@@ -737,42 +737,56 @@ async function authenticateAgent() {
 
 async function fetchAgentConfig(password) {
     try {
-        // Get the stored password hash from admin
-        const storedHash = localStorage.getItem('agentPasswordHash');
-        const storedPassword = localStorage.getItem('agentPassword');
+        // Fetch config from GitHub
+        const configData = await fetchConfigFromGitHub();
         
-        if (!storedHash && !storedPassword) {
-            throw new Error('Admin has not set up agent authentication yet. Please contact administrator.');
+        // Check if password hash exists
+        if (!configData.security || !configData.security.agentPasswordHash) {
+            throw new Error('System not configured. Please contact administrator.');
         }
         
-        // Try simple comparison first (for backward compatibility)
-        if (storedPassword && storedPassword === password) {
-            // Password matches, fetch admin's GitHub config
-            await fetchAdminGitHubConfig();
-            return;
+        // Verify password
+        const inputHash = await createSHA256Hash(password);
+        if (inputHash !== configData.security.agentPasswordHash) {
+            throw new Error('Invalid password. Please contact administrator.');
         }
         
-        // If no direct password match, try hash comparison
-        if (storedHash) {
-            // Create hash of input password
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            
-            if (inputHash === storedHash) {
-                // Password matches, fetch admin's GitHub config
-                await fetchAdminGitHubConfig();
-                return;
-            }
-        }
+        // Get GitHub configuration from config
+        githubConfig.repoOwner = configData.github.repoOwner;
+        githubConfig.repoName = configData.github.repoName;
+        githubConfig.branchName = configData.github.branchName;
+        githubConfig.imagesSubfolder = configData.github.imagesFolder || 'images';
         
-        throw new Error('Invalid password. Please contact administrator for the correct password.');
+        // Save to localStorage for this session
+        localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
+        
+        return true;
         
     } catch (error) {
         throw error;
     }
+}
+
+async function fetchConfigFromGitHub() {
+    const filepath = `config.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    const headers = {
+        'Accept': 'application/vnd.github.v3+json'
+    };
+    
+    const response = await fetch(apiUrl, { headers });
+    
+    if (!response.ok) {
+        if (response.status === 404) {
+            throw new Error('Configuration not found. Please contact administrator.');
+        }
+        throw new Error(`Failed to fetch config: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const jsonContent = decodeURIComponent(escape(atob(data.content)));
+    return JSON.parse(jsonContent);
 }
 
 async function fetchAdminGitHubConfig() {

@@ -1467,55 +1467,181 @@
 async function setAgentPassword() {
     const password = prompt('Enter a password for field agents to use for authentication:');
     
-    if (!password || password.trim() === '') {
-        alert('Password cannot be empty.');
-        return;
-    }
-    
-    if (password.length < 4) {
+    if (!password || password.length < 4) {
         alert('Password must be at least 4 characters long.');
         return;
     }
     
-    // Confirm password
-    const confirmPassword = prompt('Confirm the password:');
+    // Create hash
+    const hash = await simpleHash(password);
     
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
+    // Store password hash in GitHub config file
+    try {
+        // First, get or create config file
+        let configData = {
+            agentPasswordHash: hash,
+            updatedBy: 'admin',
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Save to GitHub
+        await saveConfigToGitHub(configData);
+        
+        alert('✅ Agent password has been set and saved to database. Share this password with your field agents.');
+    } catch (error) {
+        console.error('Error saving password:', error);
+        alert('Error saving password: ' + error.message);
+    }
+}
+
+async function saveConfigToGitHub(configData) {
+    const filepath = `config.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${githubConfig.accessToken}`
+    };
+    
+    // Convert to JSON and base64
+    const jsonContent = JSON.stringify(configData, null, 2);
+    const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+    
+    // Get SHA if file exists
+    let sha = null;
+    try {
+        const fileInfo = await fetch(apiUrl, { headers });
+        if (fileInfo.ok) {
+            const fileData = await fileInfo.json();
+            sha = fileData.sha;
+        }
+    } catch (error) {
+        // File doesn't exist yet
+    }
+    
+    const body = {
+        message: `Update agent password configuration`,
+        content: contentBase64,
+        branch: githubConfig.branchName
+    };
+    
+    if (sha) body.sha = sha;
+    
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+    }
+    
+    return await response.json();
+}
+async function createAndSaveConfig() {
+    const password = prompt('Enter agent password (min 6 characters):');
+    
+    if (!password || password.length < 6) {
+        alert('Password must be at least 6 characters long.');
         return;
     }
     
-    // Create hash using SHA-256
+    // Create SHA-256 hash
+    const hash = await createSHA256Hash(password);
+    
+    // Create config object
+    const configData = {
+        security: {
+            agentPasswordHash: hash,
+            passwordSetAt: new Date().toISOString(),
+            passwordSetBy: "admin"
+        },
+        github: {
+            repoOwner: githubConfig.repoOwner,
+            repoName: githubConfig.repoName,
+            branchName: githubConfig.branchName,
+            imagesFolder: "images"
+        },
+        system: {
+            appName: "Ezee Money Agent Registration",
+            version: "1.0.0"
+        }
+    };
+    
     try {
-        // Encode the password
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        
-        // Hash it using Web Crypto API
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        
-        // Convert to hex string
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        // Store the hash
-        localStorage.setItem('agentPasswordHash', hashHex);
-        
-        // Also store a version for the field agents (they'll use this to verify)
-        localStorage.setItem('agentPassword', password);
-        
-        alert('✅ Agent password has been set successfully!\n\nShare this password with your field agents.\n\nPassword: ' + password);
-        
+        await saveConfigToGitHub(configData);
+        alert('✅ Configuration saved successfully!\n\nPassword has been set and saved to GitHub.\nShare this password with your field agents.');
     } catch (error) {
-        console.error('Error hashing password:', error);
-        
-        // Fallback to simple base64 encoding if crypto API fails
-        const simpleHash = btoa(password).split('').reverse().join('');
-        localStorage.setItem('agentPasswordHash', simpleHash);
-        localStorage.setItem('agentPassword', password);
-        
-        alert('✅ Agent password has been set successfully!\n\nShare this password with your field agents.\n\nPassword: ' + password);
+        alert('Error saving config: ' + error.message);
     }
+}
+
+// Helper function to create SHA-256 hash
+async function createSHA256Hash(text) {
+    // Encode the text
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    
+    // Hash the data
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    
+    // Convert buffer to hex string
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex;
+}
+
+// Function to save config to GitHub
+async function saveConfigToGitHub(configData) {
+    const filepath = `config.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${githubConfig.accessToken}`
+    };
+    
+    // Convert to JSON and base64
+    const jsonContent = JSON.stringify(configData, null, 2);
+    const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+    
+    // Get SHA if file exists
+    let sha = null;
+    try {
+        const fileInfo = await fetch(apiUrl, { headers });
+        if (fileInfo.ok) {
+            const fileData = await fileInfo.json();
+            sha = fileData.sha;
+        }
+    } catch (error) {
+        // File doesn't exist yet
+    }
+    
+    const body = {
+        message: `Update system configuration`,
+        content: contentBase64,
+        branch: githubConfig.branchName
+    };
+    
+    if (sha) body.sha = sha;
+    
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+    }
+    
+    return await response.json();
 }
 
 // View current agent password (admin only)
