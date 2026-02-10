@@ -397,7 +397,7 @@
             <p>To save data to data.json and upload images, configure your GitHub repository:</p>
             <div class="config-input">
                 <input type="text" id="repoOwner" placeholder="GitHub Username (e.g., BarasaGodwilTech)">
-                <input type="text" id="repoName" placeholder="Repository Name (e.g., WILLSTECH-LANDINGSITE)">
+                <input type="text" id="repoName" placeholder="Repository Name (e.g., Ezee-money)">
                 <input type="text" id="accessToken" placeholder="GitHub Access Token (REQUIRED)">
             </div>
             <div class="config-input">
@@ -615,7 +615,7 @@
         // GitHub Configuration - ALL FILES ARE IN /data FOLDER
         let githubConfig = {
             repoOwner: 'BarasaGodwilTech',
-            repoName: 'WILLSTECH-LANDINGSITE',
+            repoName: 'Ezee-money',
             accessToken: '',
             branchName: 'main',
             // Since all files are in /data folder, we need different paths
@@ -911,7 +911,7 @@
             // Generate filename
             const timestamp = Date.now();
             const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
-            const filepath = `${githubConfig.dataFolder}/${githubConfig.imagesSubfolder}/${filename}`;
+            const filepath = `${githubConfig.imagesSubfolder}/${filename}`;
             
             // Convert file to base64
             const base64Content = await fileToBase64(file);
@@ -946,7 +946,7 @@
             }
             
             // Return the raw content URL for the image
-            return `https://raw.githubusercontent.com/${githubConfig.repoOwner}/${githubConfig.repoName}/${githubConfig.branchName}/${filepath}`;
+            return `https://raw.githubusercontent.com/${githubConfig.repoOwner}/${githubConfig.repoName}/${githubConfig.branchName}/images/${filename}`;
         }
         
         // Save agent data to GitHub data.json
@@ -974,7 +974,7 @@
             const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
             
             // Prepare API URL - data.json is in the same /data folder
-            const filepath = `${githubConfig.dataFolder}/data.json`;
+            const filepath = `data.json`;
             const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
             
             // Prepare headers
@@ -1075,7 +1075,7 @@
             } else {
                 // Set defaults based on your screenshot
                 document.getElementById('repoOwner').value = 'BarasaGodwilTech';
-                document.getElementById('repoName').value = 'WILLSTECH-LANDINGSITE';
+                document.getElementById('repoName').value = 'Ezee-money';
                 document.getElementById('branchName').value = 'main';
             }
         }

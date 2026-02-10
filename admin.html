@@ -1271,7 +1271,7 @@
         
         let githubConfig = {
     repoOwner: 'BarasaGodwilTech',
-    repoName: 'WILLSTECH-LANDINGSITE',
+    repoName: 'Ezee-money',
     accessToken: '',
     branchName: 'main'
     // Remove dataFolder since files are in root
@@ -1341,7 +1341,7 @@
             } else {
                 // Set defaults based on your screenshot
                 document.getElementById('repoOwner').value = 'BarasaGodwilTech';
-                document.getElementById('repoName').value = 'WILLSTECH-LANDINGSITE';
+                document.getElementById('repoName').value = 'Ezee-money';
                 document.getElementById('branchName').value = 'main';
             }
         }
@@ -1425,7 +1425,7 @@
             }
             
             // Since all files are in /data folder, data.json is at /data/data.json
-            const filepath = `${githubConfig.dataFolder}/data.json`;
+            const filepath = `data.json`;
             const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
             
             const headers = {
@@ -1997,7 +1997,7 @@ Ezee Money Agent Management Team
             const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
             
             // Prepare API URL - data.json is in the same /data folder
-            const filepath = `${githubConfig.dataFolder}/data.json`;
+            const filepath = `data.json`;
             const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
             
             // Prepare headers
