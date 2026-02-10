@@ -405,10 +405,11 @@
                 <button class="config-btn" onclick="saveGitHubConfig()">Save Configuration</button>
                 <button class="config-btn" onclick="testGitHubConnection()">Test Connection</button>
             </div>
+            
             <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                <strong>Important:</strong> You NEED a GitHub Personal Access Token with "repo" permissions.<br>
-                <strong>Note:</strong> Since all files are in the <code>/data</code> folder, images will be saved to <code>/data/images/</code>
-            </p>
+    <strong>Important:</strong> You NEED a GitHub Personal Access Token with "repo" permissions.<br>
+    <strong>Note:</strong> Images will be saved to <code>/images/</code> folder in your repository
+</p>
         </div>
     </div>
     
@@ -614,14 +615,12 @@
     <script>
         // GitHub Configuration - ALL FILES ARE IN /data FOLDER
         let githubConfig = {
-            repoOwner: 'BarasaGodwilTech',
-            repoName: 'Ezee-money',
-            accessToken: '',
-            branchName: 'main',
-            // Since all files are in /data folder, we need different paths
-            dataFolder: 'data', // The folder containing our files
-            imagesSubfolder: 'images' // Images go in /data/images/
-        };
+    repoOwner: 'BarasaGodwilTech',
+    repoName: 'Ezee-money',
+    accessToken: '',
+    branchName: 'main',
+    imagesSubfolder: 'images' // Images go in /images/ folder
+    };
         
         // Form data and photo storage
         let formData = {
@@ -857,7 +856,7 @@
                     document.querySelector('.form-container').classList.add('hidden');
                     uploadProgress.classList.add('hidden');
                     submissionIdEl.textContent = submissionId;
-                    imagesLocationEl.textContent = `${githubConfig.repoOwner}/${githubConfig.repoName}/data/images/`;
+                    imagesLocationEl.textContent = `${githubConfig.repoOwner}/${githubConfig.repoName}/images/`;
                     successMessage.classList.remove('hidden');
                 }, 1000);
                 
@@ -1025,7 +1024,7 @@
         
         // Fetch data from GitHub
         async function fetchGitHubData() {
-            const filepath = `${githubConfig.dataFolder}/data.json`;
+            const filepath = `data.json`;
             const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
             
             const headers = {
