@@ -1464,7 +1464,9 @@
         // ==================== AGENT PASSWORD MANAGEMENT ====================
 
 // Set password for field agents
+// Set password for field agents
 async function setAgentPassword() {
+    // Ask for password
     const password = prompt('Enter a password for field agents to use for authentication:');
     
     if (!password || password.length < 4) {
@@ -1472,22 +1474,44 @@ async function setAgentPassword() {
         return;
     }
     
-    // Create hash
-    const hash = await simpleHash(password);
+    // Ask for confirmation
+    const confirmPassword = prompt('Confirm the password:');
     
-    // Store password hash in GitHub config file
+    if (password !== confirmPassword) {
+        alert('Passwords do not match. Please try again.');
+        return;
+    }
+    
+    // Create hash
+    const hash = await createSHA256Hash(password);
+    
     try {
-        // First, get or create config file
-        let configData = {
-            agentPasswordHash: hash,
-            updatedBy: 'admin',
-            updatedAt: new Date().toISOString()
+        // Create complete config object
+        const configData = {
+            security: {
+                agentPasswordHash: hash,
+                passwordSetAt: new Date().toISOString(),
+                passwordSetBy: "admin"
+            },
+            github: {
+                repoOwner: githubConfig.repoOwner,
+                repoName: githubConfig.repoName,
+                branchName: githubConfig.branchName,
+                imagesFolder: "images"
+            },
+            system: {
+                appName: "Ezee Money Agent Registration",
+                version: "1.0.0",
+                requiresAuthentication: true
+            }
         };
         
         // Save to GitHub
         await saveConfigToGitHub(configData);
         
-        alert('✅ Agent password has been set and saved to database. Share this password with your field agents.');
+        alert('✅ Agent password has been set!\n\nPassword: ' + password + 
+              '\n\nShare this password with your field agents.\nThey will use it to authenticate.');
+        
     } catch (error) {
         console.error('Error saving password:', error);
         alert('Error saving password: ' + error.message);

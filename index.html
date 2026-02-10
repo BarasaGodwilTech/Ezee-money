@@ -734,10 +734,40 @@ async function authenticateAgent() {
         authBtn.disabled = false;
     }
 }
-
+// Helper function to create SHA-256 hash
+async function createSHA256Hash(text) {
+    try {
+        // Encode the text
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        
+        // Hash the data
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        
+        // Convert buffer to hex string
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        return hashHex;
+    } catch (error) {
+        // Fallback for browsers without crypto.subtle
+        console.warn('Crypto API not available, using simple hash');
+        return btoa(text).split('').reverse().join('');
+    }
+}
 async function fetchAgentConfig(password) {
     try {
-        // Fetch config from GitHub
+        // First, try to get admin's GitHub config from localStorage
+        const adminConfig = localStorage.getItem('githubConfig');
+        if (adminConfig) {
+            const config = JSON.parse(adminConfig);
+            githubConfig.repoOwner = config.repoOwner || githubConfig.repoOwner;
+            githubConfig.repoName = config.repoName || githubConfig.repoName;
+            githubConfig.accessToken = config.accessToken || '';
+            githubConfig.branchName = config.branchName || githubConfig.branchName;
+        }
+        
+        // Now fetch config from GitHub
         const configData = await fetchConfigFromGitHub();
         
         // Check if password hash exists
@@ -751,11 +781,20 @@ async function fetchAgentConfig(password) {
             throw new Error('Invalid password. Please contact administrator.');
         }
         
-        // Get GitHub configuration from config
-        githubConfig.repoOwner = configData.github.repoOwner;
-        githubConfig.repoName = configData.github.repoName;
-        githubConfig.branchName = configData.github.branchName;
-        githubConfig.imagesSubfolder = configData.github.imagesFolder || 'images';
+        // IMPORTANT: Get GitHub access token from admin's localStorage
+        // This allows field agents to upload images
+        if (adminConfig) {
+            const config = JSON.parse(adminConfig);
+            githubConfig.accessToken = config.accessToken || '';
+        }
+        
+        // Also get GitHub details from config.json if available
+        if (configData.github) {
+            githubConfig.repoOwner = configData.github.repoOwner || githubConfig.repoOwner;
+            githubConfig.repoName = configData.github.repoName || githubConfig.repoName;
+            githubConfig.branchName = configData.github.branchName || githubConfig.branchName;
+            githubConfig.imagesSubfolder = configData.github.imagesFolder || 'images';
+        }
         
         // Save to localStorage for this session
         localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
@@ -765,6 +804,11 @@ async function fetchAgentConfig(password) {
     } catch (error) {
         throw error;
     }
+}
+
+// Simple hash function (backward compatibility)
+async function simpleHash(str) {
+    return await createSHA256Hash(str);
 }
 
 async function fetchConfigFromGitHub() {
@@ -798,13 +842,26 @@ async function fetchAdminGitHubConfig() {
     if (adminConfig) {
         config = JSON.parse(adminConfig);
     } else {
-        // Use default config
-        config = {
-            repoOwner: 'BarasaGodwilTech',
-            repoName: 'Ezee-money',
-            accessToken: '',
-            branchName: 'main'
-        };
+        // Try to get from config.json
+        try {
+            const configData = await fetchConfigFromGitHub();
+            if (configData.github) {
+                config = {
+                    repoOwner: configData.github.repoOwner,
+                    repoName: configData.github.repoName,
+                    branchName: configData.github.branchName,
+                    accessToken: '' // Access token is sensitive, not stored in config.json
+                };
+            }
+        } catch (error) {
+            // Use default config
+            config = {
+                repoOwner: 'BarasaGodwilTech',
+                repoName: 'Ezee-money',
+                accessToken: '',
+                branchName: 'main'
+            };
+        }
     }
     
     // Update our githubConfig
@@ -816,6 +873,7 @@ async function fetchAdminGitHubConfig() {
     // Save for this agent session
     localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
 }
+
 function autoFillAgentInfo() {
     if (agentAuth.isAuthenticated && agentAuth.agentName && agentAuth.agentPhone) {
         const tradingNameField = document.getElementById('tradingName');
@@ -983,7 +1041,8 @@ async function handleSubmit() {
     }
     
     // Check GitHub configuration
-    if (!githubConfig.repoOwner || !githubConfig.repoName || !githubConfig.accessToken) {
+    // Check GitHub configuration
+    if (!githubConfig.repoOwner || !githubConfig.repoName) {
         alert('System configuration missing. Please authenticate again.');
         configPanel.style.display = 'block';
         return;
