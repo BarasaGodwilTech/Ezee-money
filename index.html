@@ -391,27 +391,25 @@
     </button>
     
     <!-- Configuration Panel -->
-    <div class="container">
-        <div class="config-panel" id="configPanel">
-            <h3><i class="fas fa-database"></i> GitHub Configuration</h3>
-            <p>To save data to data.json and upload images, configure your GitHub repository:</p>
-            <div class="config-input">
-                <input type="text" id="repoOwner" placeholder="GitHub Username (e.g., BarasaGodwilTech)">
-                <input type="text" id="repoName" placeholder="Repository Name (e.g., Ezee-money)">
-                <input type="text" id="accessToken" placeholder="GitHub Access Token (REQUIRED)">
-            </div>
-            <div class="config-input">
-                <input type="text" id="branchName" value="main" placeholder="Branch Name (usually 'main')">
-                <button class="config-btn" onclick="saveGitHubConfig()">Save Configuration</button>
-                <button class="config-btn" onclick="testGitHubConnection()">Test Connection</button>
-            </div>
-            
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-    <strong>Important:</strong> You NEED a GitHub Personal Access Token with "repo" permissions.<br>
-    <strong>Note:</strong> Images will be saved to <code>/images/</code> folder in your repository
-</p>
-        </div>
+    
+    <!-- Replace the entire config-panel div with this: -->
+<div class="config-panel" id="configPanel">
+    <h3><i class="fas fa-user-lock"></i> Field Agent Authentication</h3>
+    <p>Enter your details to access the submission system:</p>
+    <div class="config-input">
+        <input type="text" id="agentName" placeholder="Your Full Name">
+        <input type="text" id="agentPhone" placeholder="Your Phone Number">
+        <input type="password" id="agentPassword" placeholder="Access Password">
     </div>
+    <div class="config-input">
+        <button class="config-btn" onclick="authenticateAgent()">Authenticate</button>
+        <button class="config-btn" onclick="resetAuth()">Reset</button>
+    </div>
+    
+    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        <strong>Note:</strong> Get your access password from the admin. Once authenticated, your name and phone will automatically be captured.
+    </p>
+</div>
     
     <header>
         <div class="logo">
@@ -613,600 +611,736 @@
     </div>
 
     <script>
-        // GitHub Configuration - ALL FILES ARE IN /data FOLDER
-        let githubConfig = {
+        // Authentication configuration
+let agentAuth = {
+    isAuthenticated: false,
+    agentName: '',
+    agentPhone: '',
+    agentPassword: ''
+};
+
+// GitHub Configuration (will be fetched after authentication)
+let githubConfig = {
     repoOwner: 'BarasaGodwilTech',
     repoName: 'Ezee-money',
     accessToken: '',
     branchName: 'main',
-    imagesSubfolder: 'images' // Images go in /images/ folder
-    };
+    imagesSubfolder: 'images'
+};
+
+// Form data and photo storage
+let formData = {
+    idFront: null,
+    idBack: null,
+    agentPhoto: null
+};
+
+// DOM Elements
+const configToggle = document.getElementById('configToggle');
+const configPanel = document.getElementById('configPanel');
+const submitBtn = document.getElementById('submitBtn');
+const successMessage = document.getElementById('successMessage');
+const submissionIdEl = document.getElementById('submissionId');
+const imagesLocationEl = document.getElementById('imagesLocation');
+const newAgentBtn = document.getElementById('newAgentBtn');
+const uploadProgress = document.getElementById('uploadProgress');
+const progressFill = document.getElementById('progressFill');
+const uploadStatus = document.getElementById('uploadStatus');
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadAgentAuth();
+    setupPhotoUploads();
+    setupEventListeners();
+    initializeForm();
+    
+    // Check if agent is already authenticated
+    if (agentAuth.isAuthenticated) {
+        autoFillAgentInfo();
+    }
+});
+
+function setupEventListeners() {
+    // Config toggle
+    configToggle.addEventListener('click', () => {
+        configPanel.style.display = configPanel.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    // Form submission
+    submitBtn.addEventListener('click', handleSubmit);
+    
+    // New agent button
+    newAgentBtn.addEventListener('click', () => {
+        successMessage.classList.add('hidden');
+        uploadProgress.classList.add('hidden');
+        document.querySelector('.form-container').classList.remove('hidden');
+        resetForm();
+    });
+}
+
+function loadAgentAuth() {
+    const savedAuth = localStorage.getItem('agentAuth');
+    if (savedAuth) {
+        agentAuth = JSON.parse(savedAuth);
         
-        // Form data and photo storage
-        let formData = {
-            idFront: null,
-            idBack: null,
-            agentPhoto: null
+        // Update form fields
+        document.getElementById('agentName').value = agentAuth.agentName || '';
+        document.getElementById('agentPhone').value = agentAuth.agentPhone || '';
+        document.getElementById('agentPassword').value = '';
+    }
+}
+
+async function authenticateAgent() {
+    const agentName = document.getElementById('agentName').value.trim();
+    const agentPhone = document.getElementById('agentPhone').value.trim();
+    const agentPassword = document.getElementById('agentPassword').value.trim();
+    
+    if (!agentName || !agentPhone || !agentPassword) {
+        alert('Please enter all authentication details.');
+        return;
+    }
+    
+    // Show loading
+    const authBtn = document.querySelector('.config-btn');
+    const originalText = authBtn.innerHTML;
+    authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+    authBtn.disabled = true;
+    
+    try {
+        // Fetch configuration from admin (using the admin's stored GitHub config)
+        await fetchAgentConfig(agentPassword);
+        
+        // Save authentication
+        agentAuth.isAuthenticated = true;
+        agentAuth.agentName = agentName;
+        agentAuth.agentPhone = agentPhone;
+        agentAuth.agentPassword = agentPassword;
+        
+        localStorage.setItem('agentAuth', JSON.stringify(agentAuth));
+        
+        // Auto-fill the onboarding field
+        autoFillAgentInfo();
+        
+        // Hide config panel
+        configPanel.style.display = 'none';
+        
+        alert('Authentication successful! Your details have been saved.');
+        
+    } catch (error) {
+        alert('Authentication failed: ' + error.message);
+        console.error('Authentication error:', error);
+    } finally {
+        authBtn.innerHTML = originalText;
+        authBtn.disabled = false;
+    }
+}
+
+async function fetchAgentConfig(password) {
+    try {
+        // Get the stored password hash from admin
+        const storedHash = localStorage.getItem('agentPasswordHash');
+        const storedPassword = localStorage.getItem('agentPassword');
+        
+        if (!storedHash && !storedPassword) {
+            throw new Error('Admin has not set up agent authentication yet. Please contact administrator.');
+        }
+        
+        // Try simple comparison first (for backward compatibility)
+        if (storedPassword && storedPassword === password) {
+            // Password matches, fetch admin's GitHub config
+            await fetchAdminGitHubConfig();
+            return;
+        }
+        
+        // If no direct password match, try hash comparison
+        if (storedHash) {
+            // Create hash of input password
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            if (inputHash === storedHash) {
+                // Password matches, fetch admin's GitHub config
+                await fetchAdminGitHubConfig();
+                return;
+            }
+        }
+        
+        throw new Error('Invalid password. Please contact administrator for the correct password.');
+        
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function fetchAdminGitHubConfig() {
+    // Try to get GitHub config from various possible sources
+    let config = null;
+    
+    // First, check if we have the admin's config in localStorage
+    const adminConfig = localStorage.getItem('githubConfig');
+    if (adminConfig) {
+        config = JSON.parse(adminConfig);
+    } else {
+        // Use default config
+        config = {
+            repoOwner: 'BarasaGodwilTech',
+            repoName: 'Ezee-money',
+            accessToken: '',
+            branchName: 'main'
         };
+    }
+    
+    // Update our githubConfig
+    githubConfig = {
+        ...githubConfig,
+        ...config
+    };
+    
+    // Save for this agent session
+    localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
+}
+function autoFillAgentInfo() {
+    if (agentAuth.isAuthenticated && agentAuth.agentName && agentAuth.agentPhone) {
+        const tradingNameField = document.getElementById('tradingName');
+        tradingNameField.value = `${agentAuth.agentName} ${agentAuth.agentPhone}`;
         
-        // DOM Elements
-        const configToggle = document.getElementById('configToggle');
-        const configPanel = document.getElementById('configPanel');
-        const submitBtn = document.getElementById('submitBtn');
-        const successMessage = document.getElementById('successMessage');
-        const submissionIdEl = document.getElementById('submissionId');
-        const imagesLocationEl = document.getElementById('imagesLocation');
-        const newAgentBtn = document.getElementById('newAgentBtn');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const progressFill = document.getElementById('progressFill');
-        const uploadStatus = document.getElementById('uploadStatus');
+        // Make it read-only so agents don't change it
+        tradingNameField.readOnly = true;
+        tradingNameField.style.backgroundColor = '#f5f5f5';
+    }
+}
+
+function resetAuth() {
+    agentAuth.isAuthenticated = false;
+    agentAuth.agentName = '';
+    agentAuth.agentPhone = '';
+    agentAuth.agentPassword = '';
+    
+    localStorage.removeItem('agentAuth');
+    
+    document.getElementById('agentName').value = '';
+    document.getElementById('agentPhone').value = '';
+    document.getElementById('agentPassword').value = '';
+    
+    // Reset trading name field
+    const tradingNameField = document.getElementById('tradingName');
+    tradingNameField.value = '';
+    tradingNameField.readOnly = false;
+    tradingNameField.style.backgroundColor = '';
+    
+    alert('Authentication reset. Please authenticate again to submit.');
+}
+
+// Simple hash function for demo purposes
+async function simpleHash(str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function initializeForm() {
+    // Initialize date field (25 years ago as default)
+    const today = new Date();
+    const defaultDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
+    document.getElementById('dob').value = defaultDate.toISOString().split('T')[0];
+    
+    // Set min and max dates for DOB
+    const minDate = new Date(today.getFullYear() - 70, today.getMonth(), today.getDate());
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    document.getElementById('dob').min = minDate.toISOString().split('T')[0];
+    document.getElementById('dob').max = maxDate.toISOString().split('T')[0];
+}
+
+function setupPhotoUploads() {
+    // Photo upload functionality
+    function setupPhotoUpload(uploadAreaId, inputId, previewId, imageId, dataKey) {
+        const uploadArea = document.getElementById(uploadAreaId);
+        const fileInput = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const image = document.getElementById(imageId);
         
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGitHubConfig();
-            setupPhotoUploads();
-            setupEventListeners();
-            initializeForm();
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
         });
         
-        function setupEventListeners() {
-            // Config toggle
-            configToggle.addEventListener('click', () => {
-                configPanel.style.display = configPanel.style.display === 'block' ? 'none' : 'block';
-            });
-            
-            // Form submission
-            submitBtn.addEventListener('click', handleSubmit);
-            
-            // New agent button
-            newAgentBtn.addEventListener('click', () => {
-                successMessage.classList.add('hidden');
-                uploadProgress.classList.add('hidden');
-                document.querySelector('.form-container').classList.remove('hidden');
-                resetForm();
-            });
-        }
-        
-        function initializeForm() {
-            // Initialize date field (25 years ago as default)
-            const today = new Date();
-            const defaultDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
-            document.getElementById('dob').value = defaultDate.toISOString().split('T')[0];
-            
-            // Set min and max dates for DOB
-            const minDate = new Date(today.getFullYear() - 70, today.getMonth(), today.getDate());
-            const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-            document.getElementById('dob').min = minDate.toISOString().split('T')[0];
-            document.getElementById('dob').max = maxDate.toISOString().split('T')[0];
-        }
-        
-        function setupPhotoUploads() {
-            // Photo upload functionality
-            function setupPhotoUpload(uploadAreaId, inputId, previewId, imageId, dataKey) {
-                const uploadArea = document.getElementById(uploadAreaId);
-                const fileInput = document.getElementById(inputId);
-                const preview = document.getElementById(previewId);
-                const image = document.getElementById(imageId);
-                
-                uploadArea.addEventListener('click', () => {
-                    fileInput.click();
-                });
-                
-                fileInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file || !file.type.match('image.*')) {
-                        alert('Please select a valid image file.');
-                        return;
-                    }
-                    
-                    // Compress image if too large
-                    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                        compressImage(file, 800, 0.7).then(compressedFile => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                image.src = e.target.result;
-                                formData[dataKey] = compressedFile; // Store compressed file
-                                uploadArea.classList.add('hidden');
-                                preview.classList.remove('hidden');
-                            };
-                            reader.readAsDataURL(compressedFile);
-                        }).catch(error => {
-                            alert('Error compressing image: ' + error.message);
-                        });
-                    } else {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            image.src = e.target.result;
-                            formData[dataKey] = file; // Store original file
-                            uploadArea.classList.add('hidden');
-                            preview.classList.remove('hidden');
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-                
-                // Remove photo
-                preview.querySelector('.remove-photo').addEventListener('click', () => {
-                    formData[dataKey] = null;
-                    preview.classList.add('hidden');
-                    uploadArea.classList.remove('hidden');
-                    fileInput.value = '';
-                });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file || !file.type.match('image.*')) {
+                alert('Please select a valid image file.');
+                return;
             }
             
-            // Initialize photo uploads
-            setupPhotoUpload('idFrontUpload', 'idFrontInput', 'idFrontPreview', 'idFrontImage', 'idFront');
-            setupPhotoUpload('idBackUpload', 'idBackInput', 'idBackPreview', 'idBackImage', 'idBack');
-            setupPhotoUpload('agentPhotoUpload', 'agentPhotoInput', 'agentPhotoPreview', 'agentPhotoImage', 'agentPhoto');
-        }
-        
-        // Image compression function
-        function compressImage(file, maxWidth, quality) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        
-                        // Calculate new dimensions
-                        if (width > maxWidth) {
-                            height = (height * maxWidth) / width;
-                            width = maxWidth;
-                        }
-                        
-                        canvas.width = width;
-                        canvas.height = height;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        canvas.toBlob((blob) => {
-                            const compressedFile = new File([blob], file.name, {
-                                type: 'image/jpeg',
-                                lastModified: Date.now()
-                            });
-                            resolve(compressedFile);
-                        }, 'image/jpeg', quality);
+            // Compress image if too large
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                compressImage(file, 800, 0.7).then(compressedFile => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        image.src = e.target.result;
+                        formData[dataKey] = compressedFile; // Store compressed file
+                        uploadArea.classList.add('hidden');
+                        preview.classList.remove('hidden');
                     };
-                    img.onerror = reject;
-                };
-                reader.onerror = reject;
-            });
-        }
-        
-        async function handleSubmit() {
-            // Validate form
-            if (!validateForm()) {
-                return;
-            }
-            
-            // Check GitHub configuration
-            if (!githubConfig.repoOwner || !githubConfig.repoName || !githubConfig.accessToken) {
-                alert('Please configure your GitHub repository details first. Click the gear icon ⚙️ in the top right.');
-                configPanel.style.display = 'block';
-                return;
-            }
-            
-            // Show progress bar
-            uploadProgress.classList.remove('hidden');
-            progressFill.style.width = '10%';
-            uploadStatus.textContent = 'Preparing data...';
-            
-            // Generate submission ID
-            const submissionId = generateSubmissionId();
-            
-            // Collect form data (without images)
-            const agentData = {
-                id: submissionId,
-                fullName: document.getElementById('fullName').value.trim(),
-                personalNumber: document.getElementById('personalNumber').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                nationalId: document.getElementById('nationalId').value.trim(),
-                dob: document.getElementById('dob').value,
-                gender: document.getElementById('gender').value,
-                businessAddress: document.getElementById('businessAddress').value.trim(),
-                residentialAddress: document.getElementById('residentialAddress').value.trim(),
-                nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
-                nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value,
-                nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim(),
-                tradingName: document.getElementById('tradingName').value.trim(),
-                submissionDate: new Date().toISOString(),
-                status: 'pending',
-                emailVerified: false,
-                adminVerified: false,
-                // Image URLs will be added after upload
-                idFrontUrl: '',
-                idBackUrl: '',
-                agentPhotoUrl: ''
-            };
-            
-            // Disable submit button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="loading"></span> Uploading...';
-            
-            try {
-                // Step 1: Upload images to GitHub
-                uploadStatus.textContent = 'Uploading images to GitHub...';
-                progressFill.style.width = '30%';
-                
-                const imageUrls = await uploadImagesToGitHub(submissionId);
-                
-                // Add image URLs to agent data
-                agentData.idFrontUrl = imageUrls.idFrontUrl;
-                agentData.idBackUrl = imageUrls.idBackUrl;
-                agentData.agentPhotoUrl = imageUrls.agentPhotoUrl;
-                
-                // Step 2: Save agent data to data.json
-                uploadStatus.textContent = 'Saving agent data...';
-                progressFill.style.width = '70%';
-                
-                await saveAgentDataToGitHub(agentData);
-                
-                // Step 3: Complete
-                progressFill.style.width = '100%';
-                uploadStatus.textContent = 'Submission complete!';
-                
-                // Show success message
-                setTimeout(() => {
-                    document.querySelector('.form-container').classList.add('hidden');
-                    uploadProgress.classList.add('hidden');
-                    submissionIdEl.textContent = submissionId;
-                    imagesLocationEl.textContent = `${githubConfig.repoOwner}/${githubConfig.repoName}/images/`;
-                    successMessage.classList.remove('hidden');
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Submission error:', error);
-                alert('Error submitting data: ' + error.message);
-                
-                // Reset UI
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
-                uploadProgress.classList.add('hidden');
-            }
-        }
-        
-        // Upload images to GitHub and return URLs
-        async function uploadImagesToGitHub(submissionId) {
-            const imageUrls = {
-                idFrontUrl: '',
-                idBackUrl: '',
-                agentPhotoUrl: ''
-            };
-            
-            // Upload each image that exists
-            const uploads = [];
-            let uploadCount = 0;
-            const totalImages = Object.keys(formData).filter(key => formData[key] !== null).length;
-            
-            for (const [key, file] of Object.entries(formData)) {
-                if (file) {
-                    uploadCount++;
-                    const progress = 30 + (uploadCount / totalImages * 40); // 30-70%
-                    progressFill.style.width = `${progress}%`;
-                    uploadStatus.textContent = `Uploading ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}...`;
-                    
-                    try {
-                        const url = await uploadImageToGitHub(file, submissionId, key);
-                        imageUrls[`${key}Url`] = url;
-                    } catch (error) {
-                        throw new Error(`Failed to upload ${key}: ${error.message}`);
-                    }
-                }
-            }
-            
-            return imageUrls;
-        }
-        
-        // Upload a single image to GitHub
-        async function uploadImageToGitHub(file, submissionId, imageType) {
-            if (!file) return '';
-            
-            // Generate filename
-            const timestamp = Date.now();
-            const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
-            const filepath = `${githubConfig.imagesSubfolder}/${filename}`;
-            
-            // Convert file to base64
-            const base64Content = await fileToBase64(file);
-            
-            // Prepare API URL
-            const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
-            
-            // Prepare headers
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token ${githubConfig.accessToken}`
-            };
-            
-            // Prepare request body
-            const body = {
-                message: `Upload ${imageType} image for agent ${submissionId}`,
-                content: base64Content.split(',')[1], // Remove data:image/jpeg;base64, prefix
-                branch: githubConfig.branchName
-            };
-            
-            // Send request to GitHub API
-            const response = await fetch(apiUrl, {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(body)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-            }
-            
-            // Return the raw content URL for the image
-            return `https://raw.githubusercontent.com/${githubConfig.repoOwner}/${githubConfig.repoName}/${githubConfig.branchName}/images/${filename}`;
-        }
-        
-        // Save agent data to GitHub data.json
-        async function saveAgentDataToGitHub(agentData) {
-            // First, get the current data.json content
-            let currentData;
-            try {
-                currentData = await fetchGitHubData();
-            } catch (error) {
-                // If file doesn't exist, create new data
-                currentData = {
-                    agents: [],
-                    lastUpdated: new Date().toISOString()
-                };
-            }
-            
-            // Add new agent
-            currentData.agents.push(agentData);
-            currentData.lastUpdated = new Date().toISOString();
-            
-            // Convert to JSON
-            const jsonContent = JSON.stringify(currentData, null, 2);
-            
-            // Create base64 encoded content
-            const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
-            
-            // Prepare API URL - data.json is in the same /data folder
-            const filepath = `data.json`;
-            const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
-            
-            // Prepare headers
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token ${githubConfig.accessToken}`
-            };
-            
-            // First, try to get the file to get its SHA (needed for update)
-            let sha = null;
-            try {
-                const fileInfo = await fetch(apiUrl, { headers });
-                if (fileInfo.ok) {
-                    const fileData = await fileInfo.json();
-                    sha = fileData.sha;
-                }
-            } catch (error) {
-                // File doesn't exist yet
-            }
-            
-            // Prepare request body
-            const body = {
-                message: `Add new agent: ${agentData.fullName}`,
-                content: contentBase64,
-                branch: githubConfig.branchName
-            };
-            
-            // Add SHA if we're updating existing file
-            if (sha) {
-                body.sha = sha;
-            }
-            
-            // Send request to GitHub API
-            const response = await fetch(apiUrl, {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(body)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-            }
-            
-            return await response.json();
-        }
-        
-        // Fetch data from GitHub
-        async function fetchGitHubData() {
-            const filepath = `data.json`;
-            const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
-            
-            const headers = {
-                'Accept': 'application/vnd.github.v3+json'
-            };
-            
-            // Add authorization if available (not required for public repos, but helps with rate limits)
-            if (githubConfig.accessToken) {
-                headers['Authorization'] = `token ${githubConfig.accessToken}`;
-            }
-            
-            const response = await fetch(apiUrl, { headers });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            // Decode base64 content
-            const jsonContent = decodeURIComponent(escape(atob(data.content)));
-            
-            return JSON.parse(jsonContent);
-        }
-        
-        // Helper function to convert file to base64
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-        
-        // GitHub configuration functions
-        function loadGitHubConfig() {
-            const savedConfig = localStorage.getItem('githubConfig');
-            if (savedConfig) {
-                githubConfig = JSON.parse(savedConfig);
-                
-                // Update form fields
-                document.getElementById('repoOwner').value = githubConfig.repoOwner || '';
-                document.getElementById('repoName').value = githubConfig.repoName || '';
-                document.getElementById('accessToken').value = githubConfig.accessToken || '';
-                document.getElementById('branchName').value = githubConfig.branchName || 'main';
+                    reader.readAsDataURL(compressedFile);
+                }).catch(error => {
+                    alert('Error compressing image: ' + error.message);
+                });
             } else {
-                // Set defaults based on your screenshot
-                document.getElementById('repoOwner').value = 'BarasaGodwilTech';
-                document.getElementById('repoName').value = 'Ezee-money';
-                document.getElementById('branchName').value = 'main';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    image.src = e.target.result;
+                    formData[dataKey] = file; // Store original file
+                    uploadArea.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
             }
-        }
+        });
         
-        function saveGitHubConfig() {
-            githubConfig.repoOwner = document.getElementById('repoOwner').value.trim();
-            githubConfig.repoName = document.getElementById('repoName').value.trim();
-            githubConfig.accessToken = document.getElementById('accessToken').value.trim();
-            githubConfig.branchName = document.getElementById('branchName').value.trim() || 'main';
-            
-            if (!githubConfig.accessToken) {
-                alert('Access Token is REQUIRED for uploading images and saving data!');
-                return;
-            }
-            
-            localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
-            alert('GitHub configuration saved!');
-            configPanel.style.display = 'none';
-        }
+        // Remove photo
+        preview.querySelector('.remove-photo').addEventListener('click', () => {
+            formData[dataKey] = null;
+            preview.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+            fileInput.value = '';
+        });
+    }
+    
+    // Initialize photo uploads
+    setupPhotoUpload('idFrontUpload', 'idFrontInput', 'idFrontPreview', 'idFrontImage', 'idFront');
+    setupPhotoUpload('idBackUpload', 'idBackInput', 'idBackPreview', 'idBackImage', 'idBack');
+    setupPhotoUpload('agentPhotoUpload', 'agentPhotoInput', 'agentPhotoPreview', 'agentPhotoImage', 'agentPhoto');
+}
+
+// Image compression function
+function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // Calculate new dimensions
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+}
+
+async function handleSubmit() {
+    // Check if agent is authenticated
+    if (!agentAuth.isAuthenticated) {
+        alert('Please authenticate first. Click the gear icon ⚙️ in the top right.');
+        configPanel.style.display = 'block';
+        return;
+    }
+    
+    // Validate form
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Check GitHub configuration
+    if (!githubConfig.repoOwner || !githubConfig.repoName || !githubConfig.accessToken) {
+        alert('System configuration missing. Please authenticate again.');
+        configPanel.style.display = 'block';
+        return;
+    }
+    
+    // Show progress bar
+    uploadProgress.classList.remove('hidden');
+    progressFill.style.width = '10%';
+    uploadStatus.textContent = 'Preparing data...';
+    
+    // Generate submission ID
+    const submissionId = generateSubmissionId();
+    
+    // Collect form data (without images)
+    const agentData = {
+        id: submissionId,
+        fullName: document.getElementById('fullName').value.trim(),
+        personalNumber: document.getElementById('personalNumber').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        nationalId: document.getElementById('nationalId').value.trim(),
+        dob: document.getElementById('dob').value,
+        gender: document.getElementById('gender').value,
+        businessAddress: document.getElementById('businessAddress').value.trim(),
+        residentialAddress: document.getElementById('residentialAddress').value.trim(),
+        nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
+        nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value,
+        nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim(),
+        tradingName: document.getElementById('tradingName').value.trim(),
+        submissionDate: new Date().toISOString(),
+        status: 'pending',
+        emailVerified: false,
+        adminVerified: false,
+        // Image URLs will be added after upload
+        idFrontUrl: '',
+        idBackUrl: '',
+        agentPhotoUrl: ''
+    };
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Uploading...';
+    
+    try {
+        // Step 1: Upload images to GitHub
+        uploadStatus.textContent = 'Uploading images to GitHub...';
+        progressFill.style.width = '30%';
         
-        async function testGitHubConnection() {
-            if (!githubConfig.repoOwner || !githubConfig.repoName) {
-                alert('Please enter GitHub repository details.');
-                return;
-            }
+        const imageUrls = await uploadImagesToGitHub(submissionId);
+        
+        // Add image URLs to agent data
+        agentData.idFrontUrl = imageUrls.idFrontUrl;
+        agentData.idBackUrl = imageUrls.idBackUrl;
+        agentData.agentPhotoUrl = imageUrls.agentPhotoUrl;
+        
+        // Step 2: Save agent data to data.json
+        uploadStatus.textContent = 'Saving agent data...';
+        progressFill.style.width = '70%';
+        
+        await saveAgentDataToGitHub(agentData);
+        
+        // Step 3: Complete
+        progressFill.style.width = '100%';
+        uploadStatus.textContent = 'Submission complete!';
+        
+        // Show success message
+        setTimeout(() => {
+            document.querySelector('.form-container').classList.add('hidden');
+            uploadProgress.classList.add('hidden');
+            submissionIdEl.textContent = submissionId;
+            imagesLocationEl.textContent = `${githubConfig.repoOwner}/${githubConfig.repoName}/images/`;
+            successMessage.classList.remove('hidden');
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Submission error:', error);
+        alert('Error submitting data: ' + error.message);
+        
+        // Reset UI
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
+        uploadProgress.classList.add('hidden');
+    }
+}
+
+// Upload images to GitHub and return URLs
+async function uploadImagesToGitHub(submissionId) {
+    const imageUrls = {
+        idFrontUrl: '',
+        idBackUrl: '',
+        agentPhotoUrl: ''
+    };
+    
+    // Upload each image that exists
+    const uploads = [];
+    let uploadCount = 0;
+    const totalImages = Object.keys(formData).filter(key => formData[key] !== null).length;
+    
+    for (const [key, file] of Object.entries(formData)) {
+        if (file) {
+            uploadCount++;
+            const progress = 30 + (uploadCount / totalImages * 40); // 30-70%
+            progressFill.style.width = `${progress}%`;
+            uploadStatus.textContent = `Uploading ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}...`;
             
             try {
-                const data = await fetchGitHubData();
-                alert(`Connection successful! Found ${data.agents.length} agents in data.json.`);
+                const url = await uploadImageToGitHub(file, submissionId, key);
+                imageUrls[`${key}Url`] = url;
             } catch (error) {
-                alert(`Connection test: ${error.message}\n\nThis might be because the data.json file doesn't exist yet. That's OK - it will be created on first submission.`);
+                throw new Error(`Failed to upload ${key}: ${error.message}`);
             }
         }
+    }
+    
+    return imageUrls;
+}
+
+// Upload a single image to GitHub
+async function uploadImageToGitHub(file, submissionId, imageType) {
+    if (!file) return '';
+    
+    // Generate filename
+    const timestamp = Date.now();
+    const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
+    const filepath = `${githubConfig.imagesSubfolder}/${filename}`;
+    
+    // Convert file to base64
+    const base64Content = await fileToBase64(file);
+    
+    // Prepare API URL
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    // Prepare headers
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${githubConfig.accessToken}`
+    };
+    
+    // Prepare request body
+    const body = {
+        message: `Upload ${imageType} image for agent ${submissionId}`,
+        content: base64Content.split(',')[1], // Remove data:image/jpeg;base64, prefix
+        branch: githubConfig.branchName
+    };
+    
+    // Send request to GitHub API
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+    }
+    
+    // Return the raw content URL for the image
+    return `https://raw.githubusercontent.com/${githubConfig.repoOwner}/${githubConfig.repoName}/${githubConfig.branchName}/images/${filename}`;
+}
+
+// Save agent data to GitHub data.json
+async function saveAgentDataToGitHub(agentData) {
+    // First, get the current data.json content
+    let currentData;
+    try {
+        currentData = await fetchGitHubData();
+    } catch (error) {
+        // If file doesn't exist, create new data
+        currentData = {
+            agents: [],
+            lastUpdated: new Date().toISOString()
+        };
+    }
+    
+    // Add new agent
+    currentData.agents.push(agentData);
+    currentData.lastUpdated = new Date().toISOString();
+    
+    // Convert to JSON
+    const jsonContent = JSON.stringify(currentData, null, 2);
+    
+    // Create base64 encoded content
+    const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+    
+    // Prepare API URL - data.json is in the same /data folder
+    const filepath = `data.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    // Prepare headers
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${githubConfig.accessToken}`
+    };
+    
+    // First, try to get the file to get its SHA (needed for update)
+    let sha = null;
+    try {
+        const fileInfo = await fetch(apiUrl, { headers });
+        if (fileInfo.ok) {
+            const fileData = await fileInfo.json();
+            sha = fileData.sha;
+        }
+    } catch (error) {
+        // File doesn't exist yet
+    }
+    
+    // Prepare request body
+    const body = {
+        message: `Add new agent: ${agentData.fullName}`,
+        content: contentBase64,
+        branch: githubConfig.branchName
+    };
+    
+    // Add SHA if we're updating existing file
+    if (sha) {
+        body.sha = sha;
+    }
+    
+    // Send request to GitHub API
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+    }
+    
+    return await response.json();
+}
+
+// Fetch data from GitHub
+async function fetchGitHubData() {
+    const filepath = `data.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
+    
+    const headers = {
+        'Accept': 'application/vnd.github.v3+json'
+    };
+    
+    // Add authorization if available (not required for public repos, but helps with rate limits)
+    if (githubConfig.accessToken) {
+        headers['Authorization'] = `token ${githubConfig.accessToken}`;
+    }
+    
+    const response = await fetch(apiUrl, { headers });
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch data: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Decode base64 content
+    const jsonContent = decodeURIComponent(escape(atob(data.content)));
+    
+    return JSON.parse(jsonContent);
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// Form validation
+function validateForm() {
+    const requiredFields = [
+        {id: 'fullName', name: 'Full Name'},
+        {id: 'personalNumber', name: 'Personal Number'},
+        {id: 'email', name: 'Email'},
+        {id: 'nationalId', name: 'National ID'},
+        {id: 'gender', name: 'Gender'},
+        {id: 'businessAddress', name: 'Business Address'},
+        {id: 'residentialAddress', name: 'Residential Address'},
+        {id: 'nextOfKinName', name: 'Next of Kin Name'},
+        {id: 'nextOfKinRelationship', name: 'Next of Kin Relationship'},
+        {id: 'nextOfKinPhone', name: 'Next of Kin Phone'}
+    ];
+    
+    for (let field of requiredFields) {
+        const element = document.getElementById(field.id);
+        const value = element.value ? element.value.trim() : '';
         
-        // Form validation
-        function validateForm() {
-            const requiredFields = [
-                {id: 'fullName', name: 'Full Name'},
-                {id: 'personalNumber', name: 'Personal Number'},
-                {id: 'email', name: 'Email'},
-                {id: 'nationalId', name: 'National ID'},
-                {id: 'gender', name: 'Gender'},
-                {id: 'businessAddress', name: 'Business Address'},
-                {id: 'residentialAddress', name: 'Residential Address'},
-                {id: 'nextOfKinName', name: 'Next of Kin Name'},
-                {id: 'nextOfKinRelationship', name: 'Next of Kin Relationship'},
-                {id: 'nextOfKinPhone', name: 'Next of Kin Phone'}
-            ];
-            
-            for (let field of requiredFields) {
-                const element = document.getElementById(field.id);
-                const value = element.value ? element.value.trim() : '';
-                
-                if (!value) {
-                    alert(`Please fill in the ${field.name} field.`);
-                    element.focus();
-                    return false;
-                }
-            }
-            
-            // Email validation
-            const email = document.getElementById('email').value.trim();
-            if (!isValidEmail(email)) {
-                alert('Please enter a valid email address.');
-                return false;
-            }
-            
-            // Check if required photos are uploaded
-            if (!formData.idFront) {
-                alert('Please upload the front of the ID or passport bio page (required).');
-                return false;
-            }
-            
-            if (!formData.agentPhoto) {
-                alert('Please upload a passport photo of the agent (required).');
-                return false;
-            }
-            
-            return true;
+        if (!value) {
+            alert(`Please fill in the ${field.name} field.`);
+            element.focus();
+            return false;
         }
-        
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-        
-        function generateSubmissionId() {
-            const timestamp = Date.now();
-            const random = Math.floor(Math.random() * 1000);
-            return `AGENT-${timestamp}-${random}`;
-        }
-        
-        function resetForm() {
-            // Reset all form fields
-            document.getElementById('fullName').value = '';
-            document.getElementById('personalNumber').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('nationalId').value = '';
-            document.getElementById('dob').value = '';
-            document.getElementById('gender').value = '';
-            document.getElementById('businessAddress').value = '';
-            document.getElementById('residentialAddress').value = '';
-            document.getElementById('nextOfKinName').value = '';
-            document.getElementById('nextOfKinRelationship').value = '';
-            document.getElementById('nextOfKinPhone').value = '';
-            document.getElementById('tradingName').value = '';
-            
-            // Reset photos
-            formData.idFront = null;
-            formData.idBack = null;
-            formData.agentPhoto = null;
-            
-            // Show upload areas, hide previews
-            document.getElementById('idFrontUpload').classList.remove('hidden');
-            document.getElementById('idFrontPreview').classList.add('hidden');
-            document.getElementById('idBackUpload').classList.remove('hidden');
-            document.getElementById('idBackPreview').classList.add('hidden');
-            document.getElementById('agentPhotoUpload').classList.remove('hidden');
-            document.getElementById('agentPhotoPreview').classList.add('hidden');
-            
-            // Reset file inputs
-            document.getElementById('idFrontInput').value = '';
-            document.getElementById('idBackInput').value = '';
-            document.getElementById('agentPhotoInput').value = '';
-            
-            // Reset submit button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
-            
-            // Re-initialize date field
-            initializeForm();
-        }
+    }
+    
+    // Email validation
+    const email = document.getElementById('email').value.trim();
+    if (!isValidEmail(email)) {
+        alert('Please enter a valid email address.');
+        return false;
+    }
+    
+    // Check if required photos are uploaded
+    if (!formData.idFront) {
+        alert('Please upload the front of the ID or passport bio page (required).');
+        return false;
+    }
+    
+    if (!formData.agentPhoto) {
+        alert('Please upload a passport photo of the agent (required).');
+        return false;
+    }
+    
+    return true;
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function generateSubmissionId() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `AGENT-${timestamp}-${random}`;
+}
+
+function resetForm() {
+    // Reset all form fields
+    document.getElementById('fullName').value = '';
+    document.getElementById('personalNumber').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('nationalId').value = '';
+    document.getElementById('dob').value = '';
+    document.getElementById('gender').value = '';
+    document.getElementById('businessAddress').value = '';
+    document.getElementById('residentialAddress').value = '';
+    document.getElementById('nextOfKinName').value = '';
+    document.getElementById('nextOfKinRelationship').value = '';
+    document.getElementById('nextOfKinPhone').value = '';
+    document.getElementById('tradingName').value = '';
+    
+    // Reset photos
+    formData.idFront = null;
+    formData.idBack = null;
+    formData.agentPhoto = null;
+    
+    // Show upload areas, hide previews
+    document.getElementById('idFrontUpload').classList.remove('hidden');
+    document.getElementById('idFrontPreview').classList.add('hidden');
+    document.getElementById('idBackUpload').classList.remove('hidden');
+    document.getElementById('idBackPreview').classList.add('hidden');
+    document.getElementById('agentPhotoUpload').classList.remove('hidden');
+    document.getElementById('agentPhotoPreview').classList.add('hidden');
+    
+    // Reset file inputs
+    document.getElementById('idFrontInput').value = '';
+    document.getElementById('idBackInput').value = '';
+    document.getElementById('agentPhotoInput').value = '';
+    
+    // Reset submit button
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
+    
+    // Re-initialize date field
+    initializeForm();
+}
     </script>
 </body>
 </html>

@@ -1143,16 +1143,6 @@
                     <button class="action-btn verify-btn refresh-btn" onclick="loadAgentData()">
                         <i class="fas fa-sync-alt"></i> Refresh Data
                     </button>
-                    <!-- ADD THIS BUTTON -->
-        <button class="action-btn email-btn" onclick="setAgentPassword()" style="margin-left: 10px;">
-            <i class="fas fa-key"></i> Set Agent Password
-        </button>
-        <button class="action-btn view-btn" onclick="viewAgentPassword()" style="margin-left: 10px;">
-    <i class="fas fa-eye"></i> View Password
-</button>
-<button class="action-btn delete-btn" onclick="resetAgentPassword()" style="margin-left: 10px;">
-    <i class="fas fa-trash"></i> Reset Password
-</button>
                 </div>
             </div>
             
@@ -1460,97 +1450,6 @@
             
             return JSON.parse(jsonContent);
         }
-
-        // ==================== AGENT PASSWORD MANAGEMENT ====================
-
-// Set password for field agents
-async function setAgentPassword() {
-    const password = prompt('Enter a password for field agents to use for authentication:');
-    
-    if (!password || password.trim() === '') {
-        alert('Password cannot be empty.');
-        return;
-    }
-    
-    if (password.length < 4) {
-        alert('Password must be at least 4 characters long.');
-        return;
-    }
-    
-    // Confirm password
-    const confirmPassword = prompt('Confirm the password:');
-    
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
-    }
-    
-    // Create hash using SHA-256
-    try {
-        // Encode the password
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        
-        // Hash it using Web Crypto API
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        
-        // Convert to hex string
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        // Store the hash
-        localStorage.setItem('agentPasswordHash', hashHex);
-        
-        // Also store a version for the field agents (they'll use this to verify)
-        localStorage.setItem('agentPassword', password);
-        
-        alert('✅ Agent password has been set successfully!\n\nShare this password with your field agents.\n\nPassword: ' + password);
-        
-    } catch (error) {
-        console.error('Error hashing password:', error);
-        
-        // Fallback to simple base64 encoding if crypto API fails
-        const simpleHash = btoa(password).split('').reverse().join('');
-        localStorage.setItem('agentPasswordHash', simpleHash);
-        localStorage.setItem('agentPassword', password);
-        
-        alert('✅ Agent password has been set successfully!\n\nShare this password with your field agents.\n\nPassword: ' + password);
-    }
-}
-
-// View current agent password (admin only)
-function viewAgentPassword() {
-    const storedPassword = localStorage.getItem('agentPassword');
-    
-    if (!storedPassword) {
-        alert('No agent password has been set yet.\n\nClick "Set Agent Password" to create one.');
-        return;
-    }
-    
-    const confirmView = confirm('Current agent password is: ' + storedPassword + 
-                               '\n\nDo you want to copy this to clipboard?');
-    
-    if (confirmView) {
-        navigator.clipboard.writeText(storedPassword).then(() => {
-            alert('Password copied to clipboard!');
-        }).catch(() => {
-            // Fallback if clipboard API fails
-            prompt('Copy this password:', storedPassword);
-        });
-    }
-}
-
-// Reset agent password
-function resetAgentPassword() {
-    const confirmReset = confirm('Are you sure you want to reset the agent password?\n\n' +
-                               'All field agents will need to re-authenticate with the new password.');
-    
-    if (confirmReset) {
-        localStorage.removeItem('agentPasswordHash');
-        localStorage.removeItem('agentPassword');
-        alert('Agent password has been reset.');
-    }
-}
         
         // Update dashboard statistics
         function updateDashboard() {

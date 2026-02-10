@@ -1,0 +1,27 @@
+{
+  "agents": [
+    {
+      "id": "AGENT-1770287281054-671",
+      "fullName": "Kyeswa Shakimu",
+      "personalNumber": "0789096592",
+      "email": "kyeswashakimu@gmail.com",
+      "nationalId": "CM0502610A8MRJ",
+      "dob": "2005-08-02",
+      "gender": "male",
+      "businessAddress": "Mbale",
+      "residentialAddress": "Musoto",
+      "nextOfKinName": "Namubi Naume",
+      "nextOfKinRelationship": "parent",
+      "nextOfKinPhone": "+256700870643",
+      "tradingName": "Kyeswa shakimu 0789096592",
+      "submissionDate": "2026-02-05T10:28:01.058Z",
+      "status": "verified",
+      "emailVerified": false,
+      "adminVerified": false,
+      "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_idFront_1770287281086.jpg",
+      "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_idBack_1770287283846.jpg",
+      "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_agentPhoto_1770287286001.jpg"
+    }
+  ],
+  "lastUpdated": "2026-02-10T13:59:44.560Z"
+}
