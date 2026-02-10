@@ -1,0 +1,18 @@
+{
+  "security": {
+    "agentPasswordHash": "3097d8d780e49768731a94f97d34c76b157e193c969d6230bb8144cce37aed16",
+    "passwordSetAt": "2026-02-10T18:46:51.795Z",
+    "passwordSetBy": "admin"
+  },
+  "github": {
+    "repoOwner": "BarasaGodwilTech",
+    "repoName": "Ezee-money",
+    "branchName": "main",
+    "imagesFolder": "images"
+  },
+  "system": {
+    "appName": "Ezee Money Agent Registration",
+    "version": "1.0.0",
+    "requiresAuthentication": true
+  }
+}
