@@ -1,7 +1,7 @@
 {
   "security": {
-    "agentPasswordHash": "3097d8d780e49768731a94f97d34c76b157e193c969d6230bb8144cce37aed16",
-    "passwordSetAt": "2026-02-10T18:46:51.795Z",
+    "agentPasswordHash": "4228f5127aae2e261db61f139fbbef2f5048f51045dcac350aa345b1d69d7fcc",
+    "passwordSetAt": "2026-02-10T19:03:11.925Z",
     "passwordSetBy": "admin"
   },
   "github": {
