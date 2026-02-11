@@ -2756,5 +2756,572 @@ if (typeof createSHA256Hash !== 'function') {
 
 console.log('✅ Password management functions fixed!');
     </script>
+    <!-- ============ FIELD AGENT TRACKING + NOTIFICATIONS + DELETE FUNCTION ============ -->
+<script>
+// ==================== FIELD AGENT TRACKING ====================
+// Track active field agents and their activity
+let activeFieldAgents = [];
+let lastCheckTime = Date.now();
+
+// Load active agents from localStorage
+function loadActiveAgents() {
+    const stored = localStorage.getItem('activeFieldAgents');
+    if (stored) {
+        activeFieldAgents = JSON.parse(stored);
+    }
+    renderActiveAgentsPanel();
+}
+
+// Save active agents
+function saveActiveAgents() {
+    localStorage.setItem('activeFieldAgents', JSON.stringify(activeFieldAgents));
+}
+
+// Add or update field agent activity
+function trackFieldAgent(agentName, agentPhone, action = 'authenticated') {
+    const existing = activeFieldAgents.find(a => a.phone === agentPhone);
+    const now = new Date().toISOString();
+    
+    if (existing) {
+        existing.lastActive = now;
+        existing.lastAction = action;
+        existing.sessionCount = (existing.sessionCount || 0) + 1;
+    } else {
+        activeFieldAgents.push({
+            name: agentName,
+            phone: agentPhone,
+            firstSeen: now,
+            lastActive: now,
+            lastAction: action,
+            sessionCount: 1,
+            submissions: 0
+        });
+    }
+    
+    saveActiveAgents();
+    renderActiveAgentsPanel();
+}
+
+// Update agent submission count
+function incrementAgentSubmissions(agentPhone) {
+    const agent = activeFieldAgents.find(a => a.phone === agentPhone);
+    if (agent) {
+        agent.submissions = (agent.submissions || 0) + 1;
+        agent.lastAction = 'submitted new agent';
+        agent.lastActive = new Date().toISOString();
+        saveActiveAgents();
+        renderActiveAgentsPanel();
+    }
+}
+
+// Render active agents panel in admin dashboard
+function renderActiveAgentsPanel() {
+    // Check if panel already exists
+    let panel = document.getElementById('activeAgentsPanel');
+    
+    if (!panel) {
+        // Create panel
+        panel = document.createElement('div');
+        panel.id = 'activeAgentsPanel';
+        panel.className = 'card';
+        panel.style.marginTop = '20px';
+        panel.style.padding = '20px';
+        panel.style.borderLeft = '4px solid #2a5298';
+        
+        // Insert after stats cards
+        const statsSection = document.querySelector('.stats-cards');
+        if (statsSection) {
+            statsSection.parentNode.insertBefore(panel, statsSection.nextSibling);
+        }
+    }
+    
+    // Sort agents by last active (newest first)
+    const sortedAgents = [...activeFieldAgents].sort((a, b) => 
+        new Date(b.lastActive) - new Date(a.lastActive)
+    );
+    
+    // Count active in last 24 hours
+    const activeToday = sortedAgents.filter(a => {
+        const last = new Date(a.lastActive);
+        const today = new Date();
+        return last.toDateString() === today.toDateString();
+    }).length;
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: #1e3c72; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-users" style="color: #2a5298;"></i> 
+                Field Team Activity
+                <span style="background: #2a5298; color: white; padding: 3px 10px; border-radius: 20px; font-size: 14px;">
+                    ${activeToday} Active Today
+                </span>
+            </h3>
+            <button onclick="refreshActiveAgents()" class="action-btn view-btn" style="padding: 5px 15px;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    `;
+    
+    if (sortedAgents.length === 0) {
+        html += `
+            <div style="text-align: center; padding: 30px; color: #666;">
+                <i class="fas fa-user-slash" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                <p>No field agents have logged in yet.</p>
+                <p style="font-size: 13px; margin-top: 5px;">Agents will appear here when they authenticate.</p>
+            </div>
+        `;
+    } else {
+        html += `<div style="overflow-x: auto;"><table style="width: 100%;">`;
+        html += `
+            <thead>
+                <tr>
+                    <th>Agent Name</th>
+                    <th>Phone</th>
+                    <th>Last Active</th>
+                    <th>Last Action</th>
+                    <th>Submissions</th>
+                    <th>Sessions</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        sortedAgents.forEach(agent => {
+            const lastActive = new Date(agent.lastActive);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - lastActive) / (1000 * 60));
+            
+            let status = '';
+            let statusColor = '';
+            
+            if (diffMinutes < 5) {
+                status = '🟢 Online';
+                statusColor = '#28a745';
+            } else if (diffMinutes < 60) {
+                status = '🟡 Away (' + diffMinutes + ' min)';
+                statusColor = '#ffc107';
+            } else {
+                status = '⚫ Offline';
+                statusColor = '#6c757d';
+            }
+            
+            const lastActiveFormatted = lastActive.toLocaleString('en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            
+            html += `
+                <tr>
+                    <td><strong>${agent.name}</strong></td>
+                    <td>${agent.phone}</td>
+                    <td>${lastActiveFormatted}</td>
+                    <td>${agent.lastAction || 'Authenticated'}</td>
+                    <td style="text-align: center;"><span style="background: #2a5298; color: white; padding: 3px 10px; border-radius: 20px;">${agent.submissions || 0}</span></td>
+                    <td style="text-align: center;">${agent.sessionCount || 1}</td>
+                    <td><span style="color: ${statusColor};">${status}</span></td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody></table></div>`;
+        html += `<p style="margin-top: 15px; font-size: 12px; color: #666; text-align: right;">
+            <i class="fas fa-info-circle"></i> Last updated: ${new Date().toLocaleTimeString()}
+        </p>`;
+    }
+    
+    panel.innerHTML = html;
+}
+
+// Refresh active agents
+function refreshActiveAgents() {
+    renderActiveAgentsPanel();
+}
+
+// ==================== REAL-TIME NOTIFICATIONS ====================
+// Check for new agent submissions every 10 seconds
+let lastSubmissionCount = 0;
+let notificationSound = null;
+let notificationPermission = false;
+
+// Initialize notifications
+async function initNotifications() {
+    if ('Notification' in window) {
+        notificationPermission = Notification.permission === 'granted';
+        
+        if (Notification.permission === 'default') {
+            const permission = await Notification.requestPermission();
+            notificationPermission = permission === 'granted';
+        }
+        
+        if (notificationPermission) {
+            console.log('✅ Desktop notifications enabled');
+        }
+    }
+}
+
+// Show notification
+function showNotification(title, body, agentData = null) {
+    // Desktop notification
+    if (notificationPermission) {
+        new Notification(title, {
+            body: body,
+            icon: 'https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/favicon.ico'
+        });
+    }
+    
+    // In-app notification
+    showInAppNotification(title, body, agentData);
+}
+
+// Create in-app notification system
+function showInAppNotification(title, message, agentData) {
+    let notificationArea = document.getElementById('notificationArea');
+    
+    if (!notificationArea) {
+        notificationArea = document.createElement('div');
+        notificationArea.id = 'notificationArea';
+        notificationArea.style.position = 'fixed';
+        notificationArea.style.top = '20px';
+        notificationArea.style.right = '20px';
+        notificationArea.style.zIndex = '9999';
+        notificationArea.style.maxWidth = '350px';
+        document.body.appendChild(notificationArea);
+    }
+    
+    const notificationId = 'notif-' + Date.now();
+    const notification = document.createElement('div');
+    notification.id = notificationId;
+    notification.style.backgroundColor = '#d4edda';
+    notification.style.color = '#155724';
+    notification.style.border = '1px solid #c3e6cb';
+    notification.style.borderRadius = '8px';
+    notification.style.padding = '15px';
+    notification.style.marginBottom = '10px';
+    notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+    notification.style.animation = 'slideIn 0.3s ease';
+    notification.style.cursor = 'pointer';
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-plus" style="font-size: 24px; color: #28a745;"></i>
+            <div style="flex: 1;">
+                <strong style="font-size: 16px;">${title}</strong>
+                <p style="margin: 5px 0 0; font-size: 14px;">${message}</p>
+                ${agentData ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #c3e6cb;">
+                        <small>
+                            📋 ${agentData.fullName}<br>
+                            📧 ${agentData.email}<br>
+                            📱 ${agentData.personalNumber}
+                        </small>
+                    </div>
+                ` : ''}
+            </div>
+            <button onclick="document.getElementById('${notificationId}').remove()" style="background: none; border: none; color: #155724; font-size: 18px; cursor: pointer;">&times;</button>
+        </div>
+    `;
+    
+    notification.onclick = function(e) {
+        if (!e.target.closest('button')) {
+            // Navigate to agents section and highlight the new agent
+            showSection('agents');
+            if (agentData && agentData.id) {
+                setTimeout(() => viewAgent(agentData.id), 500);
+            }
+            this.remove();
+        }
+    };
+    
+    notificationArea.appendChild(notification);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        const el = document.getElementById(notificationId);
+        if (el) el.remove();
+    }, 10000);
+}
+
+// Check for new submissions
+async function checkForNewSubmissions() {
+    if (!githubConfig.repoOwner || !githubConfig.repoName) return;
+    
+    try {
+        const data = await fetchGitHubData();
+        const currentCount = data.agents?.length || 0;
+        
+        if (lastSubmissionCount === 0) {
+            lastSubmissionCount = currentCount;
+            return;
+        }
+        
+        if (currentCount > lastSubmissionCount) {
+            // New submission detected!
+            const newAgents = data.agents.slice(lastSubmissionCount - currentCount);
+            const newAgent = newAgents[0]; // Most recent
+            
+            // Find which field agent submitted it
+            const fieldAgent = activeFieldAgents.find(a => 
+                newAgent.tradingName && newAgent.tradingName.includes(a.phone)
+            );
+            
+            if (fieldAgent) {
+                incrementAgentSubmissions(fieldAgent.phone);
+            }
+            
+            // Show notification
+            showNotification(
+                '🚀 New Agent Registered!',
+                `${newAgent.fullName} just registered as an agent`,
+                newAgent
+            );
+            
+            // Play sound
+            playNotificationSound();
+        }
+        
+        lastSubmissionCount = currentCount;
+        
+    } catch (error) {
+        console.error('Error checking submissions:', error);
+    }
+}
+
+// Play notification sound
+function playNotificationSound() {
+    try {
+        const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('Sound play failed:', e));
+    } catch (e) {
+        console.log('Sound not supported');
+    }
+}
+
+// ==================== DELETE AGENT FUNCTION ====================
+// Complete deletion of agent and their images
+async function deleteAgent(agentId) {
+    const agent = agents.find(a => a.id === agentId);
+    
+    if (!agent) {
+        alert('Agent not found!');
+        return;
+    }
+    
+    const confirmDelete = confirm(`⚠️ WARNING: This will permanently delete:\n\n` +
+        `📋 Agent: ${agent.fullName}\n` +
+        `📧 Email: ${agent.email}\n` +
+        `🖼️ All uploaded images (ID Front, ID Back, Agent Photo)\n\n` +
+        `This action CANNOT be undone!\n\n` +
+        `Are you absolutely sure?`);
+    
+    if (!confirmDelete) return;
+    
+    // Double confirm
+    const secondConfirm = prompt(`Type "DELETE" to confirm permanent deletion of ${agent.fullName}:`);
+    
+    if (secondConfirm !== 'DELETE') {
+        alert('Deletion cancelled.');
+        return;
+    }
+    
+    // Show loading
+    const deleteBtn = event?.target;
+    const originalText = deleteBtn?.innerHTML;
+    if (deleteBtn) {
+        deleteBtn.innerHTML = '<span class="loading"></span> Deleting...';
+        deleteBtn.disabled = true;
+    }
+    
+    try {
+        // Step 1: Delete images from GitHub
+        if (githubConfig.accessToken) {
+            const imageUrls = [
+                agent.idFrontUrl,
+                agent.idBackUrl,
+                agent.agentPhotoUrl
+            ].filter(url => url && url.includes('raw.githubusercontent.com'));
+            
+            for (const url of imageUrls) {
+                try {
+                    await deleteImageFromGitHub(url);
+                    console.log('✅ Deleted image:', url);
+                } catch (error) {
+                    console.warn('Failed to delete image:', url, error);
+                }
+            }
+        }
+        
+        // Step 2: Remove agent from data.json
+        const agentIndex = agents.findIndex(a => a.id === agentId);
+        if (agentIndex !== -1) {
+            agents.splice(agentIndex, 1);
+        }
+        
+        if (dataJson && dataJson.agents) {
+            const dataIndex = dataJson.agents.findIndex(a => a.id === agentId);
+            if (dataIndex !== -1) {
+                dataJson.agents.splice(dataIndex, 1);
+                dataJson.lastUpdated = new Date().toISOString();
+            }
+        }
+        
+        // Step 3: Save updated data.json to GitHub
+        if (githubConfig.accessToken) {
+            await saveDataToGitHub(dataJson || { agents: agents, lastUpdated: new Date().toISOString() });
+        }
+        
+        // Step 4: Save to localStorage
+        localStorage.setItem('dataJson', JSON.stringify(dataJson));
+        
+        // Step 5: Update UI
+        updateDashboard();
+        renderRecentAgents();
+        renderAllAgents();
+        
+        // Close modal if open
+        agentModal.style.display = 'none';
+        
+        alert(`✅ Agent ${agent.fullName} has been permanently deleted along with all images.`);
+        
+    } catch (error) {
+        console.error('Deletion error:', error);
+        alert('Error deleting agent: ' + error.message);
+    } finally {
+        if (deleteBtn) {
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        }
+    }
+}
+
+// Delete single image from GitHub
+async function deleteImageFromGitHub(imageUrl) {
+    if (!imageUrl || !githubConfig.accessToken) return;
+    
+    // Extract filepath from URL
+    const urlParts = imageUrl.split('/');
+    const filename = urlParts.pop();
+    const branch = urlParts.pop();
+    const repoPath = urlParts.slice(-2).join('/');
+    const filepath = `images/${filename}`;
+    
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${githubConfig.accessToken}`
+    };
+    
+    // Get file SHA first
+    let sha = null;
+    try {
+        const fileInfo = await fetch(apiUrl, { headers });
+        if (fileInfo.ok) {
+            const fileData = await fileInfo.json();
+            sha = fileData.sha;
+        }
+    } catch (error) {
+        // File doesn't exist
+        return;
+    }
+    
+    if (sha) {
+        const body = {
+            message: `Delete image: ${filename}`,
+            sha: sha,
+            branch: githubConfig.branchName
+        };
+        
+        const response = await fetch(apiUrl, {
+            method: 'DELETE',
+            headers: headers,
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to delete image: ${response.statusText}`);
+        }
+    }
+}
+
+// ==================== ADD DELETE BUTTON TO AGENT VIEW ====================
+// Override viewAgent to include delete button
+const originalViewAgent = window.viewAgent;
+window.viewAgent = function(agentId) {
+    // Call original viewAgent first
+    originalViewAgent(agentId);
+    
+    // Add delete button to modal
+    setTimeout(() => {
+        const modalBody = document.getElementById('agentModalBody');
+        const verificationPanel = modalBody.querySelector('.verification-panel');
+        
+        const deleteButtonHTML = `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ffebee;">
+                <button onclick="deleteAgent('${agentId}')" 
+                        style="background-color: #d32f2f; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;">
+                    <i class="fas fa-trash"></i> Permanently Delete Agent
+                </button>
+                <p style="color: #d32f2f; font-size: 12px; margin-top: 8px;">
+                    <i class="fas fa-exclamation-triangle"></i> Warning: This will delete all data and images. Cannot be undone.
+                </p>
+            </div>
+        `;
+        
+        if (verificationPanel) {
+            verificationPanel.insertAdjacentHTML('afterend', deleteButtonHTML);
+        } else {
+            modalBody.insertAdjacentHTML('beforeend', deleteButtonHTML);
+        }
+    }, 100);
+};
+
+// ==================== INITIALIZATION ====================
+// Start everything when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize notifications
+    initNotifications();
+    
+    // Load active agents
+    loadActiveAgents();
+    
+    // Get initial submission count
+    setTimeout(async () => {
+        if (githubConfig.repoOwner && githubConfig.repoName) {
+            try {
+                const data = await fetchGitHubData();
+                lastSubmissionCount = data.agents?.length || 0;
+                console.log('📊 Initial submission count:', lastSubmissionCount);
+            } catch (e) {
+                console.log('Waiting for data...');
+            }
+        }
+    }, 2000);
+    
+    // Check for new submissions every 10 seconds
+    setInterval(checkForNewSubmissions, 10000);
+    
+    // Refresh active agents every 30 seconds
+    setInterval(refreshActiveAgents, 30000);
+    
+    // Listen for field agent activity (via localStorage events)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'activeFieldAgents' || e.key === 'agentAuth') {
+            loadActiveAgents();
+        }
+    });
+});
+
+// Expose functions globally
+window.trackFieldAgent = trackFieldAgent;
+window.incrementAgentSubmissions = incrementAgentSubmissions;
+window.deleteAgent = deleteAgent;
+window.refreshActiveAgents = refreshActiveAgents;
+
+console.log('✅ Field Agent Tracking + Notifications + Delete Function installed!');
+</script>
+
+<!-- Add CSS
 </body>
 </html>
