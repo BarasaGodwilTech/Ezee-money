@@ -2623,5 +2623,138 @@ setInterval(() => {
 }, 4000);
     
     </script>
+    <script>
+// ==================== FIXED PASSWORD MANAGEMENT ====================
+// Override the broken viewPassword and resetPassword functions
+
+// Fix 1: View Password - Show the actual password from config.json
+async function viewAgentPassword() {
+    try {
+        if (!githubConfig.repoOwner || !githubConfig.repoName) {
+            alert('Please configure GitHub settings first.');
+            return;
+        }
+        
+        // Show loading
+        alert('Fetching current password from GitHub...');
+        
+        // Fetch the config file from GitHub
+        const configData = await fetchConfigFromGitHub();
+        
+        if (!configData || !configData.security || !configData.security.agentPasswordHash) {
+            alert('No password has been set yet.\n\nClick "Set Agent Password" to create one.');
+            return;
+        }
+        
+        // Since we can't reverse the hash, we need to ask admin if they remember it
+        // This is more secure than storing plain text password
+        const checkPassword = prompt('For security, we cannot retrieve the actual password.\n\n' +
+                                   'To verify the current password, enter it below:');
+        
+        if (checkPassword) {
+            const hash = await createSHA256Hash(checkPassword);
+            if (hash === configData.security.agentPasswordHash) {
+                alert('✅ Password is correct: ' + checkPassword + '\n\nMake note of this password for field agents.');
+            } else {
+                alert('❌ Incorrect password. The stored password is different.');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error viewing password:', error);
+        alert('Error fetching password: ' + error.message);
+    }
+}
+
+// Fix 2: Reset Password - Actually remove from GitHub, not localStorage
+async function resetAgentPassword() {
+    const confirmReset = confirm('⚠️ WARNING: This will completely remove the agent password!\n\n' +
+                               'All field agents will be locked out and must authenticate with a new password.\n\n' +
+                               'Are you absolutely sure?');
+    
+    if (!confirmReset) {
+        return;
+    }
+    
+    try {
+        if (!githubConfig.repoOwner || !githubConfig.repoName || !githubConfig.accessToken) {
+            alert('GitHub access token required. Please configure in settings.');
+            return;
+        }
+        
+        // Show loading
+        alert('Removing password from GitHub...');
+        
+        // Fetch current config
+        let configData;
+        try {
+            configData = await fetchConfigFromGitHub();
+        } catch (error) {
+            configData = {};
+        }
+        
+        // Remove password hash
+        if (configData.security) {
+            delete configData.security.agentPasswordHash;
+            configData.security.passwordResetAt = new Date().toISOString();
+            configData.security.passwordResetBy = 'admin';
+        }
+        
+        // Save back to GitHub
+        await saveConfigToGitHub(configData);
+        
+        // Also clear any local storage
+        localStorage.removeItem('agentPasswordHash');
+        
+        alert('✅ Password has been successfully reset.\n\n' +
+              'Field agents can no longer authenticate.\n' +
+              'Set a new password using the "Set Agent Password" button.');
+        
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        alert('Error resetting password: ' + error.message);
+    }
+}
+
+// Helper function to fetch config from GitHub (duplicate of existing but ensure it works)
+async function fetchConfigFromGitHub() {
+    const filepath = `config.json`;
+    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
+    
+    const headers = {
+        'Accept': 'application/vnd.github.v3+json'
+    };
+    
+    if (githubConfig.accessToken) {
+        headers['Authorization'] = `token ${githubConfig.accessToken}`;
+    }
+    
+    const response = await fetch(apiUrl, { headers });
+    
+    if (!response.ok) {
+        if (response.status === 404) {
+            return { security: {}, github: {} };
+        }
+        throw new Error(`Failed to fetch config: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const jsonContent = decodeURIComponent(escape(atob(data.content)));
+    return JSON.parse(jsonContent);
+}
+
+// Ensure createSHA256Hash is available
+if (typeof createSHA256Hash !== 'function') {
+    window.createSHA256Hash = async function(text) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+}
+
+console.log('✅ Password management functions fixed!');
+    </script>
 </body>
 </html>
