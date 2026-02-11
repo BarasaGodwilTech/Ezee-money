@@ -1563,5 +1563,75 @@ autoFillAgentInfo = function() {
 
 console.log('✅ Persistent authentication enabled - Login lasts 7 days!');
     </script>
+    <!-- ============ FIELD AGENT TRACKING ============ -->
+<script>
+// Report activity to admin
+function reportActivity(action) {
+    try {
+        if (window.agentAuth && window.agentAuth.isAuthenticated) {
+            // Store activity in localStorage for admin to detect
+            const activity = {
+                name: window.agentAuth.agentName,
+                phone: window.agentAuth.agentPhone,
+                action: action,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            let activities = JSON.parse(localStorage.getItem('fieldAgentActivities') || '[]');
+            activities.push(activity);
+            // Keep last 50 activities
+            if (activities.length > 50) activities.shift();
+            localStorage.setItem('fieldAgentActivities', JSON.stringify(activities));
+            
+            // Also update active agents list
+            let activeAgents = JSON.parse(localStorage.getItem('activeFieldAgents') || '[]');
+            const existing = activeAgents.find(a => a.phone === window.agentAuth.agentPhone);
+            
+            if (existing) {
+                existing.lastActive = activity.timestamp;
+                existing.lastAction = action;
+            } else {
+                activeAgents.push({
+                    name: window.agentAuth.agentName,
+                    phone: window.agentAuth.agentPhone,
+                    firstSeen: activity.timestamp,
+                    lastActive: activity.timestamp,
+                    lastAction: action,
+                    sessionCount: 1,
+                    submissions: 0
+                });
+            }
+            
+            localStorage.setItem('activeFieldAgents', JSON.stringify(activeAgents));
+            
+            // Trigger storage event for admin page
+            window.dispatchEvent(new Event('storage'));
+        }
+    } catch (e) {
+        console.log('Error reporting activity:', e);
+    }
+}
+
+// Override handleSubmit to report submissions
+const originalHandleSubmit = window.handleSubmit;
+window.handleSubmit = async function() {
+    await originalHandleSubmit.apply(this, arguments);
+    if (window.agentAuth && window.agentAuth.isAuthenticated) {
+        reportActivity('submitted new agent');
+    }
+};
+
+// Report on authentication
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        if (window.agentAuth && window.agentAuth.isAuthenticated) {
+            reportActivity('authenticated');
+        }
+    }, 1000);
+});
+
+console.log('✅ Field agent activity tracking enabled');
+</script>
 </body>
 </html>
