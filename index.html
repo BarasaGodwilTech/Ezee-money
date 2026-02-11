@@ -1415,5 +1415,153 @@ function resetForm() {
     initializeForm();
 }
     </script>
+    <script>
+// ==================== FIXED PERSISTENT AUTHENTICATION ====================
+// This makes authentication persist across page refreshes
+
+// Override and enhance the authentication system
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for saved authentication on EVERY page load
+    restoreAuthentication();
+    
+    // Also check when page becomes visible (user returns to tab)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            restoreAuthentication();
+        }
+    });
+});
+
+// Restore authentication from localStorage
+function restoreAuthentication() {
+    try {
+        const savedAuth = localStorage.getItem('agentAuth');
+        const savedConfig = localStorage.getItem('agentGitHubConfig');
+        
+        if (savedAuth && savedConfig) {
+            const auth = JSON.parse(savedAuth);
+            
+            // Only restore if it was authenticated and not expired
+            if (auth.isAuthenticated && auth.timestamp) {
+                // Check if authentication is less than 7 days old
+                const authAge = Date.now() - auth.timestamp;
+                const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+                
+                if (authAge < maxAge) {
+                    // Restore authentication state
+                    agentAuth = auth;
+                    githubConfig = JSON.parse(savedConfig);
+                    
+                    // Update UI
+                    autoFillAgentInfo();
+                    
+                    // Hide config panel
+                    configPanel.style.display = 'none';
+                    
+                    console.log('✅ Authentication restored from ' + new Date(auth.timestamp).toLocaleString());
+                } else {
+                    // Authentication expired, clear it
+                    console.log('Authentication expired, please login again');
+                    localStorage.removeItem('agentAuth');
+                    localStorage.removeItem('agentGitHubConfig');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error restoring authentication:', error);
+    }
+}
+
+// Override authenticateAgent to add timestamp
+const originalAuthenticateAgent = authenticateAgent;
+authenticateAgent = async function() {
+    const agentName = document.getElementById('agentName').value.trim();
+    const agentPhone = document.getElementById('agentPhone').value.trim();
+    const agentPassword = document.getElementById('agentPassword').value.trim();
+    
+    if (!agentName || !agentPhone || !agentPassword) {
+        alert('Please enter all authentication details.');
+        return;
+    }
+    
+    const authBtn = document.querySelector('.config-btn');
+    const originalText = authBtn.innerHTML;
+    authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+    authBtn.disabled = true;
+    
+    try {
+        await fetchAgentConfig(agentPassword);
+        
+        // Save authentication with TIMESTAMP for persistence
+        agentAuth = {
+            isAuthenticated: true,
+            agentName: agentName,
+            agentPhone: agentPhone,
+            agentPassword: agentPassword,
+            timestamp: Date.now() // Add timestamp for expiry checking
+        };
+        
+        localStorage.setItem('agentAuth', JSON.stringify(agentAuth));
+        
+        autoFillAgentInfo();
+        configPanel.style.display = 'none';
+        
+        alert('✅ Authentication successful! You will stay logged in for 7 days.');
+        
+    } catch (error) {
+        alert('Authentication failed: ' + error.message);
+    } finally {
+        authBtn.innerHTML = originalText;
+        authBtn.disabled = false;
+    }
+};
+
+// Override resetAuth to clear everything properly
+resetAuth = function() {
+    agentAuth = {
+        isAuthenticated: false,
+        agentName: '',
+        agentPhone: '',
+        agentPassword: '',
+        timestamp: null
+    };
+    
+    // Clear ALL auth-related storage
+    localStorage.removeItem('agentAuth');
+    localStorage.removeItem('agentGitHubConfig');
+    localStorage.removeItem('githubConfig'); // Also clear this to force fresh fetch
+    
+    document.getElementById('agentName').value = '';
+    document.getElementById('agentPhone').value = '';
+    document.getElementById('agentPassword').value = '';
+    
+    const tradingNameField = document.getElementById('tradingName');
+    tradingNameField.value = '';
+    tradingNameField.readOnly = false;
+    tradingNameField.style.backgroundColor = '';
+    
+    alert('✅ Authentication reset. You have been logged out.');
+};
+
+// Fix autoFillAgentInfo to work with restored auth
+const originalAutoFill = autoFillAgentInfo;
+autoFillAgentInfo = function() {
+    if (agentAuth && agentAuth.isAuthenticated && agentAuth.agentName && agentAuth.agentPhone) {
+        const tradingNameField = document.getElementById('tradingName');
+        tradingNameField.value = `${agentAuth.agentName} ${agentAuth.agentPhone}`;
+        tradingNameField.readOnly = true;
+        tradingNameField.style.backgroundColor = '#f5f5f5';
+        console.log('✅ Auto-filled agent info from saved session');
+    }
+};
+
+// Make sure auth persists on page refresh by running immediately
+(function() {
+    // Try to restore on script load
+    setTimeout(restoreAuthentication, 100);
+})();
+
+console.log('✅ Persistent authentication enabled - Login lasts 7 days!');
+    </script>
 </body>
 </html>
