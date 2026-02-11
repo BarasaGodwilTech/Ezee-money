@@ -1,8 +1,9 @@
 {
   "security": {
-    "agentPasswordHash": "4228f5127aae2e261db61f139fbbef2f5048f51045dcac350aa345b1d69d7fcc",
     "passwordSetAt": "2026-02-10T19:03:11.925Z",
-    "passwordSetBy": "admin"
+    "passwordSetBy": "admin",
+    "passwordResetAt": "2026-02-11T14:43:29.873Z",
+    "passwordResetBy": "admin"
   },
   "github": {
     "repoOwner": "BarasaGodwilTech",
