@@ -2786,5 +2786,343 @@ console.log('✅ Auto-logout on password change ENABLED');
     console.log('📌 Field agents will now receive admin GitHub token automatically');
 })();
 </script>
+    <!-- ============ UNIVERSAL AUTHENTICATION - WORKS ON ALL DEVICES ============ -->
+<script>
+(function() {
+    console.log('🔥 INSTALLING UNIVERSAL AUTHENTICATION');
+    
+    // ===========================================
+    // COMPLETE AUTHENTICATION - WORKS ON ANY DEVICE
+    // ===========================================
+    
+    window.authenticateAgent = async function() {
+        const agentName = document.getElementById('agentName').value.trim();
+        const agentPhone = document.getElementById('agentPhone').value.trim();
+        const agentPassword = document.getElementById('agentPassword').value.trim();
+        
+        if (!agentName || !agentPhone || !agentPassword) {
+            alert('Please enter all authentication details.');
+            return;
+        }
+        
+        const authBtn = document.querySelector('.config-btn');
+        const originalText = authBtn.innerHTML;
+        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+        authBtn.disabled = true;
+        
+        try {
+            // ===== STEP 1: FETCH CONFIG DIRECTLY FROM GITHUB =====
+            // This works on ANY device because it's public!
+            
+            // First, we need the repo info - try multiple sources
+            let repoOwner = 'BarasaGodwilTech';
+            let repoName = 'Ezee-money';
+            let branchName = 'main';
+            
+            // Try to get from admin's config (if this device has it)
+            const adminConfig = localStorage.getItem('githubConfig');
+            if (adminConfig) {
+                const config = JSON.parse(adminConfig);
+                repoOwner = config.repoOwner || repoOwner;
+                repoName = config.repoName || repoName;
+                branchName = config.branchName || branchName;
+            }
+            
+            // ===== STEP 2: FETCH config.json FROM GITHUB =====
+            // This is PUBLIC - no token needed to READ
+            const configUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/config.json?ref=${branchName}`;
+            
+            console.log('📡 Fetching config from:', configUrl);
+            
+            const configResponse = await fetch(configUrl, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            
+            if (!configResponse.ok) {
+                if (configResponse.status === 404) {
+                    throw new Error('System not configured. Please contact admin.');
+                }
+                throw new Error('Cannot access configuration. Status: ' + configResponse.status);
+            }
+            
+            const configData = await configResponse.json();
+            const configContent = JSON.parse(decodeURIComponent(escape(atob(configData.content))));
+            
+            // ===== STEP 3: VERIFY PASSWORD =====
+            if (!configContent.security || !configContent.security.agentPasswordHash) {
+                throw new Error('Password not set. Please contact admin.');
+            }
+            
+            const inputHash = await window.createSHA256Hash(agentPassword);
+            if (inputHash !== configContent.security.agentPasswordHash) {
+                throw new Error('Invalid password.');
+            }
+            
+            // ===== STEP 4: GET GITHUB CONFIG FROM THE SAME FILE =====
+            // This contains the repo details needed for uploads
+            if (!configContent.github) {
+                throw new Error('GitHub configuration missing. Please contact admin.');
+            }
+            
+            // ===== STEP 5: NOW GET THE ACCESS TOKEN =====
+            // This is the tricky part - we need the token from admin's localStorage
+            // But if this is a different device, admin's localStorage isn't available
+            
+            let accessToken = '';
+            
+            // Try to get from this device's localStorage (if admin configured here)
+            const localAdminConfig = localStorage.getItem('githubConfig');
+            if (localAdminConfig) {
+                const config = JSON.parse(localAdminConfig);
+                accessToken = config.accessToken || '';
+            }
+            
+            // If no token, we need to handle this gracefully
+            if (!accessToken) {
+                // Show warning but continue - maybe repo is public?
+                console.warn('⚠️ No GitHub access token found. Image upload may fail if repo is private.');
+            }
+            
+            // ===== STEP 6: SETUP GITHUB CONFIG =====
+            window.githubConfig = {
+                repoOwner: configContent.github.repoOwner || repoOwner,
+                repoName: configContent.github.repoName || repoName,
+                branchName: configContent.github.branchName || branchName,
+                accessToken: accessToken, // May be empty on new devices
+                imagesSubfolder: configContent.github.imagesFolder || 'images'
+            };
+            
+            // ===== STEP 7: SAVE AUTHENTICATION =====
+            const now = Date.now();
+            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
+            
+            const authData = {
+                isAuthenticated: true,
+                agentName: agentName,
+                agentPhone: agentPhone,
+                timestamp: now,
+                expiry: expiryDate,
+                version: '5.0',
+                repoOwner: window.githubConfig.repoOwner,
+                repoName: window.githubConfig.repoName,
+                branchName: window.githubConfig.branchName
+            };
+            
+            localStorage.setItem('agentAuth', JSON.stringify(authData));
+            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
+            
+            // ===== STEP 8: UPDATE UI =====
+            window.agentAuth = authData;
+            
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField) {
+                tradingNameField.value = `${agentName} ${agentPhone}`;
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            
+            // ===== STEP 9: SHOW SUCCESS =====
+            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            
+            let message = `✅ LOGIN SUCCESSFUL!\n\n` +
+                         `📱 Agent: ${agentName}\n` +
+                         `📞 Phone: ${agentPhone}\n` +
+                         `📅 Session expires: ${expiryDateFormatted}\n\n`;
+            
+            if (accessToken) {
+                message += `🔑 GitHub token: ✓ LOADED\n📤 You can upload images.`;
+            } else {
+                message += `⚠️ GitHub token: NOT FOUND\n📤 Image upload may fail.\n\n` +
+                          `👉 Ask admin to log in on THIS device once to transfer the token.`;
+            }
+            
+            alert(message);
+            
+            // Report activity
+            try {
+                window.reportActivity('authenticated');
+            } catch(e) {}
+            
+        } catch (error) {
+            console.error('Authentication error:', error);
+            alert('❌ Authentication failed: ' + error.message);
+        } finally {
+            authBtn.innerHTML = originalText;
+            authBtn.disabled = false;
+        }
+    };
+    
+    // ===========================================
+    // SESSION RESTORATION - WORKS ON ALL DEVICES
+    // ===========================================
+    
+    window.restoreAuthentication = function() {
+        try {
+            const savedAuth = localStorage.getItem('agentAuth');
+            const savedConfig = localStorage.getItem('agentGitHubConfig');
+            
+            if (!savedAuth || !savedConfig) return false;
+            
+            const auth = JSON.parse(savedAuth);
+            
+            if (auth.expiry && Date.now() > auth.expiry) {
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                return false;
+            }
+            
+            window.agentAuth = auth;
+            window.githubConfig = JSON.parse(savedConfig);
+            
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField && auth.agentName && auth.agentPhone) {
+                tradingNameField.value = `${auth.agentName} ${auth.agentPhone}`;
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            
+            const daysLeft = Math.floor((auth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
+            console.log(`✅ Session restored - ${daysLeft} days remaining`);
+            
+            return true;
+            
+        } catch (e) {
+            return false;
+        }
+    };
+    
+    // ===========================================
+    // CHECK SESSION RESET - WORKS ON ALL DEVICES
+    // ===========================================
+    
+    window.checkSessionReset = async function() {
+        try {
+            // Get repo info from saved auth
+            const savedAuth = localStorage.getItem('agentAuth');
+            if (!savedAuth) return false;
+            
+            const auth = JSON.parse(savedAuth);
+            if (!auth.repoOwner || !auth.repoName) return false;
+            
+            // Fetch config from GitHub (public, no token needed)
+            const configUrl = `https://api.github.com/repos/${auth.repoOwner}/${auth.repoName}/contents/config.json?ref=${auth.branchName || 'main'}`;
+            
+            const response = await fetch(configUrl, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            
+            if (!response.ok) return false;
+            
+            const data = await response.json();
+            const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+            
+            if (config.security && config.security.sessionResetAt) {
+                const resetTime = new Date(config.security.sessionResetAt).getTime();
+                const loginTime = auth.timestamp || 0;
+                
+                if (resetTime > loginTime) {
+                    localStorage.removeItem('agentAuth');
+                    localStorage.removeItem('agentGitHubConfig');
+                    alert('🔐 Admin changed the password. Please login again.');
+                    return true;
+                }
+            }
+        } catch (e) {}
+        
+        return false;
+    };
+    
+    // ===========================================
+    // FIX IMAGE UPLOAD - HANDLE MISSING TOKEN
+    // ===========================================
+    
+    const originalUploadImage = window.uploadImageToGitHub;
+    window.uploadImageToGitHub = async function(file, submissionId, imageType) {
+        if (!file) return '';
+        
+        const savedConfig = localStorage.getItem('agentGitHubConfig');
+        if (!savedConfig) {
+            throw new Error('Configuration not found. Please login again.');
+        }
+        
+        const config = JSON.parse(savedConfig);
+        
+        if (!config.accessToken) {
+            throw new Error('❌ GitHub access token missing!\n\nPlease ask the admin to log in on THIS device once to transfer the token.\n\nAlternative: Admin can make the repository public.');
+        }
+        
+        // Proceed with upload...
+        const timestamp = Date.now();
+        const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
+        const filepath = `images/${filename}`;
+        
+        const base64Content = await window.fileToBase64(file);
+        
+        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}`;
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${config.accessToken}`
+        };
+        
+        const body = {
+            message: `Upload ${imageType} image for agent ${submissionId}`,
+            content: base64Content.split(',')[1],
+            branch: config.branchName || 'main'
+        };
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+        }
+        
+        return `https://raw.githubusercontent.com/${config.repoOwner}/${config.repoName}/${config.branchName || 'main'}/images/${filename}`;
+    };
+    
+    // ===========================================
+    // CREATE SHA256 HASH
+    // ===========================================
+    
+    if (!window.createSHA256Hash) {
+        window.createSHA256Hash = async function(text) {
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                // Fallback
+                return btoa(text).split('').reverse().join('');
+            }
+        };
+    }
+    
+    // ===========================================
+    // RUN ON PAGE LOAD
+    // ===========================================
+    
+    setTimeout(() => {
+        window.restoreAuthentication();
+        window.checkSessionReset();
+    }, 10);
+    
+    console.log('✅ UNIVERSAL AUTHENTICATION INSTALLED');
+    console.log('📌 Works on ANY device - config fetched from GitHub');
+})();
+</script>
 </body>
 </html>
