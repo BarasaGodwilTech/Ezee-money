@@ -1,4 +1,10 @@
 {
+  "github": {
+    "repoOwner": "BarasaGodwilTech",
+    "repoName": "Ezee-money",
+    "branchName": "main",
+    "imagesFolder": "images"
+  },
   "security": {
     "agentPasswordHash": "19513fdc9da4fb72a4a05eb66917548d3c90ff94d5419e1f2363eea89dfee1dd",
     "passwordSetAt": "2026-02-12T05:39:31.099Z",
@@ -6,15 +12,10 @@
     "sessionResetAt": "2026-02-12T05:39:36.734Z",
     "sessionResetReason": "password_changed"
   },
-  "github": {
-    "repoOwner": "BarasaGodwilTech",
-    "repoName": "Ezee-money",
-    "branchName": "main",
-    "imagesFolder": "images"
-  },
   "system": {
     "appName": "Ezee Money Agent Registration",
     "version": "1.0.0",
-    "requiresAuthentication": true
+    "lastConfiguredBy": "admin",
+    "lastConfiguredAt": "2026-02-12T08:16:34.303Z"
   }
 }
