@@ -3654,6 +3654,391 @@ window.resetAgentPassword = async function() {
     console.log('✅ Admin token verification installed');
 })();
 </script>
+    <!-- ============ FINAL FIX - STORE CONFIG IN GITHUB ============ -->
+<script>
+(function() {
+    console.log('🔥 INSTALLING UNIVERSAL CONFIG STORAGE');
     
+    // ===========================================
+    // OVERRIDE SAVE GITHUB CONFIG - SAVE TO GITHUB
+    // ===========================================
+    
+    window.saveGitHubConfig = async function() {
+        const repoOwner = document.getElementById('repoOwner').value.trim();
+        const repoName = document.getElementById('repoName').value.trim();
+        const accessToken = document.getElementById('accessToken').value.trim();
+        const branchName = document.getElementById('branchName').value.trim() || 'main';
+        
+        if (!repoOwner || !repoName) {
+            alert('Please enter repository owner and name.');
+            return;
+        }
+        
+        if (!accessToken) {
+            alert('⚠️ ACCESS TOKEN IS REQUIRED!\n\nField agents cannot upload images without a token.');
+            return;
+        }
+        
+        // Save to localStorage (this device only)
+        const localConfig = {
+            repoOwner: repoOwner,
+            repoName: repoName,
+            accessToken: accessToken,
+            branchName: branchName
+        };
+        
+        localStorage.setItem('githubConfig', JSON.stringify(localConfig));
+        window.githubConfig = localConfig;
+        
+        // ===== CRITICAL: ALSO SAVE TO GITHUB =====
+        // This makes it available to ALL devices!
+        
+        try {
+            // Create or update config.json with GitHub settings
+            const configFile = {
+                github: {
+                    repoOwner: repoOwner,
+                    repoName: repoName,
+                    branchName: branchName,
+                    imagesFolder: 'images'
+                },
+                security: {},
+                system: {
+                    appName: "Ezee Money Agent Registration",
+                    version: "1.0.0",
+                    lastConfiguredBy: "admin",
+                    lastConfiguredAt: new Date().toISOString()
+                }
+            };
+            
+            // Try to get existing config to preserve password
+            try {
+                const existing = await window.fetchConfigFromGitHub();
+                if (existing && existing.security) {
+                    configFile.security = existing.security;
+                }
+            } catch (e) {
+                // No existing config, that's fine
+            }
+            
+            // Save to GitHub
+            const filepath = 'config.json';
+            const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filepath}`;
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${accessToken}`
+            };
+            
+            const jsonContent = JSON.stringify(configFile, null, 2);
+            const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+            
+            // Get SHA if file exists
+            let sha = null;
+            try {
+                const fileInfo = await fetch(apiUrl, { headers });
+                if (fileInfo.ok) {
+                    const fileData = await fileInfo.json();
+                    sha = fileData.sha;
+                }
+            } catch (e) {}
+            
+            const body = {
+                message: `Update GitHub configuration by admin`,
+                content: contentBase64,
+                branch: branchName
+            };
+            
+            if (sha) body.sha = sha;
+            
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(body)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+            }
+            
+            alert('✅ SUCCESS!\n\n✓ GitHub configuration saved to THIS device\n✓ Also saved to GitHub repository\n✓ ALL field agents can now authenticate from ANY device');
+            
+        } catch (error) {
+            console.error('Error saving to GitHub:', error);
+            alert('⚠️ Configuration saved locally but FAILED to save to GitHub.\n\nError: ' + error.message + '\n\nField agents on other devices will not be able to authenticate.');
+        }
+        
+        document.getElementById('configPanel').style.display = 'none';
+        
+        // Try to load data
+        setTimeout(() => {
+            if (typeof window.loadAgentData === 'function') {
+                window.loadAgentData();
+            }
+        }, 1000);
+    };
+    
+    // ===========================================
+    // OVERRIDE SET AGENT PASSWORD - SAVE TO GITHUB
+    // ===========================================
+    
+    const originalSetPassword = window.setAgentPassword;
+    window.setAgentPassword = async function() {
+        const password = prompt('Enter a password for field agents to use for authentication:');
+        
+        if (!password || password.length < 4) {
+            alert('Password must be at least 4 characters long.');
+            return;
+        }
+        
+        const confirmPassword = prompt('Confirm the password:');
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match.');
+            return;
+        }
+        
+        try {
+            if (!window.githubConfig || !window.githubConfig.accessToken) {
+                alert('❌ Please configure GitHub settings FIRST.\n\nClick the gear icon ⚙️ and save your GitHub configuration with an access token.');
+                return;
+            }
+            
+            // Create hash
+            const hash = await window.createSHA256Hash(password);
+            
+            // First, get existing config
+            let configData;
+            try {
+                configData = await window.fetchConfigFromGitHub();
+            } catch (e) {
+                configData = {};
+            }
+            
+            if (!configData.security) configData.security = {};
+            if (!configData.github) configData.github = {};
+            
+            // Update security settings
+            configData.security.agentPasswordHash = hash;
+            configData.security.passwordSetAt = new Date().toISOString();
+            configData.security.passwordSetBy = 'admin';
+            configData.security.sessionResetAt = new Date().toISOString(); // Force logout
+            configData.security.sessionResetReason = 'password_changed';
+            
+            // Ensure GitHub settings are preserved
+            configData.github.repoOwner = window.githubConfig.repoOwner;
+            configData.github.repoName = window.githubConfig.repoName;
+            configData.github.branchName = window.githubConfig.branchName;
+            configData.github.imagesFolder = 'images';
+            
+            // Save to GitHub
+            await window.saveConfigToGitHub(configData);
+            
+            alert(`✅ PASSWORD SET SUCCESSFULLY!\n\nPassword: ${password}\n\n✓ Saved to GitHub repository\n✓ ALL field agents can now login with this password\n✓ Previous sessions have been terminated`);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error setting password: ' + error.message);
+        }
+    };
+    
+    // ===========================================
+    // OVERRIDE RESET AGENT PASSWORD - DELETE FROM GITHUB
+    // ===========================================
+    
+    const originalResetPassword = window.resetAgentPassword;
+    window.resetAgentPassword = async function() {
+        const confirmReset = confirm('⚠️ WARNING: This will completely DELETE the agent password!\n\n' +
+                                   '✓ Password removed from GitHub\n' +
+                                   '✓ ALL field agents logged out immediately\n' +
+                                   '✓ No one can submit until you set a new password\n\n' +
+                                   'Are you absolutely sure?');
+        
+        if (!confirmReset) return;
+        
+        const secondConfirm = prompt('Type "DELETE PASSWORD" to confirm:');
+        if (secondConfirm !== 'DELETE PASSWORD') {
+            alert('Reset cancelled.');
+            return;
+        }
+        
+        try {
+            if (!window.githubConfig || !window.githubConfig.accessToken) {
+                alert('❌ GitHub access token required.');
+                return;
+            }
+            
+            // Fetch current config
+            let configData;
+            try {
+                configData = await window.fetchConfigFromGitHub();
+            } catch (e) {
+                configData = {};
+            }
+            
+            if (!configData.security) configData.security = {};
+            
+            // REMOVE the password hash
+            delete configData.security.agentPasswordHash;
+            
+            // Add session reset to log out all agents
+            configData.security.passwordResetAt = new Date().toISOString();
+            configData.security.passwordResetBy = 'admin';
+            configData.security.sessionResetAt = new Date().toISOString();
+            configData.security.sessionResetReason = 'password_deleted';
+            configData.security.passwordDeleted = true;
+            
+            // Save back to GitHub
+            await window.saveConfigToGitHub(configData);
+            
+            alert('✅ PASSWORD DELETED SUCCESSFULLY!\n\n' +
+                  '✓ Password removed from GitHub\n' +
+                  '✓ ALL field agents logged out\n' +
+                  '✓ No one can submit until you set a new password');
+            
+        } catch (error) {
+            console.error('Reset error:', error);
+            alert('❌ Error resetting password: ' + error.message);
+        }
+    };
+    
+    // ===========================================
+    // OVERRIDE VIEW PASSWORD - VERIFY FROM GITHUB
+    // ===========================================
+    
+    window.viewAgentPassword = async function() {
+        try {
+            const configData = await window.fetchConfigFromGitHub();
+            
+            if (!configData || !configData.security || !configData.security.agentPasswordHash) {
+                alert('No password has been set yet.');
+                return;
+            }
+            
+            const checkPassword = prompt('Enter the current password to verify:');
+            
+            if (checkPassword) {
+                const hash = await window.createSHA256Hash(checkPassword);
+                if (hash === configData.security.agentPasswordHash) {
+                    alert('✅ PASSWORD IS CORRECT!\n\nPassword: ' + checkPassword);
+                } else {
+                    alert('❌ Incorrect password.');
+                }
+            }
+            
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    };
+    
+    // ===========================================
+    // FIX FETCH CONFIG FROM GITHUB
+    // ===========================================
+    
+    window.fetchConfigFromGitHub = async function() {
+        if (!window.githubConfig || !window.githubConfig.repoOwner || !window.githubConfig.repoName) {
+            throw new Error('GitHub repository not configured');
+        }
+        
+        const filepath = 'config.json';
+        const apiUrl = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/${filepath}?ref=${window.githubConfig.branchName || 'main'}`;
+        
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        if (window.githubConfig.accessToken) {
+            headers['Authorization'] = `token ${window.githubConfig.accessToken}`;
+        }
+        
+        const response = await fetch(apiUrl, { headers });
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                return { security: {}, github: {} };
+            }
+            throw new Error(`Failed to fetch config: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const jsonContent = decodeURIComponent(escape(atob(data.content)));
+        return JSON.parse(jsonContent);
+    };
+    
+    // ===========================================
+    // FIX SAVE CONFIG TO GITHUB
+    // ===========================================
+    
+    window.saveConfigToGitHub = async function(configData) {
+        if (!window.githubConfig || !window.githubConfig.accessToken) {
+            throw new Error('GitHub access token required');
+        }
+        
+        const filepath = 'config.json';
+        const apiUrl = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/${filepath}`;
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${window.githubConfig.accessToken}`
+        };
+        
+        const jsonContent = JSON.stringify(configData, null, 2);
+        const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+        
+        // Get SHA if file exists
+        let sha = null;
+        try {
+            const fileInfo = await fetch(apiUrl, { headers });
+            if (fileInfo.ok) {
+                const fileData = await fileInfo.json();
+                sha = fileData.sha;
+            }
+        } catch (e) {}
+        
+        const body = {
+            message: `Update configuration - ${new Date().toLocaleString()}`,
+            content: contentBase64,
+            branch: window.githubConfig.branchName || 'main'
+        };
+        
+        if (sha) body.sha = sha;
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || response.statusText);
+        }
+        
+        return await response.json();
+    };
+    
+    // ===========================================
+    // LOAD CONFIG ON STARTUP
+    // ===========================================
+    
+    // Try to load existing config from GitHub on page load
+    setTimeout(async () => {
+        try {
+            if (window.githubConfig && window.githubConfig.repoOwner && window.githubConfig.repoName) {
+                const config = await window.fetchConfigFromGitHub();
+                console.log('📋 Loaded config from GitHub');
+            }
+        } catch (e) {
+            console.log('No existing config found');
+        }
+    }, 2000);
+    
+    console.log('✅ UNIVERSAL CONFIG STORAGE INSTALLED');
+    console.log('📌 GitHub config now saved to repository - available on ALL devices!');
+})();
+    </script>
 </body>
 </html>
