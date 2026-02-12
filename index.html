@@ -1981,5 +1981,129 @@ console.log('✅ Field agent activity tracking enabled');
 })();
 </script>
 <!-- ============ END OF TRUE PERSISTENT LOGIN ============ -->
+    <!-- ============ AUTO-LOGOUT ON PASSWORD CHANGE ============ -->
+<script>
+// This runs EVERY TIME page loads and BEFORE submission
+// It checks if admin changed/deleted the password and logs out immediately
+
+// Override fetchAgentConfig to check for session resets
+const originalFetchConfig = window.fetchAgentConfig;
+window.fetchAgentConfig = async function(password) {
+    try {
+        // First, get the config to check for session resets
+        const configData = await fetchConfigFromGitHub();
+        
+        // Check if we have a saved session timestamp
+        const savedAuth = localStorage.getItem('agentAuth');
+        if (savedAuth) {
+            const auth = JSON.parse(savedAuth);
+            
+            // If admin reset the session after we logged in, FORCE LOGOUT
+            if (configData.security && configData.security.sessionResetAt) {
+                const resetTime = new Date(configData.security.sessionResetAt).getTime();
+                const loginTime = auth.timestamp || 0;
+                
+                if (resetTime > loginTime) {
+                    console.log('🛑 Session reset detected - logging out');
+                    
+                    // Clear everything
+                    localStorage.removeItem('agentAuth');
+                    localStorage.removeItem('agentGitHubConfig');
+                    sessionStorage.removeItem('agentAuth_backup');
+                    
+                    // Show message
+                    alert('🔐 The admin has changed the access password.\n\nPlease login again with the new password.');
+                    
+                    // Clear form
+                    document.getElementById('agentName').value = auth.agentName || '';
+                    document.getElementById('agentPhone').value = auth.agentPhone || '';
+                    document.getElementById('agentPassword').value = '';
+                    
+                    // Show config panel
+                    configPanel.style.display = 'block';
+                    
+                    throw new Error('Session reset by admin');
+                }
+            }
+        }
+        
+        // Now proceed with normal authentication
+        return await originalFetchConfig.apply(this, arguments);
+        
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Also check on every page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(async () => {
+        try {
+            const configData = await fetchConfigFromGitHub();
+            const savedAuth = localStorage.getItem('agentAuth');
+            
+            if (savedAuth && configData.security && configData.security.sessionResetAt) {
+                const auth = JSON.parse(savedAuth);
+                const resetTime = new Date(configData.security.sessionResetAt).getTime();
+                const loginTime = auth.timestamp || 0;
+                
+                if (resetTime > loginTime) {
+                    console.log('🛑 Session reset detected on page load');
+                    localStorage.removeItem('agentAuth');
+                    localStorage.removeItem('agentGitHubConfig');
+                    sessionStorage.removeItem('agentAuth_backup');
+                    
+                    // Only show alert if they were actually logged in
+                    if (auth.isAuthenticated) {
+                        alert('🔐 The admin has changed the access password.\n\nPlease login again with the new password.');
+                        window.location.reload();
+                    }
+                }
+            }
+        } catch (e) {
+            // Silent fail
+        }
+    }, 1000);
+});
+
+// And check BEFORE every submission
+const originalHandleSubmit = window.handleSubmit;
+window.handleSubmit = async function() {
+    // Check if session is still valid with current GitHub config
+    try {
+        const configData = await fetchConfigFromGitHub();
+        const savedAuth = localStorage.getItem('agentAuth');
+        
+        if (savedAuth && configData.security && configData.security.sessionResetAt) {
+            const auth = JSON.parse(savedAuth);
+            const resetTime = new Date(configData.security.sessionResetAt).getTime();
+            const loginTime = auth.timestamp || 0;
+            
+            if (resetTime > loginTime) {
+                alert('🔐 Your session has been revoked.\n\nThe admin changed the access password.\n\nPlease login again.');
+                
+                // Clear session
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                sessionStorage.removeItem('agentAuth_backup');
+                
+                // Show login panel
+                configPanel.style.display = 'block';
+                
+                return; // Stop submission
+            }
+        }
+        
+        // Proceed with submission
+        await originalHandleSubmit.apply(this, arguments);
+        
+    } catch (error) {
+        console.error('Session check failed:', error);
+        await originalHandleSubmit.apply(this, arguments);
+    }
+};
+
+console.log('✅ Auto-logout on password change ENABLED');
+</script>
 </body>
 </html>
