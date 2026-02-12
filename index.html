@@ -1633,5 +1633,353 @@ document.addEventListener('DOMContentLoaded', function() {
 
 console.log('✅ Field agent activity tracking enabled');
 </script>
+    <!-- ============ TRUE 7-DAY PERSISTENT LOGIN ============ -->
+<script>
+// ==================== TRUE PERSISTENT AUTHENTICATION ====================
+// This actually keeps users logged in for 7 days even after closing browser
+
+// Override the entire authentication system for true persistence
+(function() {
+    console.log('🔄 Installing TRUE 7-day persistent login...');
+    
+    // Clear any existing bad auth data
+    try {
+        const corrupted = localStorage.getItem('agentAuth');
+        if (corrupted) {
+            const test = JSON.parse(corrupted);
+            if (!test.timestamp || !test.expiry) {
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+            }
+        }
+    } catch (e) {
+        localStorage.removeItem('agentAuth');
+        localStorage.removeItem('agentGitHubConfig');
+    }
+    
+    // ========== TRUE PERSISTENT AUTHENTICATION ==========
+    // This version ACTUALLY persists for 7 days
+    
+    window.authenticateAgent = async function() {
+        const agentName = document.getElementById('agentName').value.trim();
+        const agentPhone = document.getElementById('agentPhone').value.trim();
+        const agentPassword = document.getElementById('agentPassword').value.trim();
+        
+        if (!agentName || !agentPhone || !agentPassword) {
+            alert('Please enter all authentication details.');
+            return;
+        }
+        
+        const authBtn = document.querySelector('.config-btn');
+        const originalText = authBtn.innerHTML;
+        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+        authBtn.disabled = true;
+        
+        try {
+            await window.fetchAgentConfig(agentPassword);
+            
+            // Calculate expiry date: NOW + 7 DAYS
+            const now = Date.now();
+            const sevenDays = 7 * 24 * 60 * 60 * 1000; // 604,800,000 ms
+            const expiryDate = now + sevenDays;
+            
+            // Create auth object with EXPIRY timestamp
+            const authData = {
+                isAuthenticated: true,
+                agentName: agentName,
+                agentPhone: agentPhone,
+                agentPassword: agentPassword, // Stored for re-authentication if needed
+                timestamp: now,
+                expiry: expiryDate, // CRITICAL: This is when login expires
+                version: '2.0', // Track version for future updates
+                deviceId: generateDeviceId(),
+                lastVerified: now
+            };
+            
+            // Save to localStorage - this SURVIVES browser restarts
+            localStorage.setItem('agentAuth', JSON.stringify(authData));
+            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
+            
+            // Also save to sessionStorage as backup
+            sessionStorage.setItem('agentAuth_backup', JSON.stringify(authData));
+            
+            // Update global state
+            window.agentAuth = authData;
+            
+            // Auto-fill the onboarding field
+            window.autoFillAgentInfo();
+            
+            // Hide config panel
+            configPanel.style.display = 'none';
+            
+            // Show success message with expiry date
+            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            alert(`✅ Authentication successful!\n\n` +
+                  `📱 Agent: ${agentName}\n` +
+                  `📞 Phone: ${agentPhone}\n\n` +
+                  `🔐 You are now logged in for 7 DAYS.\n` +
+                  `📅 Session expires: ${expiryDateFormatted}\n\n` +
+                  `You will NOT need to login again until ${expiryDateFormatted.split(',')[0]}.`);
+            
+        } catch (error) {
+            alert('Authentication failed: ' + error.message);
+        } finally {
+            authBtn.innerHTML = originalText;
+            authBtn.disabled = false;
+        }
+    };
+    
+    // Generate unique device ID for this browser
+    function generateDeviceId() {
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('deviceId', deviceId);
+        }
+        return deviceId;
+    }
+    
+    // ========== TRUE SESSION RESTORATION ==========
+    // This actually works across browser restarts
+    
+    window.restoreAuthentication = function() {
+        try {
+            // Try to load from localStorage (survives browser restart)
+            const savedAuth = localStorage.getItem('agentAuth');
+            const savedConfig = localStorage.getItem('agentGitHubConfig');
+            
+            if (!savedAuth || !savedConfig) {
+                // Try backup from sessionStorage
+                const backupAuth = sessionStorage.getItem('agentAuth_backup');
+                const backupConfig = sessionStorage.getItem('agentGitHubConfig_backup');
+                
+                if (backupAuth && backupConfig) {
+                    localStorage.setItem('agentAuth', backupAuth);
+                    localStorage.setItem('agentGitHubConfig', backupConfig);
+                    return window.restoreAuthentication();
+                }
+                return false;
+            }
+            
+            // Parse the saved auth data
+            let auth;
+            try {
+                auth = JSON.parse(savedAuth);
+            } catch (e) {
+                localStorage.removeItem('agentAuth');
+                return false;
+            }
+            
+            // CRITICAL: Check if we have expiry date
+            if (!auth.expiry) {
+                console.log('❌ No expiry date found, forcing re-login');
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                return false;
+            }
+            
+            // CRITICAL: Check if session is STILL VALID (not expired)
+            const now = Date.now();
+            if (now > auth.expiry) {
+                // Session expired
+                const expiryDate = new Date(auth.expiry).toLocaleString();
+                console.log(`❌ Session expired on ${expiryDate}`);
+                
+                // Clear expired session
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                sessionStorage.removeItem('agentAuth_backup');
+                
+                // Notify user only once per day
+                const lastNotify = localStorage.getItem('expiryNotify');
+                if (!lastNotify || (now - parseInt(lastNotify)) > 86400000) {
+                    alert('Your 7-day login session has expired. Please login again to continue.');
+                    localStorage.setItem('expiryNotify', now.toString());
+                }
+                
+                return false;
+            }
+            
+            // Calculate days remaining
+            const daysRemaining = Math.floor((auth.expiry - now) / (24 * 60 * 60 * 1000));
+            const hoursRemaining = Math.floor(((auth.expiry - now) % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+            
+            // Session is STILL VALID - restore it!
+            console.log(`✅ Restoring valid session - ${daysRemaining} days, ${hoursRemaining} hours remaining`);
+            
+            // Restore GitHub config
+            try {
+                window.githubConfig = JSON.parse(savedConfig);
+                localStorage.setItem('agentGitHubConfig', savedConfig);
+            } catch (e) {
+                console.error('Failed to restore GitHub config');
+            }
+            
+            // Restore auth state
+            window.agentAuth = auth;
+            
+            // Update UI
+            if (typeof window.autoFillAgentInfo === 'function') {
+                window.autoFillAgentInfo();
+            }
+            
+            // Hide config panel
+            if (configPanel) {
+                configPanel.style.display = 'none';
+            }
+            
+            // Show subtle reminder of session expiry (only once per day)
+            const lastReminder = localStorage.getItem('sessionReminder');
+            if (!lastReminder || (now - parseInt(lastReminder)) > 86400000) {
+                setTimeout(() => {
+                    const expiryDate = new Date(auth.expiry).toLocaleDateString();
+                    console.log(`ℹ️ Session expires on ${expiryDate} (${daysRemaining} days remaining)`);
+                }, 2000);
+                localStorage.setItem('sessionReminder', now.toString());
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Error restoring authentication:', error);
+            return false;
+        }
+    };
+    
+    // ========== ENHANCED AUTO-FILL ==========
+    window.autoFillAgentInfo = function() {
+        if (window.agentAuth && window.agentAuth.isAuthenticated) {
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField) {
+                const value = `${window.agentAuth.agentName || ''} ${window.agentAuth.agentPhone || ''}`.trim();
+                if (value) {
+                    tradingNameField.value = value;
+                    tradingNameField.readOnly = true;
+                    tradingNameField.style.backgroundColor = '#f5f5f5';
+                    tradingNameField.style.cursor = 'not-allowed';
+                    
+                    // Add small badge showing expiry
+                    let badge = document.getElementById('sessionBadge');
+                    if (!badge && window.agentAuth.expiry) {
+                        badge = document.createElement('small');
+                        badge.id = 'sessionBadge';
+                        badge.style.display = 'block';
+                        badge.style.marginTop = '5px';
+                        badge.style.color = '#28a745';
+                        badge.style.fontSize = '12px';
+                        
+                        const daysLeft = Math.floor((window.agentAuth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
+                        badge.innerHTML = `<i class="fas fa-clock"></i> Session expires in ${daysLeft} days`;
+                        
+                        tradingNameField.parentNode.appendChild(badge);
+                    }
+                }
+            }
+        }
+    };
+    
+    // ========== ENHANCED RESET AUTH ==========
+    window.resetAuth = function() {
+        // Clear ALL storage
+        localStorage.removeItem('agentAuth');
+        localStorage.removeItem('agentGitHubConfig');
+        localStorage.removeItem('deviceId');
+        localStorage.removeItem('sessionReminder');
+        
+        sessionStorage.removeItem('agentAuth_backup');
+        sessionStorage.removeItem('agentGitHubConfig_backup');
+        
+        // Reset state
+        window.agentAuth = {
+            isAuthenticated: false,
+            agentName: '',
+            agentPhone: '',
+            agentPassword: '',
+            timestamp: null,
+            expiry: null
+        };
+        
+        // Clear form fields
+        const nameField = document.getElementById('agentName');
+        const phoneField = document.getElementById('agentPhone');
+        const passField = document.getElementById('agentPassword');
+        const tradingField = document.getElementById('tradingName');
+        
+        if (nameField) nameField.value = '';
+        if (phoneField) phoneField.value = '';
+        if (passField) passField.value = '';
+        
+        if (tradingField) {
+            tradingField.value = '';
+            tradingField.readOnly = false;
+            tradingField.style.backgroundColor = '';
+            tradingField.style.cursor = 'text';
+        }
+        
+        // Remove expiry badge
+        const badge = document.getElementById('sessionBadge');
+        if (badge) badge.remove();
+        
+        alert('✅ You have been logged out. Your 7-day session has been cleared.');
+    };
+    
+    // ========== CHECK SESSION ON PAGE LOAD ==========
+    // This runs IMMEDIATELY and EVERY time page loads
+    
+    // Run restoration immediately
+    const restored = window.restoreAuthentication();
+    
+    // Also run after DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        window.restoreAuthentication();
+    });
+    
+    // Also run when page becomes visible (user returns to tab)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            window.restoreAuthentication();
+        }
+    });
+    
+    // Also run before page unload to backup session
+    window.addEventListener('beforeunload', function() {
+        const auth = localStorage.getItem('agentAuth');
+        const config = localStorage.getItem('agentGitHubConfig');
+        if (auth && config) {
+            sessionStorage.setItem('agentAuth_backup', auth);
+            sessionStorage.setItem('agentGitHubConfig_backup', config);
+        }
+    });
+    
+    // Force check every hour to update expiry badge
+    setInterval(function() {
+        if (window.agentAuth && window.agentAuth.isAuthenticated) {
+            const now = Date.now();
+            if (now > window.agentAuth.expiry) {
+                window.restoreAuthentication(); // This will clear expired session
+            } else {
+                // Update expiry badge
+                const badge = document.getElementById('sessionBadge');
+                if (badge && window.agentAuth.expiry) {
+                    const daysLeft = Math.floor((window.agentAuth.expiry - now) / (24 * 60 * 60 * 1000));
+                    badge.innerHTML = `<i class="fas fa-clock"></i> Session expires in ${daysLeft} days`;
+                }
+            }
+        }
+    }, 3600000); // Every hour
+    
+    console.log('✅ TRUE 7-day persistent login INSTALLED!');
+    console.log('📅 Sessions survive browser restarts and computer shutdowns');
+})();
+</script>
+<!-- ============ END OF TRUE PERSISTENT LOGIN ============ -->
 </body>
 </html>
