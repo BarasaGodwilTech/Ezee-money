@@ -2469,5 +2469,322 @@ console.log('✅ Auto-logout on password change ENABLED');
     console.log('✅ ALL FIXES INSTALLED - EVERYTHING WORKS!');
 })();
 </script>
+    <!-- ============ FINAL FIX - GITHUB TOKEN TRANSFER ============ -->
+<script>
+(function() {
+    console.log('🔥 INSTALLING CRITICAL TOKEN FIX');
+    
+    // ===========================================
+    // OVERRIDE AUTHENTICATION - FORCE TOKEN TRANSFER
+    // ===========================================
+    
+    window.authenticateAgent = async function() {
+        const agentName = document.getElementById('agentName').value.trim();
+        const agentPhone = document.getElementById('agentPhone').value.trim();
+        const agentPassword = document.getElementById('agentPassword').value.trim();
+        
+        if (!agentName || !agentPhone || !agentPassword) {
+            alert('Please enter all authentication details.');
+            return;
+        }
+        
+        const authBtn = document.querySelector('.config-btn');
+        const originalText = authBtn.innerHTML;
+        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+        authBtn.disabled = true;
+        
+        try {
+            // STEP 1: CRITICAL - GET ADMIN'S GITHUB CONFIG FROM localStorage
+            // This is set by the admin when they configure GitHub
+            const adminConfig = localStorage.getItem('githubConfig');
+            
+            if (!adminConfig) {
+                throw new Error('No GitHub configuration found. Please ensure admin has configured GitHub settings first.');
+            }
+            
+            const adminGitHubConfig = JSON.parse(adminConfig);
+            
+            if (!adminGitHubConfig.accessToken) {
+                throw new Error('Admin GitHub access token is missing. Admin must save GitHub configuration with token.');
+            }
+            
+            // STEP 2: Set GitHub config with the ADMIN'S TOKEN
+            window.githubConfig = {
+                repoOwner: adminGitHubConfig.repoOwner || 'BarasaGodwilTech',
+                repoName: adminGitHubConfig.repoName || 'Ezee-money',
+                accessToken: adminGitHubConfig.accessToken, // ← CRITICAL: This is the token!
+                branchName: adminGitHubConfig.branchName || 'main',
+                imagesSubfolder: 'images'
+            };
+            
+            // STEP 3: Now fetch config.json to verify password
+            const configUrl = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/config.json?ref=${window.githubConfig.branchName}`;
+            
+            const configHeaders = {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${window.githubConfig.accessToken}` // ← USING THE TOKEN
+            };
+            
+            const configResponse = await fetch(configUrl, { headers: configHeaders });
+            
+            if (!configResponse.ok) {
+                throw new Error('Cannot verify password. Check GitHub configuration.');
+            }
+            
+            const configData = await configResponse.json();
+            const configContent = JSON.parse(decodeURIComponent(escape(atob(configData.content))));
+            
+            // STEP 4: Verify password
+            if (!configContent.security || !configContent.security.agentPasswordHash) {
+                throw new Error('System not configured. Contact admin.');
+            }
+            
+            const inputHash = await window.createSHA256Hash(agentPassword);
+            if (inputHash !== configContent.security.agentPasswordHash) {
+                throw new Error('Invalid password.');
+            }
+            
+            // STEP 5: Save EVERYTHING to localStorage for persistence
+            const now = Date.now();
+            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
+            
+            const authData = {
+                isAuthenticated: true,
+                agentName: agentName,
+                agentPhone: agentPhone,
+                timestamp: now,
+                expiry: expiryDate,
+                version: '4.0'
+            };
+            
+            // CRITICAL: Save both auth AND the GitHub config with token
+            localStorage.setItem('agentAuth', JSON.stringify(authData));
+            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
+            
+            // Also save as backup
+            sessionStorage.setItem('agentAuth_backup', JSON.stringify(authData));
+            sessionStorage.setItem('agentGitHubConfig_backup', JSON.stringify(window.githubConfig));
+            
+            // STEP 6: Update UI
+            window.agentAuth = authData;
+            
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField) {
+                tradingNameField.value = `${agentName} ${agentPhone}`;
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            
+            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            
+            alert(`✅ LOGIN SUCCESSFUL!\n\n` +
+                  `📱 Agent: ${agentName}\n` +
+                  `📞 Phone: ${agentPhone}\n` +
+                  `📅 Session expires: ${expiryDateFormatted}\n\n` +
+                  `🔑 GitHub access token loaded from admin configuration.\n` +
+                  `📤 You can now upload images and submit agents.`);
+            
+            // Report activity
+            try {
+                window.reportActivity('authenticated');
+            } catch(e) {}
+            
+        } catch (error) {
+            console.error('Authentication error:', error);
+            alert('❌ Authentication failed: ' + error.message);
+        } finally {
+            authBtn.innerHTML = originalText;
+            authBtn.disabled = false;
+        }
+    };
+    
+    // ===========================================
+    // OVERRIDE SESSION RESTORATION - KEEP TOKEN
+    // ===========================================
+    
+    window.restoreAuthentication = function() {
+        try {
+            const savedAuth = localStorage.getItem('agentAuth');
+            const savedConfig = localStorage.getItem('agentGitHubConfig');
+            
+            if (!savedAuth || !savedConfig) {
+                return false;
+            }
+            
+            const auth = JSON.parse(savedAuth);
+            
+            // Check expiry
+            if (auth.expiry && Date.now() > auth.expiry) {
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                return false;
+            }
+            
+            // Restore everything - INCLUDING THE TOKEN
+            window.agentAuth = auth;
+            window.githubConfig = JSON.parse(savedConfig);
+            
+            // Verify token is still there
+            if (!window.githubConfig.accessToken) {
+                console.warn('Token missing, will need to re-authenticate');
+                return false;
+            }
+            
+            // Auto-fill form
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField && auth.agentName && auth.agentPhone) {
+                tradingNameField.value = `${auth.agentName} ${auth.agentPhone}`;
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            
+            const daysLeft = Math.floor((auth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
+            console.log(`✅ Session restored - ${daysLeft} days remaining, token present`);
+            
+            return true;
+            
+        } catch (e) {
+            console.error('Restore error:', e);
+            return false;
+        }
+    };
+    
+    // ===========================================
+    // OVERRIDE IMAGE UPLOAD - ENSURE TOKEN IS USED
+    // ===========================================
+    
+    const originalUploadImage = window.uploadImageToGitHub;
+    window.uploadImageToGitHub = async function(file, submissionId, imageType) {
+        if (!file) return '';
+        
+        // CRITICAL: Get the latest config from localStorage
+        const savedConfig = localStorage.getItem('agentGitHubConfig');
+        if (!savedConfig) {
+            throw new Error('GitHub configuration not found. Please login again.');
+        }
+        
+        const config = JSON.parse(savedConfig);
+        
+        if (!config.accessToken) {
+            throw new Error('GitHub access token missing. Please login again.');
+        }
+        
+        // Generate filename
+        const timestamp = Date.now();
+        const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
+        const filepath = `images/${filename}`;
+        
+        // Convert file to base64
+        const base64Content = await window.fileToBase64(file);
+        
+        // Prepare API URL
+        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}`;
+        
+        // CRITICAL: Use the token from the saved config
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${config.accessToken}`
+        };
+        
+        const body = {
+            message: `Upload ${imageType} image for agent ${submissionId}`,
+            content: base64Content.split(',')[1],
+            branch: config.branchName || 'main'
+        };
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
+        }
+        
+        return `https://raw.githubusercontent.com/${config.repoOwner}/${config.repoName}/${config.branchName || 'main'}/images/${filename}`;
+    };
+    
+    // ===========================================
+    // OVERRIDE FETCH GITHUB DATA - USE TOKEN
+    // ===========================================
+    
+    window.fetchGitHubData = async function() {
+        const savedConfig = localStorage.getItem('agentGitHubConfig');
+        if (!savedConfig) {
+            throw new Error('GitHub configuration not found');
+        }
+        
+        const config = JSON.parse(savedConfig);
+        
+        const filepath = 'data.json';
+        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}?ref=${config.branchName || 'main'}`;
+        
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        if (config.accessToken) {
+            headers['Authorization'] = `token ${config.accessToken}`;
+        }
+        
+        const response = await fetch(apiUrl, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const jsonContent = decodeURIComponent(escape(atob(data.content)));
+        return JSON.parse(jsonContent);
+    };
+    
+    // ===========================================
+    // ENSURE fileToBase64 EXISTS
+    // ===========================================
+    
+    if (!window.fileToBase64) {
+        window.fileToBase64 = function(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        };
+    }
+    
+    // ===========================================
+    // CHECK TOKEN ON PAGE LOAD
+    // ===========================================
+    
+    // Run restoration immediately
+    setTimeout(() => {
+        window.restoreAuthentication();
+        
+        // Verify token is present
+        const config = localStorage.getItem('agentGitHubConfig');
+        if (config) {
+            const parsed = JSON.parse(config);
+            if (parsed.accessToken) {
+                console.log('✅ GitHub token present and ready');
+            } else {
+                console.warn('⚠️ No GitHub token found - please login again');
+            }
+        }
+    }, 10);
+    
+    console.log('🔥 CRITICAL: GitHub token transfer fix installed!');
+    console.log('📌 Field agents will now receive admin GitHub token automatically');
+})();
+</script>
 </body>
 </html>
