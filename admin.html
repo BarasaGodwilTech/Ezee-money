@@ -4040,5 +4040,277 @@ window.resetAgentPassword = async function() {
     console.log('📌 GitHub config now saved to repository - available on ALL devices!');
 })();
     </script>
+    <!-- ============ UPDATE EXCEL EXPORT WITH SC CODE ============ -->
+<script>
+(function() {
+    console.log('📊 UPDATING EXCEL EXPORT FOR SC CODE');
+    
+    // Override exportToExcel to include SC Code
+    const originalExport = window.exportToExcel;
+    window.exportToExcel = function() {
+        if (!agents || agents.length === 0) {
+            alert('No data available to export.');
+            return;
+        }
+        
+        const originalText = event.target.innerHTML;
+        event.target.innerHTML = '<span class="loading"></span> Exporting...';
+        event.target.disabled = true;
+        
+        try {
+            // Create CSV content with SC CODE column
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // NEW HEADERS - replaced Phone with SC Code
+            const headers = [
+                "Agent ID",
+                "Full Name",
+                "Email",
+                "Email Verified",
+                "Personal Number",
+                "National ID",
+                "Date of Birth",
+                "Gender",
+                "Business Address",
+                "Residential Address",
+                "Next of Kin Name",
+                "Next of Kin Relationship",
+                "Next of Kin Phone",
+                "Field Agent SC Code", // Changed from Trading Name
+                "Status",
+                "Submission Date",
+                "Admin Verified",
+                "ID Front URL",
+                "ID Back URL",
+                "Agent Photo URL"
+            ];
+            
+            csvContent += headers.join(",") + "\n";
+            
+            // Add data rows - now using tradingName as SC Code
+            agents.forEach(agent => {
+                const row = [
+                    `"${agent.id || ''}"`,
+                    `"${agent.fullName || ''}"`,
+                    `"${agent.email || ''}"`,
+                    `"${agent.emailVerified ? 'Yes' : 'No'}"`,
+                    `"${agent.personalNumber || ''}"`,
+                    `"${agent.nationalId || ''}"`,
+                    `"${agent.dob || ''}"`,
+                    `"${agent.gender || ''}"`,
+                    `"${(agent.businessAddress || '').replace(/"/g, '""')}"`,
+                    `"${(agent.residentialAddress || '').replace(/"/g, '""')}"`,
+                    `"${agent.nextOfKinName || ''}"`,
+                    `"${agent.nextOfKinRelationship || ''}"`,
+                    `"${agent.nextOfKinPhone || ''}"`,
+                    `"${agent.tradingName || ''}"`, // This now holds SC CODE
+                    `"${agent.status || ''}"`,
+                    `"${agent.submissionDate || ''}"`,
+                    `"${agent.adminVerified ? 'Yes' : 'No'}"`,
+                    `"${agent.idFrontUrl || ''}"`,
+                    `"${agent.idBackUrl || ''}"`,
+                    `"${agent.agentPhotoUrl || ''}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            const date = new Date();
+            const dateStr = date.toISOString().split('T')[0];
+            link.setAttribute("download", `EzeeMoney_Agents_SC_Codes_${dateStr}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`✅ Exported ${agents.length} agents with SC Codes!`);
+            
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Error exporting data: ' + error.message);
+        } finally {
+            event.target.innerHTML = originalText;
+            event.target.disabled = false;
+        }
+    };
+    
+    // Also update the Active Agents panel to show SC CODE instead of Phone
+    const originalRender = window.renderActiveAgentsPanel;
+    if (originalRender) {
+        window.renderActiveAgentsPanel = function() {
+            originalRender.call(this);
+            
+            // Modify the panel after it's rendered
+            setTimeout(() => {
+                const panel = document.getElementById('activeAgentsPanel');
+                if (panel) {
+                    // Change table headers from "Phone" to "SC Code"
+                    const headers = panel.querySelectorAll('th');
+                    headers.forEach(header => {
+                        if (header.textContent.includes('Phone')) {
+                            header.textContent = 'SC Code';
+                        }
+                    });
+                    
+                    // Update any field agent tracking display
+                    console.log('✅ Updated tracking panel to show SC Code');
+                }
+            }, 100);
+        };
+    }
+    
+    console.log('✅ Excel export updated for SC Code');
+})();
+    </script>
+    <!-- ============ FIX TRACKING PANEL TO SHOW SC CODE ============ -->
+<script>
+(function() {
+    // Override how active agents are displayed to show SC Code instead of Phone
+    const originalLoad = window.loadActiveAgents;
+    if (originalLoad) {
+        window.loadActiveAgents = function() {
+            const stored = localStorage.getItem('activeFieldAgents');
+            if (stored) {
+                window.activeFieldAgents = JSON.parse(stored);
+            }
+            
+            // Call original if it exists
+            if (originalLoad) {
+                originalLoad.call(this);
+            } else {
+                window.renderActiveAgentsPanel();
+            }
+        };
+    }
+    
+    // Modify the render function to use SC Code
+    window.renderActiveAgentsPanel = function() {
+        let panel = document.getElementById('activeAgentsPanel');
+        
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'activeAgentsPanel';
+            panel.className = 'card';
+            panel.style.marginTop = '20px';
+            panel.style.padding = '20px';
+            panel.style.borderLeft = '4px solid #2a5298';
+            
+            const statsSection = document.querySelector('.stats-cards');
+            if (statsSection) {
+                statsSection.parentNode.insertBefore(panel, statsSection.nextSibling);
+            }
+        }
+        
+        const sortedAgents = [...(window.activeFieldAgents || [])].sort((a, b) => 
+            new Date(b.lastActive) - new Date(a.lastActive)
+        );
+        
+        const activeToday = sortedAgents.filter(a => {
+            const last = new Date(a.lastActive);
+            const today = new Date();
+            return last.toDateString() === today.toDateString();
+        }).length;
+        
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #1e3c72; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-users" style="color: #2a5298;"></i> 
+                    Field Team Activity
+                    <span style="background: #2a5298; color: white; padding: 3px 10px; border-radius: 20px; font-size: 14px;">
+                        ${activeToday} Active Today
+                    </span>
+                </h3>
+                <button onclick="window.refreshActiveAgents?.()" class="action-btn view-btn" style="padding: 5px 15px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        `;
+        
+        if (sortedAgents.length === 0) {
+            html += `
+                <div style="text-align: center; padding: 30px; color: #666;">
+                    <i class="fas fa-user-slash" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                    <p>No field agents have logged in yet.</p>
+                    <p style="font-size: 13px; margin-top: 5px;">Agents will appear here when they authenticate with SC Code.</p>
+                </div>
+            `;
+        } else {
+            html += `<div style="overflow-x: auto;"><table style="width: 100%;">`;
+            html += `
+                <thead>
+                    <tr>
+                        <th>Agent Name</th>
+                        <th>SC Code</th> <!-- Changed from Phone -->
+                        <th>Last Active</th>
+                        <th>Last Action</th>
+                        <th>Submissions</th>
+                        <th>Sessions</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            sortedAgents.forEach(agent => {
+                const lastActive = new Date(agent.lastActive);
+                const now = new Date();
+                const diffMinutes = Math.floor((now - lastActive) / (1000 * 60));
+                
+                let status = '';
+                let statusColor = '';
+                
+                if (diffMinutes < 5) {
+                    status = '🟢 Online';
+                    statusColor = '#28a745';
+                } else if (diffMinutes < 60) {
+                    status = '🟡 Away (' + diffMinutes + ' min)';
+                    statusColor = '#ffc107';
+                } else {
+                    status = '⚫ Offline';
+                    statusColor = '#6c757d';
+                }
+                
+                const lastActiveFormatted = lastActive.toLocaleString('en-US', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                
+                html += `
+                    <tr>
+                        <td><strong>${agent.name || agent.agentName || ''}</strong></td>
+                        <td><code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${agent.scCode || agent.phone || ''}</code></td>
+                        <td>${lastActiveFormatted}</td>
+                        <td>${agent.lastAction || 'Authenticated'}</td>
+                        <td style="text-align: center;"><span style="background: #2a5298; color: white; padding: 3px 10px; border-radius: 20px;">${agent.submissions || 0}</span></td>
+                        <td style="text-align: center;">${agent.sessionCount || 1}</td>
+                        <td><span style="color: ${statusColor};">${status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table></div>`;
+            html += `<p style="margin-top: 15px; font-size: 12px; color: #666; text-align: right;">
+                <i class="fas fa-info-circle"></i> Last updated: ${new Date().toLocaleTimeString()}
+            </p>`;
+        }
+        
+        panel.innerHTML = html;
+    };
+    
+    // Load agents on startup
+    setTimeout(() => {
+        const stored = localStorage.getItem('activeFieldAgents');
+        if (stored) {
+            window.activeFieldAgents = JSON.parse(stored);
+            window.renderActiveAgentsPanel();
+        }
+    }, 500);
+    
+    console.log('✅ Tracking panel updated for SC Code');
+})();
+</script>
 </body>
 </html>
