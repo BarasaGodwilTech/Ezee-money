@@ -3321,7 +3321,57 @@ window.refreshActiveAgents = refreshActiveAgents;
 
 console.log('✅ Field Agent Tracking + Notifications + Delete Function installed!');
 </script>
+<!-- ============ FORCE LOGOUT ALL FIELD AGENTS ON PASSWORD CHANGE ============ -->
+<script>
+// This runs whenever admin sets or resets password - FORCES ALL AGENTS TO LOGOUT
+const originalSetPassword = setAgentPassword;
+window.setAgentPassword = async function() {
+    // Call original function
+    await originalSetPassword.apply(this, arguments);
+    
+    // After password is set/changed, force logout all field agents
+    try {
+        // Update the config.json with a session reset token
+        const configData = await fetchConfigFromGitHub();
+        
+        // Add a session reset timestamp
+        if (!configData.security) configData.security = {};
+        configData.security.sessionResetAt = new Date().toISOString();
+        configData.security.sessionResetReason = 'password_changed';
+        
+        // Save back to GitHub
+        await saveConfigToGitHub(configData);
+        
+        console.log('🔄 Session reset token issued - all field agents will need to re-login');
+        
+        // Optional: Show confirmation
+        setTimeout(() => {
+            alert('✅ All field agents have been logged out and must login with the new password.');
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error issuing session reset:', error);
+    }
+};
 
-<!-- Add CSS
+// Also override resetAgentPassword
+const originalResetPassword = resetAgentPassword;
+window.resetAgentPassword = async function() {
+    await originalResetPassword.apply(this, arguments);
+    
+    try {
+        const configData = await fetchConfigFromGitHub();
+        if (!configData.security) configData.security = {};
+        configData.security.sessionResetAt = new Date().toISOString();
+        configData.security.sessionResetReason = 'password_deleted';
+        await saveConfigToGitHub(configData);
+        
+        alert('✅ Password removed. All field agents have been logged out.');
+        
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+</script>
 </body>
 </html>
