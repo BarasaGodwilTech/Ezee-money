@@ -3624,5 +3624,35 @@ window.resetAgentPassword = async function() {
     console.log('✅ ADMIN FIXES INSTALLED - DELETE WORKS, TRACKING REAL-TIME!');
 })();
 </script>
+    <!-- ============ ADMIN TOKEN VERIFICATION ============ -->
+<script>
+(function() {
+    // Ensure admin's GitHub config is saved to localStorage
+    const originalSaveConfig = window.saveGitHubConfig;
+    if (originalSaveConfig) {
+        window.saveGitHubConfig = function() {
+            const result = originalSaveConfig.apply(this, arguments);
+            
+            // Verify token was saved
+            const config = localStorage.getItem('githubConfig');
+            if (config) {
+                const parsed = JSON.parse(config);
+                if (parsed.accessToken) {
+                    console.log('✅ Admin GitHub token saved successfully');
+                } else {
+                    console.warn('⚠️ Admin GitHub token is missing!');
+                    setTimeout(() => {
+                        alert('⚠️ WARNING: GitHub access token is required for field agents to upload images.\n\nPlease enter your GitHub token in the configuration panel.');
+                    }, 500);
+                }
+            }
+            
+            return result;
+        };
+    }
+    
+    console.log('✅ Admin token verification installed');
+})();
+</script>
 </body>
 </html>
