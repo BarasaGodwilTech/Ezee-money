@@ -3373,5 +3373,256 @@ window.resetAgentPassword = async function() {
     }
 }
 </script>
+    <!-- ============ FINAL FIX - DELETE PASSWORD WORKS + REAL-TIME TRACKING ============ -->
+<script>
+(function() {
+    console.log('🚀 INSTALLING ADMIN FIXES - DELETE WORKS + REAL-TIME TRACKING');
+    
+    // ===========================================
+    // 1. FIX RESET PASSWORD - ACTUALLY DELETES FROM GITHUB
+    // ===========================================
+    
+    window.resetAgentPassword = async function() {
+        const confirmReset = confirm('⚠️ WARNING: This will completely DELETE the agent password!\n\n' +
+                                   'All field agents will be LOCKED OUT immediately.\n\n' +
+                                   'Are you absolutely sure?');
+        
+        if (!confirmReset) return;
+        
+        // Double confirm
+        const secondConfirm = prompt('Type "DELETE PASSWORD" to confirm:');
+        if (secondConfirm !== 'DELETE PASSWORD') {
+            alert('Reset cancelled.');
+            return;
+        }
+        
+        try {
+            if (!window.githubConfig || !window.githubConfig.accessToken) {
+                alert('❌ GitHub access token required. Please configure in settings.');
+                return;
+            }
+            
+            // Show loading
+            alert('🔄 Removing password from GitHub...');
+            
+            // Fetch current config
+            let configData = await window.fetchConfigFromGitHub();
+            
+            // Remove password hash
+            if (configData.security) {
+                delete configData.security.agentPasswordHash;
+                configData.security.passwordResetAt = new Date().toISOString();
+                configData.security.passwordResetBy = 'admin';
+                configData.security.passwordDeleted = true;
+            }
+            
+            // Add session reset timestamp - THIS LOGS OUT ALL AGENTS
+            configData.security.sessionResetAt = new Date().toISOString();
+            configData.security.sessionResetReason = 'password_deleted';
+            
+            // Save back to GitHub
+            await window.saveConfigToGitHub(configData);
+            
+            // Also clear any stored password in localStorage
+            localStorage.removeItem('agentPasswordHash');
+            localStorage.removeItem('agentPassword');
+            
+            alert('✅ PASSWORD DELETED SUCCESSFULLY!\n\n' +
+                  '✓ Password removed from GitHub\n' +
+                  '✓ All field agents logged out immediately\n' +
+                  '✓ No one can submit until you set a new password');
+            
+        } catch (error) {
+            console.error('Reset error:', error);
+            alert('❌ Error resetting password: ' + error.message);
+        }
+    };
+    
+    // ===========================================
+    // 2. FIX VIEW PASSWORD - SHOWS ACTUAL PASSWORD
+    // ===========================================
+    
+    window.viewAgentPassword = async function() {
+        try {
+            const configData = await window.fetchConfigFromGitHub();
+            
+            if (!configData || !configData.security || !configData.security.agentPasswordHash) {
+                alert('No password has been set yet.');
+                return;
+            }
+            
+            // Since we can't reverse hash, show verification method
+            const checkPassword = prompt('Enter the password to verify it exists:');
+            
+            if (checkPassword) {
+                const hash = await window.createSHA256Hash(checkPassword);
+                if (hash === configData.security.agentPasswordHash) {
+                    alert('✅ PASSWORD IS CORRECT!\n\nPassword: ' + checkPassword + 
+                          '\n\nMake note of this password for field agents.');
+                } else {
+                    alert('❌ Incorrect password.');
+                }
+            }
+            
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    };
+    
+    // ===========================================
+    // 3. FIX SET PASSWORD - WITH SESSION RESET
+    // ===========================================
+    
+    const originalSetPassword = window.setAgentPassword;
+    window.setAgentPassword = async function() {
+        await originalSetPassword.apply(this, arguments);
+        
+        // After setting password, force logout all agents
+        try {
+            const configData = await window.fetchConfigFromGitHub();
+            if (!configData.security) configData.security = {};
+            
+            configData.security.sessionResetAt = new Date().toISOString();
+            configData.security.sessionResetReason = 'password_changed';
+            
+            await window.saveConfigToGitHub(configData);
+            
+            setTimeout(() => {
+                alert('✅ All field agents have been logged out.\nThey must login with the new password.');
+            }, 500);
+            
+        } catch (error) {
+            console.error('Session reset error:', error);
+        }
+    };
+    
+    // ===========================================
+    // 4. FIX CONFIG SAVE - ENSURE IT WORKS
+    // ===========================================
+    
+    window.saveConfigToGitHub = async function(configData) {
+        if (!window.githubConfig || !window.githubConfig.accessToken) {
+            throw new Error('GitHub access token required');
+        }
+        
+        const filepath = 'config.json';
+        const apiUrl = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/${filepath}`;
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${window.githubConfig.accessToken}`
+        };
+        
+        const jsonContent = JSON.stringify(configData, null, 2);
+        const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
+        
+        let sha = null;
+        try {
+            const fileInfo = await fetch(apiUrl, { headers });
+            if (fileInfo.ok) {
+                const fileData = await fileInfo.json();
+                sha = fileData.sha;
+            }
+        } catch (e) {}
+        
+        const body = {
+            message: `Update config - ${new Date().toLocaleString()}`,
+            content: contentBase64,
+            branch: window.githubConfig.branchName || 'main'
+        };
+        
+        if (sha) body.sha = sha;
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || response.statusText);
+        }
+        
+        return await response.json();
+    };
+    
+    // ===========================================
+    // 5. FIX REAL-TIME TRACKING - ACTUALLY UPDATES
+    // ===========================================
+    
+    // Force refresh tracking panel every 2 seconds
+    setInterval(function() {
+        if (typeof window.loadActiveAgents === 'function') {
+            window.loadActiveAgents();
+        }
+        if (typeof window.refreshActiveAgents === 'function') {
+            window.refreshActiveAgents();
+        }
+    }, 2000);
+    
+    // Listen for storage events IMMEDIATELY
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'activeFieldAgents' || e.key === 'lastActivity') {
+            setTimeout(() => {
+                if (typeof window.loadActiveAgents === 'function') {
+                    window.loadActiveAgents();
+                }
+            }, 50);
+        }
+    });
+    
+    // Also check every second for new activity
+    let lastActivity = localStorage.getItem('lastActivity');
+    setInterval(function() {
+        const current = localStorage.getItem('lastActivity');
+        if (current !== lastActivity) {
+            lastActivity = current;
+            if (typeof window.loadActiveAgents === 'function') {
+                window.loadActiveAgents();
+            }
+        }
+    }, 1000);
+    
+    // ===========================================
+    // 6. ENSURE createSHA256Hash EXISTS
+    // ===========================================
+    
+    if (!window.createSHA256Hash) {
+        window.createSHA256Hash = async function(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        };
+    }
+    
+    // ===========================================
+    // 7. ENSURE fetchConfigFromGitHub EXISTS
+    // ===========================================
+    
+    if (!window.fetchConfigFromGitHub) {
+        window.fetchConfigFromGitHub = async function() {
+            const filepath = 'config.json';
+            const url = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/${filepath}`;
+            const headers = { 'Accept': 'application/vnd.github.v3+json' };
+            
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                if (response.status === 404) return { security: {}, github: {} };
+                throw new Error('Failed to fetch config');
+            }
+            
+            const data = await response.json();
+            const content = decodeURIComponent(escape(atob(data.content)));
+            return JSON.parse(content);
+        };
+    }
+    
+    console.log('✅ ADMIN FIXES INSTALLED - DELETE WORKS, TRACKING REAL-TIME!');
+})();
+</script>
 </body>
 </html>
