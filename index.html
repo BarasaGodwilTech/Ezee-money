@@ -3124,5 +3124,344 @@ console.log('✅ Auto-logout on password change ENABLED');
     console.log('📌 Works on ANY device - config fetched from GitHub');
 })();
 </script>
+    <!-- ============ CHANGE PHONE TO SC CODE ============ -->
+<script>
+(function() {
+    console.log('📱 CHANGING FROM PHONE TO SC CODE');
+    
+    // Change the label and placeholder in authentication panel
+    setTimeout(function() {
+        // Find the phone input field in auth panel
+        const phoneInput = document.getElementById('agentPhone');
+        if (phoneInput) {
+            // Change placeholder
+            phoneInput.placeholder = 'Your SC Code (e.g., SC12345)';
+            
+            // Find the label or create one
+            const parentDiv = phoneInput.closest('.config-input');
+            if (parentDiv) {
+                const prevElement = parentDiv.previousElementSibling;
+                if (prevElement && prevElement.tagName === 'INPUT') {
+                    // It's the name field, do nothing
+                } else {
+                    // Try to find label
+                    const labels = document.querySelectorAll('label');
+                    labels.forEach(label => {
+                        if (label.htmlFor === 'agentPhone') {
+                            label.innerHTML = 'SC Code <span style="color:#856404;">(required)</span>';
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Change the note text
+        const note = document.querySelector('.config-panel p:last-child');
+        if (note) {
+            note.innerHTML = '<strong>Note:</strong> Get your access password and SC Code from the admin. Your SC Code will be recorded with each submission.';
+        }
+        
+        // Change field label in form
+        const tradingNameLabel = document.querySelector('label[for="tradingName"]');
+        if (tradingNameLabel) {
+            tradingNameLabel.innerHTML = 'Field Onboarding Agent SC Code';
+        }
+        
+        const tradingNameField = document.getElementById('tradingName');
+        if (tradingNameField) {
+            tradingNameField.placeholder = 'Enter your SC Code';
+            const fieldInfo = tradingNameField.nextElementSibling;
+            if (fieldInfo && fieldInfo.classList.contains('field-info')) {
+                fieldInfo.innerHTML = 'Enter your SC Code provided by admin';
+            }
+        }
+        
+        console.log('✅ Changed from Phone to SC Code');
+    }, 100);
+    
+    // ============ OVERRIDE AUTHENTICATION TO USE SC CODE ============
+    const originalAuthenticate = window.authenticateAgent;
+    window.authenticateAgent = async function() {
+        const agentName = document.getElementById('agentName').value.trim();
+        const agentScCode = document.getElementById('agentPhone').value.trim(); // Now holds SC CODE
+        const agentPassword = document.getElementById('agentPassword').value.trim();
+        
+        if (!agentName || !agentScCode || !agentPassword) {
+            alert('Please enter your Name, SC Code, and Password.');
+            return;
+        }
+        
+        // Validate SC Code format (starts with SC)
+        if (!agentScCode.toUpperCase().startsWith('SC')) {
+            alert('SC Code should start with "SC" (e.g., SC12345)');
+            return;
+        }
+        
+        const authBtn = document.querySelector('.config-btn');
+        const originalText = authBtn.innerHTML;
+        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
+        authBtn.disabled = true;
+        
+        try {
+            // Try multiple possible owners
+            const possibleOwners = ['BarasaGodwilTech', 'barasagodwiltech', 'BarasaGodwiltech'];
+            let configData = null;
+            
+            for (const owner of possibleOwners) {
+                try {
+                    const testUrl = `https://api.github.com/repos/${owner}/Ezee-money/contents/config.json`;
+                    const testResponse = await fetch(testUrl, {
+                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    
+                    if (testResponse.ok) {
+                        const testData = await testResponse.json();
+                        const testContent = JSON.parse(decodeURIComponent(escape(atob(testData.content))));
+                        
+                        if (testContent && (testContent.github || testContent.security)) {
+                            configData = testContent;
+                            window.githubConfig = window.githubConfig || {};
+                            window.githubConfig.repoOwner = owner;
+                            window.githubConfig.repoName = 'Ezee-money';
+                            window.githubConfig.branchName = 'main';
+                            break;
+                        }
+                    }
+                } catch (e) {}
+            }
+            
+            if (!configData) {
+                throw new Error('No GitHub configuration found.');
+            }
+            
+            // Get GitHub access token
+            const adminConfig = localStorage.getItem('githubConfig');
+            let accessToken = '';
+            
+            if (adminConfig) {
+                const parsed = JSON.parse(adminConfig);
+                accessToken = parsed.accessToken || '';
+            }
+            
+            if (!accessToken) {
+                const useToken = confirm('This device needs GitHub access token.\n\nEnter it now?');
+                if (useToken) {
+                    accessToken = prompt('Enter GitHub access token:');
+                    if (!accessToken) throw new Error('Token required');
+                    if (configData.github) {
+                        localStorage.setItem('githubConfig', JSON.stringify({
+                            repoOwner: configData.github.repoOwner,
+                            repoName: configData.github.repoName,
+                            accessToken: accessToken,
+                            branchName: configData.github.branchName || 'main'
+                        }));
+                    }
+                } else {
+                    throw new Error('Access token required');
+                }
+            }
+            
+            // Set up GitHub config
+            window.githubConfig = {
+                repoOwner: configData.github?.repoOwner || 'BarasaGodwilTech',
+                repoName: configData.github?.repoName || 'Ezee-money',
+                accessToken: accessToken,
+                branchName: configData.github?.branchName || 'main',
+                imagesSubfolder: configData.github?.imagesFolder || 'images'
+            };
+            
+            // Verify password
+            if (!configData.security || !configData.security.agentPasswordHash) {
+                throw new Error('System not configured. Contact admin.');
+            }
+            
+            const inputHash = await window.createSHA256Hash(agentPassword);
+            if (inputHash !== configData.security.agentPasswordHash) {
+                throw new Error('Invalid password.');
+            }
+            
+            // Save authentication with SC CODE instead of phone
+            const now = Date.now();
+            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
+            
+            const authData = {
+                isAuthenticated: true,
+                agentName: agentName,
+                agentScCode: agentScCode, // Changed from agentPhone
+                timestamp: now,
+                expiry: expiryDate,
+                version: '6.0-SCCODE'
+            };
+            
+            localStorage.setItem('agentAuth', JSON.stringify(authData));
+            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
+            
+            window.agentAuth = authData;
+            
+            // Auto-fill the SC CODE field
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField) {
+                tradingNameField.value = agentScCode; // Now stores SC CODE only
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            
+            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            
+            alert(`✅ LOGIN SUCCESSFUL!\n\n` +
+                  `👤 Agent: ${agentName}\n` +
+                  `🔑 SC Code: ${agentScCode}\n` +
+                  `📅 Expires: ${expiryDateFormatted}\n\n` +
+                  `Your SC Code will be recorded with every submission.`);
+            
+            // Report activity with SC CODE
+            try {
+                if (window.reportActivity) {
+                    window.reportActivity('authenticated');
+                }
+            } catch(e) {}
+            
+        } catch (error) {
+            console.error('Authentication error:', error);
+            alert('❌ Authentication failed: ' + error.message);
+        } finally {
+            authBtn.innerHTML = originalText;
+            authBtn.disabled = false;
+        }
+    };
+    
+    // ============ OVERRIDE AUTO-FILL TO USE SC CODE ============
+    const originalAutoFill = window.autoFillAgentInfo;
+    window.autoFillAgentInfo = function() {
+        const savedAuth = localStorage.getItem('agentAuth');
+        if (savedAuth) {
+            try {
+                const auth = JSON.parse(savedAuth);
+                if (auth.isAuthenticated && auth.agentName && auth.agentScCode) {
+                    const tradingNameField = document.getElementById('tradingName');
+                    if (tradingNameField) {
+                        tradingNameField.value = auth.agentScCode; // SC CODE only
+                        tradingNameField.readOnly = true;
+                        tradingNameField.style.backgroundColor = '#f5f5f5';
+                    }
+                }
+            } catch (e) {}
+        }
+    };
+    
+    // ============ OVERRIDE REPORT ACTIVITY TO USE SC CODE ============
+    const originalReport = window.reportActivity;
+    window.reportActivity = function(action) {
+        try {
+            const savedAuth = localStorage.getItem('agentAuth');
+            if (!savedAuth) return;
+            
+            const auth = JSON.parse(savedAuth);
+            if (!auth.isAuthenticated || !auth.agentName || !auth.agentScCode) return;
+            
+            const activity = {
+                name: auth.agentName,
+                scCode: auth.agentScCode, // Changed from phone
+                action: action,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Update active agents with SC CODE
+            let activeAgents = JSON.parse(localStorage.getItem('activeFieldAgents') || '[]');
+            const existing = activeAgents.find(a => a.scCode === auth.agentScCode);
+            
+            if (existing) {
+                existing.lastActive = activity.timestamp;
+                existing.lastAction = action;
+                existing.sessionCount = (existing.sessionCount || 0) + 1;
+                if (action === 'submitted new agent') {
+                    existing.submissions = (existing.submissions || 0) + 1;
+                }
+            } else {
+                activeAgents.push({
+                    name: auth.agentName,
+                    scCode: auth.agentScCode, // Store SC CODE instead of phone
+                    firstSeen: activity.timestamp,
+                    lastActive: activity.timestamp,
+                    lastAction: action,
+                    sessionCount: 1,
+                    submissions: action === 'submitted new agent' ? 1 : 0
+                });
+            }
+            
+            localStorage.setItem('activeFieldAgents', JSON.stringify(activeAgents));
+            localStorage.setItem('lastActivity', JSON.stringify(activity));
+            window.dispatchEvent(new Event('storage'));
+            
+        } catch (e) {
+            console.log('Report error:', e);
+        }
+    };
+    
+    // ============ OVERRIDE RESET AUTH ============
+    const originalReset = window.resetAuth;
+    window.resetAuth = function() {
+        localStorage.removeItem('agentAuth');
+        localStorage.removeItem('agentGitHubConfig');
+        
+        document.getElementById('agentName').value = '';
+        document.getElementById('agentPhone').value = ''; // SC CODE field
+        document.getElementById('agentPassword').value = '';
+        
+        const tradingNameField = document.getElementById('tradingName');
+        if (tradingNameField) {
+            tradingNameField.value = '';
+            tradingNameField.readOnly = false;
+            tradingNameField.style.backgroundColor = '';
+        }
+        
+        alert('✅ Logged out. SC Code cleared.');
+    };
+    
+    // ============ RESTORE SESSION WITH SC CODE ============
+    window.restoreAuthentication = function() {
+        try {
+            const savedAuth = localStorage.getItem('agentAuth');
+            const savedConfig = localStorage.getItem('agentGitHubConfig');
+            
+            if (!savedAuth || !savedConfig) return false;
+            
+            const auth = JSON.parse(savedAuth);
+            
+            if (auth.expiry && Date.now() > auth.expiry) {
+                localStorage.removeItem('agentAuth');
+                localStorage.removeItem('agentGitHubConfig');
+                return false;
+            }
+            
+            window.agentAuth = auth;
+            window.githubConfig = JSON.parse(savedConfig);
+            
+            // Auto-fill with SC CODE
+            const tradingNameField = document.getElementById('tradingName');
+            if (tradingNameField && auth.agentScCode) {
+                tradingNameField.value = auth.agentScCode;
+                tradingNameField.readOnly = true;
+                tradingNameField.style.backgroundColor = '#f5f5f5';
+            }
+            
+            document.getElementById('configPanel').style.display = 'none';
+            return true;
+            
+        } catch (e) {
+            return false;
+        }
+    };
+    
+    // Run restoration
+    setTimeout(window.restoreAuthentication, 50);
+    
+    console.log('✅ PHONE → SC CODE conversion complete!');
+})();
+</script>
 </body>
 </html>
