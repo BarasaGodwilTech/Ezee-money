@@ -21,7 +21,29 @@
       "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_idFront_1770287281086.jpg",
       "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_idBack_1770287283846.jpg",
       "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770287281054-671_agentPhoto_1770287286001.jpg"
+    },
+    {
+      "id": "AGENT-1770988700583-906",
+      "fullName": "Wafula Emma",
+      "personalNumber": "0774346956",
+      "email": "wafulaemma685@gmail.com",
+      "nationalId": "CM9806710EUD3G",
+      "dob": "1998-12-26",
+      "gender": "male",
+      "businessAddress": "Mbale",
+      "residentialAddress": "Nauyo",
+      "nextOfKinName": "Martha Babirye",
+      "nextOfKinRelationship": "sibling",
+      "nextOfKinPhone": "0742686252",
+      "tradingName": "SC774346956",
+      "submissionDate": "2026-02-13T13:18:20.585Z",
+      "status": "pending",
+      "emailVerified": false,
+      "adminVerified": false,
+      "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770988700583-906_idFront_1770988700590.jpg",
+      "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770988700583-906_idBack_1770988712247.jpg",
+      "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/AGENT-1770988700583-906_agentPhoto_1770988714904.jpg"
     }
   ],
-  "lastUpdated": "2026-02-12T14:48:07.045Z"
+  "lastUpdated": "2026-02-13T13:18:40.581Z"
 }
