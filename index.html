@@ -3,333 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Agent Registration</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Ezee Money Agent Registration</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
         body {
-            background-color: #f5f7fa;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            color: var(--dark);
             line-height: 1.6;
-            padding-bottom: 20px;
         }
-        
+
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 2rem;
         }
-        
-        header {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 20px;
-            border-radius: 0 0 15px 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
+
+        .header {
             text-align: center;
+            color: white;
+            margin-bottom: 2rem;
         }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 10px;
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
         }
-        
-        .logo i {
-            font-size: 28px;
-        }
-        
-        .logo h1 {
-            font-size: 22px;
-            font-weight: 600;
-        }
-        
-        .header-subtitle {
-            font-size: 14px;
+
+        .header p {
+            font-size: 1.1rem;
             opacity: 0.9;
-            margin-top: 5px;
         }
-        
-        .config-panel {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
+
+        .auth-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
-        
-        .config-panel h3 {
-            color: #856404;
-            margin-bottom: 10px;
-        }
-        
-        .config-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .config-input input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .config-btn {
-            background-color: #856404;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .form-container {
-            background-color: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        
-        .form-title {
-            color: #1e3c72;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #444;
-        }
-        
-        label.required::after {
-            content: " *";
-            color: #e74c3c;
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border 0.3s;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            border-color: #2a5298;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
-        }
-        
-        .photo-section {
-            margin-top: 30px;
-        }
-        
-        .photo-instructions {
-            background-color: #f8f9fa;
-            border-left: 4px solid #2a5298;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .photo-instructions ul {
-            padding-left: 20px;
-            margin-top: 8px;
-        }
-        
-        .photo-instructions li {
-            margin-bottom: 5px;
-        }
-        
-        .photo-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        @media (max-width: 768px) {
-            .photo-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .photo-upload-area {
-            border: 2px dashed #2a5298;
-            border-radius: 10px;
-            padding: 20px;
+
+        .auth-panel h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
             text-align: center;
-            background-color: #f8fafc;
-            cursor: pointer;
-            transition: all 0.3s;
-            height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
-        
-        .photo-upload-area:hover {
-            background-color: #eef5ff;
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
-        
-        .photo-icon {
-            font-size: 40px;
-            color: #2a5298;
-            margin-bottom: 10px;
+
+        .form-group {
+            margin-bottom: 1rem;
         }
-        
-        .photo-preview {
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-group input, .form-group select {
             width: 100%;
-            height: 200px;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
         }
-        
-        .photo-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
         }
-        
-        .remove-photo {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(231, 76, 60, 0.9);
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
-        
-        .photo-label {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #1e3c72;
+
+        .form-section h3 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
         }
-        
-        .buttons {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-        }
-        
+
         .btn {
-            padding: 16px 40px;
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.5rem;
         }
-        
+
         .btn-primary {
-            background-color: #2a5298;
+            background: var(--primary);
             color: white;
         }
-        
+
         .btn-primary:hover {
-            background-color: #1e3c72;
+            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(30, 60, 114, 0.2);
         }
-        
-        .btn-primary:disabled {
-            background-color: #95a5a6;
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
-        
-        .btn-success {
-            background-color: #4cd964;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background-color: #3bc753;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 30px;
-            border-radius: 10px;
-            margin: 20px 0;
+
+        .photo-upload {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
             text-align: center;
-            border: 1px solid #c3e6cb;
+            transition: border-color 0.3s;
+            cursor: pointer;
+            margin-bottom: 1rem;
         }
-        
-        .success-message i {
-            font-size: 50px;
-            margin-bottom: 20px;
-            color: #28a745;
+
+        .photo-upload:hover {
+            border-color: var(--primary);
         }
-        
-        .field-info {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
-            font-style: italic;
+
+        .photo-upload.has-image {
+            border-color: var(--success);
+            background: #f0fdf4;
         }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .form-container {
-                padding: 20px;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
+
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .alert-warning {
+            background: #fed7aa;
+            color: #92400e;
+            border: 1px solid #fdba74;
+        }
+
         .loading {
             display: inline-block;
             width: 20px;
@@ -339,3129 +221,798 @@
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        .config-toggle {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #2a5298;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 100;
-        }
-        
+
         .progress-bar {
             width: 100%;
-            height: 20px;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            margin-top: 10px;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
             overflow: hidden;
+            margin: 1rem 0;
         }
-        
+
         .progress-fill {
             height: 100%;
-            background-color: #4cd964;
-            width: 0%;
+            background: var(--primary);
             transition: width 0.3s;
+            border-radius: 4px;
         }
-        
-        .upload-status {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online {
+            background: var(--success);
+        }
+
+        .status-offline {
+            background: var(--danger);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-2 {
+            margin-top: 2rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-panel, .form-section {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Config Toggle Button -->
-    <button class="config-toggle" id="configToggle">
-        <i class="fas fa-cog"></i>
-    </button>
-    
-    <!-- Configuration Panel -->
-    
-    <!-- Replace the entire config-panel div with this: -->
-<div class="config-panel" id="configPanel">
-    <h3><i class="fas fa-user-lock"></i> Field Agent Authentication</h3>
-    <p>Enter your details to access the submission system:</p>
-    <div class="config-input">
-        <input type="text" id="agentName" placeholder="Your Full Name">
-        <input type="text" id="agentPhone" placeholder="Your Phone Number">
-        <input type="password" id="agentPassword" placeholder="Access Password">
-    </div>
-    <div class="config-input">
-        <button class="config-btn" onclick="authenticateAgent()">Authenticate</button>
-        <button class="config-btn" onclick="resetAuth()">Reset</button>
-    </div>
-    
-    <p style="font-size: 12px; color: #666; margin-top: 10px;">
-        <strong>Note:</strong> Get your access password from the admin. Once authenticated, your name and phone will automatically be captured.
-    </p>
-</div>
-    
-    <header>
-        <div class="logo">
-            <i class="fas fa-user-tie"></i>
-            <h1>New Agent Registration</h1>
-        </div>
-        <div class="header-subtitle">Fill in this form for agents not yet on the platform</div>
-    </header>
-    
     <div class="container">
-        <div class="form-container">
-            <h2 class="form-title"><i class="fas fa-user-circle"></i> Agent Information</h2>
-            
-            <div class="form-group">
-                <label for="fullName" class="required">Full Name</label>
-                <input type="text" id="fullName" placeholder="Enter agent's full name">
+        <header class="header">
+            <h1>🏦 Ezee Money</h1>
+            <p>Field Agent Registration System</p>
+            <div>
+                <span class="status-indicator" id="connectionStatus"></span>
+                <span id="statusText">Checking connection...</span>
             </div>
-            
-            <div class="form-group">
-                <label for="personalNumber" class="required">Business Owner Personal Number</label>
-                <input type="text" id="personalNumber" placeholder="Enter personal number">
-            </div>
-            
-            <div class="form-group">
-                <label for="email" class="required">Email Address</label>
-                <input type="email" id="email" placeholder="Enter valid email address">
-                <div class="field-info">A verification email will be sent to this address</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="nationalId" class="required">National ID Number</label>
-                <input type="text" id="nationalId" placeholder="Enter National ID Number">
-                <div class="field-info">Please do not add card number instead of NIN on UG IDs</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="dob" class="required">Date of Birth</label>
-                <input type="date" id="dob">
-            </div>
-            
-            <div class="form-group">
-                <label for="gender" class="required">Gender</label>
-                <select id="gender">
-                    <option value="">Select Gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="businessAddress" class="required">Business Address Landmark</label>
-                <input type="text" id="businessAddress" placeholder="Enter business address landmark">
-            </div>
-            
-            <div class="form-group">
-                <label for="residentialAddress" class="required">Residential Address</label>
-                <textarea id="residentialAddress" rows="3" placeholder="Enter residential address"></textarea>
-            </div>
-            
-            <h2 class="form-title"><i class="fas fa-users"></i> Next of Kin Information</h2>
-            
-            <div class="form-group">
-                <label for="nextOfKinName" class="required">Next of Kin Full Name</label>
-                <input type="text" id="nextOfKinName" placeholder="Enter next of kin full name">
-            </div>
-            
-            <div class="form-group">
-                <label for="nextOfKinRelationship" class="required">Next of Kin Relationship to Agent</label>
-                <select id="nextOfKinRelationship">
-                    <option value="">Select Relationship</option>
-                    <option value="spouse">Spouse</option>
-                    <option value="parent">Parent</option>
-                    <option value="child">Child</option>
-                    <option value="sibling">Sibling</option>
-                    <option value="other_relative">Other Relative</option>
-                    <option value="friend">Friend</option>
-                    <option value="business_partner">Business Partner</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="nextOfKinPhone" class="required">Next of Kin Phone Number</label>
-                <input type="tel" id="nextOfKinPhone" placeholder="Enter phone number">
-            </div>
-            
-            <div class="form-group">
-                <label for="tradingName">Field Onboarding agent name and phone number</label>
-                <input type="text" id="tradingName" placeholder="Enter name and phone number">
-                <div class="field-info">Fill in your name and phone number</div>
-            </div>
-            
-            <div class="photo-section">
-                <h2 class="form-title"><i class="fas fa-camera"></i> Photo Documentation</h2>
-                
-                <div class="photo-instructions">
-                    <p><strong>Take 2 photos of the agent's ID:</strong></p>
-                    <ul>
-                        <li>Front and back for National ID</li>
-                        <li>Passport bio data page and front cover for passport</li>
-                    </ul>
-                    <p style="margin-top: 10px;"><strong>Also take a passport photo of the agent:</strong></p>
-                    <ul>
-                        <li>Clear face photo against a plain background</li>
-                        <li>Shoulder-up photo similar to passport photo</li>
-                    </ul>
+        </header>
+
+        <div id="alertContainer"></div>
+
+        <!-- Authentication Panel -->
+        <div id="authPanel" class="auth-panel">
+            <h2>🔐 Agent Authentication</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="agentPassword">Agent Password</label>
+                    <input type="password" id="agentPassword" placeholder="Enter your agent password" required>
                 </div>
-                
-                <div class="photo-grid">
-                    <div>
-                        <div class="photo-label">ID Front / Passport Bio Page *</div>
-                        <div class="photo-upload-area" id="idFrontUpload">
-                            <div class="photo-icon">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <p><strong>Tap to upload</strong></p>
-                            <p style="color: #666; font-size: 14px;">ID Front or Passport Bio Page</p>
-                            <input type="file" id="idFrontInput" accept="image/*" capture="environment" style="display: none;">
-                        </div>
-                        <div class="photo-preview hidden" id="idFrontPreview">
-                            <img id="idFrontImage" src="" alt="ID Front">
-                            <div class="remove-photo" data-target="idFront">
-                                <i class="fas fa-times"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="photo-label">ID Back / Passport Cover</div>
-                        <div class="photo-upload-area" id="idBackUpload">
-                            <div class="photo-icon">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <p><strong>Tap to upload</strong></p>
-                            <p style="color: #666; font-size: 14px;">ID Back or Passport Cover</p>
-                            <input type="file" id="idBackInput" accept="image/*" capture="environment" style="display: none;">
-                        </div>
-                        <div class="photo-preview hidden" id="idBackPreview">
-                            <img id="idBackImage" src="" alt="ID Back">
-                            <div class="remove-photo" data-target="idBack">
-                                <i class="fas fa-times"></i>
-                            </div>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="githubToken">GitHub Token (if required)</label>
+                    <input type="password" id="githubToken" placeholder="Enter GitHub personal access token">
                 </div>
-                
-                <div style="margin-top: 30px;">
-                    <div class="photo-label">Agent Passport Photo *</div>
-                    <div class="photo-upload-area" id="agentPhotoUpload">
-                        <div class="photo-icon">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <p><strong>Tap to upload agent photo</strong></p>
-                        <p style="color: #666; font-size: 14px;">Clear face photo for identification</p>
-                        <input type="file" id="agentPhotoInput" accept="image/*" capture="environment" style="display: none;">
-                    </div>
-                    <div class="photo-preview hidden" id="agentPhotoPreview">
-                        <img id="agentPhotoImage" src="" alt="Agent Photo">
-                        <div class="remove-photo" data-target="agentPhoto">
-                            <i class="fas fa-times"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="buttons">
-                <button type="button" id="submitBtn" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Submit Agent Registration
+                <button type="submit" class="btn btn-primary">
+                    <span id="authButtonText">Authenticate</span>
+                    <span class="loading hidden" id="authLoading"></span>
                 </button>
-            </div>
-            
-            <div id="uploadProgress" class="hidden">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="upload-status" id="uploadStatus">Preparing upload...</div>
-            </div>
+            </form>
         </div>
-        
-        <!-- Success Message -->
-        <div class="success-message hidden" id="successMessage">
-            <i class="fas fa-check-circle"></i>
-            <h3>Agent Registration Submitted Successfully!</h3>
-            <p>The agent's information has been saved and images uploaded.</p>
-            <p>An email will be sent to the agent for verification. if no email is recieved reach out to your area agent for assistance.</p>
-            <p style="margin-top: 20px; font-weight: 600;">Submission ID: <span id="submissionId"></span></p>
-            <p style="margin-top: 10px; font-size: 14px;">
-    Images and Data uploaded to: Ezee Money Database
-    <span id="imagesLocation" style="color: transparent"></span>
-            </p>
-            <div style="margin-top: 20px;">
-                <button type="button" id="newAgentBtn" class="btn btn-primary" style="margin-right: 10px;">
-                    <i class="fas fa-user-plus"></i> Register Another Agent
-                </button>
-                <a href="#" class="btn btn-success">
-                    <i class="fas fa-chart-bar"></i> Go to Admin Dashboard
-                </a>
-            </div>
+
+        <!-- Registration Form -->
+        <div id="registrationForm" class="hidden">
+            <form id="agentForm">
+                <!-- Personal Information -->
+                <section class="form-section">
+                    <h3>👤 Personal Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fullName">Full Name *</label>
+                            <input type="text" id="fullName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="scCode">Field Onboarding Agent SC Code *</label>
+                            <input type="text" id="scCode" placeholder="SCXXXXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nationalId">National ID Number *</label>
+                            <input type="text" id="nationalId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dob">Date of Birth *</label>
+                            <input type="date" id="dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender *</label>
+                            <select id="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Address Information -->
+                <section class="form-section">
+                    <h3>📍 Address Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="businessAddress">Business Address *</label>
+                            <input type="text" id="businessAddress" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="residentialAddress">Residential Address *</label>
+                            <input type="text" id="residentialAddress" required>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Next of Kin Information -->
+                <section class="form-section">
+                    <h3>👨‍👩‍👧‍👦 Next of Kin Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nextOfKinName">Next of Kin Name *</label>
+                            <input type="text" id="nextOfKinName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nextOfKinRelationship">Relationship *</label>
+                            <input type="text" id="nextOfKinRelationship" placeholder="e.g., Parent, Sibling, Spouse" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nextOfKinPhone">Next of Kin Phone *</label>
+                            <input type="tel" id="nextOfKinPhone" required>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Photo Documentation -->
+                <section class="form-section">
+                    <h3>📸 Photo Documentation</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>ID Front Photo *</label>
+                            <div class="photo-upload" onclick="document.getElementById('idFrontInput').click()">
+                                <input type="file" id="idFrontInput" accept="image/*" style="display: none;" required>
+                                <div id="idFrontPreview">
+                                    <p>📷 Click to upload ID Front</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>ID Back Photo *</label>
+                            <div class="photo-upload" onclick="document.getElementById('idBackInput').click()">
+                                <input type="file" id="idBackInput" accept="image/*" style="display: none;" required>
+                                <div id="idBackPreview">
+                                    <p>📷 Click to upload ID Back</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Agent Photo *</label>
+                            <div class="photo-upload" onclick="document.getElementById('agentPhotoInput').click()">
+                                <input type="file" id="agentPhotoInput" accept="image/*" style="display: none;" required>
+                                <div id="agentPhotoPreview">
+                                    <p>📷 Click to upload Agent Photo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Submit Section -->
+                <section class="form-section text-center">
+                    <div class="progress-bar hidden" id="uploadProgress">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="submitBtn">
+                        <span>Submit Registration</span>
+                        <span class="loading hidden" id="submitLoading"></span>
+                    </button>
+                    <p class="mt-2">
+                        <small>By submitting, you confirm all information is accurate and true</small>
+                    </p>
+                </section>
+            </form>
         </div>
     </div>
 
     <script>
-        // Authentication configuration
-let agentAuth = {
-    isAuthenticated: false,
-    agentName: '',
-    agentPhone: '',
-    agentPassword: ''
-};
+        // Global variables
+        let config = {};
+        let githubToken = localStorage.getItem('githubToken') || '';
+        let isAuthenticated = false;
+        let loginTime = null;
 
-// GitHub Configuration (will be fetched after authentication)
-let githubConfig = {
-    repoOwner: 'BarasaGodwilTech',
-    repoName: 'Ezee-money',
-    accessToken: '',
-    branchName: 'main',
-    imagesSubfolder: 'images'
-};
-
-// Form data and photo storage
-let formData = {
-    idFront: null,
-    idBack: null,
-    agentPhoto: null
-};
-
-// DOM Elements
-const configToggle = document.getElementById('configToggle');
-const configPanel = document.getElementById('configPanel');
-const submitBtn = document.getElementById('submitBtn');
-const successMessage = document.getElementById('successMessage');
-const submissionIdEl = document.getElementById('submissionId');
-const imagesLocationEl = document.getElementById('imagesLocation');
-const newAgentBtn = document.getElementById('newAgentBtn');
-const uploadProgress = document.getElementById('uploadProgress');
-const progressFill = document.getElementById('progressFill');
-const uploadStatus = document.getElementById('uploadStatus');
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadAgentAuth();
-    setupPhotoUploads();
-    setupEventListeners();
-    initializeForm();
-    
-    // Check if agent is already authenticated
-    if (agentAuth.isAuthenticated) {
-        autoFillAgentInfo();
-    }
-});
-
-function setupEventListeners() {
-    // Config toggle
-    configToggle.addEventListener('click', () => {
-        configPanel.style.display = configPanel.style.display === 'block' ? 'none' : 'block';
-    });
-    
-    // Form submission
-    submitBtn.addEventListener('click', handleSubmit);
-    
-    // New agent button
-    newAgentBtn.addEventListener('click', () => {
-        successMessage.classList.add('hidden');
-        uploadProgress.classList.add('hidden');
-        document.querySelector('.form-container').classList.remove('hidden');
-        resetForm();
-    });
-}
-
-function loadAgentAuth() {
-    const savedAuth = localStorage.getItem('agentAuth');
-    if (savedAuth) {
-        agentAuth = JSON.parse(savedAuth);
-        
-        // Update form fields
-        document.getElementById('agentName').value = agentAuth.agentName || '';
-        document.getElementById('agentPhone').value = agentAuth.agentPhone || '';
-        document.getElementById('agentPassword').value = '';
-    }
-}
-
-async function authenticateAgent() {
-    const agentName = document.getElementById('agentName').value.trim();
-    const agentPhone = document.getElementById('agentPhone').value.trim();
-    const agentPassword = document.getElementById('agentPassword').value.trim();
-    
-    if (!agentName || !agentPhone || !agentPassword) {
-        alert('Please enter all authentication details.');
-        return;
-    }
-    
-    // Show loading
-    const authBtn = document.querySelector('.config-btn');
-    const originalText = authBtn.innerHTML;
-    authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-    authBtn.disabled = true;
-    
-    try {
-        // Fetch configuration from admin (using the admin's stored GitHub config)
-        await fetchAgentConfig(agentPassword);
-        
-        // Save authentication
-        agentAuth.isAuthenticated = true;
-        agentAuth.agentName = agentName;
-        agentAuth.agentPhone = agentPhone;
-        agentAuth.agentPassword = agentPassword;
-        
-        localStorage.setItem('agentAuth', JSON.stringify(agentAuth));
-        
-        // Auto-fill the onboarding field
-        autoFillAgentInfo();
-        
-        // Hide config panel
-        configPanel.style.display = 'none';
-        
-        alert('Authentication successful! Your details have been saved.');
-        
-    } catch (error) {
-        alert('Authentication failed: ' + error.message);
-        console.error('Authentication error:', error);
-    } finally {
-        authBtn.innerHTML = originalText;
-        authBtn.disabled = false;
-    }
-}
-// Helper function to create SHA-256 hash
-async function createSHA256Hash(text) {
-    try {
-        // Encode the text
-        const encoder = new TextEncoder();
-        const data = encoder.encode(text);
-        
-        // Hash the data
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        
-        // Convert buffer to hex string
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        return hashHex;
-    } catch (error) {
-        // Fallback for browsers without crypto.subtle
-        console.warn('Crypto API not available, using simple hash');
-        return btoa(text).split('').reverse().join('');
-    }
-}
-async function fetchAgentConfig(password) {
-    try {
-        // First, try to get admin's GitHub config from localStorage
-        const adminConfig = localStorage.getItem('githubConfig');
-        if (adminConfig) {
-            const config = JSON.parse(adminConfig);
-            githubConfig.repoOwner = config.repoOwner || githubConfig.repoOwner;
-            githubConfig.repoName = config.repoName || githubConfig.repoName;
-            githubConfig.accessToken = config.accessToken || '';
-            githubConfig.branchName = config.branchName || githubConfig.branchName;
-        }
-        
-        // Now fetch config from GitHub
-        const configData = await fetchConfigFromGitHub();
-        
-        // Check if password hash exists
-        if (!configData.security || !configData.security.agentPasswordHash) {
-            throw new Error('System not configured. Please contact administrator.');
-        }
-        
-        // Verify password
-        const inputHash = await createSHA256Hash(password);
-        if (inputHash !== configData.security.agentPasswordHash) {
-            throw new Error('Invalid password. Please contact administrator.');
-        }
-        
-        // IMPORTANT: Get GitHub access token from admin's localStorage
-        // This allows field agents to upload images
-        if (adminConfig) {
-            const config = JSON.parse(adminConfig);
-            githubConfig.accessToken = config.accessToken || '';
-        }
-        
-        // Also get GitHub details from config.json if available
-        if (configData.github) {
-            githubConfig.repoOwner = configData.github.repoOwner || githubConfig.repoOwner;
-            githubConfig.repoName = configData.github.repoName || githubConfig.repoName;
-            githubConfig.branchName = configData.github.branchName || githubConfig.branchName;
-            githubConfig.imagesSubfolder = configData.github.imagesFolder || 'images';
-        }
-        
-        // Save to localStorage for this session
-        localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
-        
-        return true;
-        
-    } catch (error) {
-        throw error;
-    }
-}
-
-// Simple hash function (backward compatibility)
-async function simpleHash(str) {
-    return await createSHA256Hash(str);
-}
-
-async function fetchConfigFromGitHub() {
-    const filepath = `config.json`;
-    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
-    
-    const headers = {
-        'Accept': 'application/vnd.github.v3+json'
-    };
-    
-    const response = await fetch(apiUrl, { headers });
-    
-    if (!response.ok) {
-        if (response.status === 404) {
-            throw new Error('Configuration not found. Please contact administrator.');
-        }
-        throw new Error(`Failed to fetch config: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    const jsonContent = decodeURIComponent(escape(atob(data.content)));
-    return JSON.parse(jsonContent);
-}
-
-async function fetchAdminGitHubConfig() {
-    // Try to get GitHub config from various possible sources
-    let config = null;
-    
-    // First, check if we have the admin's config in localStorage
-    const adminConfig = localStorage.getItem('githubConfig');
-    if (adminConfig) {
-        config = JSON.parse(adminConfig);
-    } else {
-        // Try to get from config.json
-        try {
-            const configData = await fetchConfigFromGitHub();
-            if (configData.github) {
-                config = {
-                    repoOwner: configData.github.repoOwner,
-                    repoName: configData.github.repoName,
-                    branchName: configData.github.branchName,
-                    accessToken: '' // Access token is sensitive, not stored in config.json
-                };
-            }
-        } catch (error) {
-            // Use default config
-            config = {
-                repoOwner: 'BarasaGodwilTech',
-                repoName: 'Ezee-money',
-                accessToken: '',
-                branchName: 'main'
-            };
-        }
-    }
-    
-    // Update our githubConfig
-    githubConfig = {
-        ...githubConfig,
-        ...config
-    };
-    
-    // Save for this agent session
-    localStorage.setItem('agentGitHubConfig', JSON.stringify(githubConfig));
-}
-
-function autoFillAgentInfo() {
-    if (agentAuth.isAuthenticated && agentAuth.agentName && agentAuth.agentPhone) {
-        const tradingNameField = document.getElementById('tradingName');
-        tradingNameField.value = `${agentAuth.agentName} ${agentAuth.agentPhone}`;
-        
-        // Make it read-only so agents don't change it
-        tradingNameField.readOnly = true;
-        tradingNameField.style.backgroundColor = '#f5f5f5';
-    }
-}
-
-function resetAuth() {
-    agentAuth.isAuthenticated = false;
-    agentAuth.agentName = '';
-    agentAuth.agentPhone = '';
-    agentAuth.agentPassword = '';
-    
-    localStorage.removeItem('agentAuth');
-    
-    document.getElementById('agentName').value = '';
-    document.getElementById('agentPhone').value = '';
-    document.getElementById('agentPassword').value = '';
-    
-    // Reset trading name field
-    const tradingNameField = document.getElementById('tradingName');
-    tradingNameField.value = '';
-    tradingNameField.readOnly = false;
-    tradingNameField.style.backgroundColor = '';
-    
-    alert('Authentication reset. Please authenticate again to submit.');
-}
-
-// Simple hash function for demo purposes
-async function simpleHash(str) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function initializeForm() {
-    // Initialize date field (25 years ago as default)
-    const today = new Date();
-    const defaultDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
-    document.getElementById('dob').value = defaultDate.toISOString().split('T')[0];
-    
-    // Set min and max dates for DOB
-    const minDate = new Date(today.getFullYear() - 70, today.getMonth(), today.getDate());
-    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-    document.getElementById('dob').min = minDate.toISOString().split('T')[0];
-    document.getElementById('dob').max = maxDate.toISOString().split('T')[0];
-}
-
-function setupPhotoUploads() {
-    // Photo upload functionality
-    function setupPhotoUpload(uploadAreaId, inputId, previewId, imageId, dataKey) {
-        const uploadArea = document.getElementById(uploadAreaId);
-        const fileInput = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        const image = document.getElementById(imageId);
-        
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
         });
-        
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file || !file.type.match('image.*')) {
-                alert('Please select a valid image file.');
-                return;
-            }
-            
-            // Compress image if too large
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                compressImage(file, 800, 0.7).then(compressedFile => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        image.src = e.target.result;
-                        formData[dataKey] = compressedFile; // Store compressed file
-                        uploadArea.classList.add('hidden');
-                        preview.classList.remove('hidden');
-                    };
-                    reader.readAsDataURL(compressedFile);
-                }).catch(error => {
-                    alert('Error compressing image: ' + error.message);
-                });
-            } else {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    image.src = e.target.result;
-                    formData[dataKey] = file; // Store original file
-                    uploadArea.classList.add('hidden');
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Remove photo
-        preview.querySelector('.remove-photo').addEventListener('click', () => {
-            formData[dataKey] = null;
-            preview.classList.add('hidden');
-            uploadArea.classList.remove('hidden');
-            fileInput.value = '';
-        });
-    }
-    
-    // Initialize photo uploads
-    setupPhotoUpload('idFrontUpload', 'idFrontInput', 'idFrontPreview', 'idFrontImage', 'idFront');
-    setupPhotoUpload('idBackUpload', 'idBackInput', 'idBackPreview', 'idBackImage', 'idBack');
-    setupPhotoUpload('agentPhotoUpload', 'agentPhotoInput', 'agentPhotoPreview', 'agentPhotoImage', 'agentPhoto');
-}
 
-// Image compression function
-function compressImage(file, maxWidth, quality) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                // Calculate new dimensions
-                if (width > maxWidth) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                canvas.toBlob((blob) => {
-                    const compressedFile = new File([blob], file.name, {
-                        type: 'image/jpeg',
-                        lastModified: Date.now()
-                    });
-                    resolve(compressedFile);
-                }, 'image/jpeg', quality);
-            };
-            img.onerror = reject;
-        };
-        reader.onerror = reject;
-    });
-}
-
-async function handleSubmit() {
-    // Check if agent is authenticated
-    if (!agentAuth.isAuthenticated) {
-        alert('Please authenticate first. Click the gear icon ⚙️ in the top right.');
-        configPanel.style.display = 'block';
-        return;
-    }
-    
-    // Validate form
-    if (!validateForm()) {
-        return;
-    }
-    
-    // Check GitHub configuration
-    // Check GitHub configuration
-    if (!githubConfig.repoOwner || !githubConfig.repoName) {
-        alert('System configuration missing. Please authenticate again.');
-        configPanel.style.display = 'block';
-        return;
-    }
-    
-    // Show progress bar
-    uploadProgress.classList.remove('hidden');
-    progressFill.style.width = '10%';
-    uploadStatus.textContent = 'Preparing data...';
-    
-    // Generate submission ID
-    const submissionId = generateSubmissionId();
-    
-    // Collect form data (without images)
-    const agentData = {
-        id: submissionId,
-        fullName: document.getElementById('fullName').value.trim(),
-        personalNumber: document.getElementById('personalNumber').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        nationalId: document.getElementById('nationalId').value.trim(),
-        dob: document.getElementById('dob').value,
-        gender: document.getElementById('gender').value,
-        businessAddress: document.getElementById('businessAddress').value.trim(),
-        residentialAddress: document.getElementById('residentialAddress').value.trim(),
-        nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
-        nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value,
-        nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim(),
-        tradingName: document.getElementById('tradingName').value.trim(),
-        submissionDate: new Date().toISOString(),
-        status: 'pending',
-        emailVerified: false,
-        adminVerified: false,
-        // Image URLs will be added after upload
-        idFrontUrl: '',
-        idBackUrl: '',
-        agentPhotoUrl: ''
-    };
-    
-    // Disable submit button
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="loading"></span> Uploading...';
-    
-    try {
-        // Step 1: Upload images to GitHub
-        uploadStatus.textContent = 'Uploading images to GitHub...';
-        progressFill.style.width = '30%';
-        
-        const imageUrls = await uploadImagesToGitHub(submissionId);
-        
-        // Add image URLs to agent data
-        agentData.idFrontUrl = imageUrls.idFrontUrl;
-        agentData.idBackUrl = imageUrls.idBackUrl;
-        agentData.agentPhotoUrl = imageUrls.agentPhotoUrl;
-        
-        // Step 2: Save agent data to data.json
-        uploadStatus.textContent = 'Saving agent data...';
-        progressFill.style.width = '70%';
-        
-        await saveAgentDataToGitHub(agentData);
-        
-        // Step 3: Complete
-        progressFill.style.width = '100%';
-        uploadStatus.textContent = 'Submission complete!';
-        
-        // Show success message
-        setTimeout(() => {
-            document.querySelector('.form-container').classList.add('hidden');
-            uploadProgress.classList.add('hidden');
-            submissionIdEl.textContent = submissionId;
-            imagesLocationEl.textContent = `${githubConfig.repoOwner}/${githubConfig.repoName}/images/`;
-            successMessage.classList.remove('hidden');
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Submission error:', error);
-        alert('Error submitting data: ' + error.message);
-        
-        // Reset UI
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
-        uploadProgress.classList.add('hidden');
-    }
-}
-
-// Upload images to GitHub and return URLs
-async function uploadImagesToGitHub(submissionId) {
-    const imageUrls = {
-        idFrontUrl: '',
-        idBackUrl: '',
-        agentPhotoUrl: ''
-    };
-    
-    // Upload each image that exists
-    const uploads = [];
-    let uploadCount = 0;
-    const totalImages = Object.keys(formData).filter(key => formData[key] !== null).length;
-    
-    for (const [key, file] of Object.entries(formData)) {
-        if (file) {
-            uploadCount++;
-            const progress = 30 + (uploadCount / totalImages * 40); // 30-70%
-            progressFill.style.width = `${progress}%`;
-            uploadStatus.textContent = `Uploading ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}...`;
-            
+        async function initializeApp() {
             try {
-                const url = await uploadImageToGitHub(file, submissionId, key);
-                imageUrls[`${key}Url`] = url;
+                await checkConnection();
+                await restoreAuthentication();
+                setupEventListeners();
             } catch (error) {
-                throw new Error(`Failed to upload ${key}: ${error.message}`);
+                showAlert('Error initializing application: ' + error.message, 'error');
             }
         }
-    }
-    
-    return imageUrls;
-}
 
-// Upload a single image to GitHub
-async function uploadImageToGitHub(file, submissionId, imageType) {
-    if (!file) return '';
-    
-    // Generate filename
-    const timestamp = Date.now();
-    const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
-    const filepath = `${githubConfig.imagesSubfolder}/${filename}`;
-    
-    // Convert file to base64
-    const base64Content = await fileToBase64(file);
-    
-    // Prepare API URL
-    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
-    
-    // Prepare headers
-    const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json',
-        'Authorization': `token ${githubConfig.accessToken}`
-    };
-    
-    // Prepare request body
-    const body = {
-        message: `Upload ${imageType} image for agent ${submissionId}`,
-        content: base64Content.split(',')[1], // Remove data:image/jpeg;base64, prefix
-        branch: githubConfig.branchName
-    };
-    
-    // Send request to GitHub API
-    const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: headers,
-        body: JSON.stringify(body)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-    }
-    
-    // Return the raw content URL for the image
-    return `https://raw.githubusercontent.com/${githubConfig.repoOwner}/${githubConfig.repoName}/${githubConfig.branchName}/images/${filename}`;
-}
-
-// Save agent data to GitHub data.json
-async function saveAgentDataToGitHub(agentData) {
-    // First, get the current data.json content
-    let currentData;
-    try {
-        currentData = await fetchGitHubData();
-    } catch (error) {
-        // If file doesn't exist, create new data
-        currentData = {
-            agents: [],
-            lastUpdated: new Date().toISOString()
-        };
-    }
-    
-    // Add new agent
-    currentData.agents.push(agentData);
-    currentData.lastUpdated = new Date().toISOString();
-    
-    // Convert to JSON
-    const jsonContent = JSON.stringify(currentData, null, 2);
-    
-    // Create base64 encoded content
-    const contentBase64 = btoa(unescape(encodeURIComponent(jsonContent)));
-    
-    // Prepare API URL - data.json is in the same /data folder
-    const filepath = `data.json`;
-    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}`;
-    
-    // Prepare headers
-    const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json',
-        'Authorization': `token ${githubConfig.accessToken}`
-    };
-    
-    // First, try to get the file to get its SHA (needed for update)
-    let sha = null;
-    try {
-        const fileInfo = await fetch(apiUrl, { headers });
-        if (fileInfo.ok) {
-            const fileData = await fileInfo.json();
-            sha = fileData.sha;
-        }
-    } catch (error) {
-        // File doesn't exist yet
-    }
-    
-    // Prepare request body
-    const body = {
-        message: `Add new agent: ${agentData.fullName}`,
-        content: contentBase64,
-        branch: githubConfig.branchName
-    };
-    
-    // Add SHA if we're updating existing file
-    if (sha) {
-        body.sha = sha;
-    }
-    
-    // Send request to GitHub API
-    const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: headers,
-        body: JSON.stringify(body)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-    }
-    
-    return await response.json();
-}
-
-// Fetch data from GitHub
-async function fetchGitHubData() {
-    const filepath = `data.json`;
-    const apiUrl = `https://api.github.com/repos/${githubConfig.repoOwner}/${githubConfig.repoName}/contents/${filepath}?ref=${githubConfig.branchName}`;
-    
-    const headers = {
-        'Accept': 'application/vnd.github.v3+json'
-    };
-    
-    // Add authorization if available (not required for public repos, but helps with rate limits)
-    if (githubConfig.accessToken) {
-        headers['Authorization'] = `token ${githubConfig.accessToken}`;
-    }
-    
-    const response = await fetch(apiUrl, { headers });
-    
-    if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Decode base64 content
-    const jsonContent = decodeURIComponent(escape(atob(data.content)));
-    
-    return JSON.parse(jsonContent);
-}
-
-// Helper function to convert file to base64
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-
-// Form validation
-function validateForm() {
-    const requiredFields = [
-        {id: 'fullName', name: 'Full Name'},
-        {id: 'personalNumber', name: 'Personal Number'},
-        {id: 'email', name: 'Email'},
-        {id: 'nationalId', name: 'National ID'},
-        {id: 'gender', name: 'Gender'},
-        {id: 'businessAddress', name: 'Business Address'},
-        {id: 'residentialAddress', name: 'Residential Address'},
-        {id: 'nextOfKinName', name: 'Next of Kin Name'},
-        {id: 'nextOfKinRelationship', name: 'Next of Kin Relationship'},
-        {id: 'nextOfKinPhone', name: 'Next of Kin Phone'}
-    ];
-    
-    for (let field of requiredFields) {
-        const element = document.getElementById(field.id);
-        const value = element.value ? element.value.trim() : '';
-        
-        if (!value) {
-            alert(`Please fill in the ${field.name} field.`);
-            element.focus();
-            return false;
-        }
-    }
-    
-    // Email validation
-    const email = document.getElementById('email').value.trim();
-    if (!isValidEmail(email)) {
-        alert('Please enter a valid email address.');
-        return false;
-    }
-    
-    // Check if required photos are uploaded
-    if (!formData.idFront) {
-        alert('Please upload the front of the ID or passport bio page (required).');
-        return false;
-    }
-    
-    if (!formData.agentPhoto) {
-        alert('Please upload a passport photo of the agent (required).');
-        return false;
-    }
-    
-    return true;
-}
-
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-function generateSubmissionId() {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `AGENT-${timestamp}-${random}`;
-}
-
-function resetForm() {
-    // Reset all form fields
-    document.getElementById('fullName').value = '';
-    document.getElementById('personalNumber').value = '';
-    document.getElementById('email').value = '';
-    document.getElementById('nationalId').value = '';
-    document.getElementById('dob').value = '';
-    document.getElementById('gender').value = '';
-    document.getElementById('businessAddress').value = '';
-    document.getElementById('residentialAddress').value = '';
-    document.getElementById('nextOfKinName').value = '';
-    document.getElementById('nextOfKinRelationship').value = '';
-    document.getElementById('nextOfKinPhone').value = '';
-    document.getElementById('tradingName').value = '';
-    
-    // Reset photos
-    formData.idFront = null;
-    formData.idBack = null;
-    formData.agentPhoto = null;
-    
-    // Show upload areas, hide previews
-    document.getElementById('idFrontUpload').classList.remove('hidden');
-    document.getElementById('idFrontPreview').classList.add('hidden');
-    document.getElementById('idBackUpload').classList.remove('hidden');
-    document.getElementById('idBackPreview').classList.add('hidden');
-    document.getElementById('agentPhotoUpload').classList.remove('hidden');
-    document.getElementById('agentPhotoPreview').classList.add('hidden');
-    
-    // Reset file inputs
-    document.getElementById('idFrontInput').value = '';
-    document.getElementById('idBackInput').value = '';
-    document.getElementById('agentPhotoInput').value = '';
-    
-    // Reset submit button
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
-    
-    // Re-initialize date field
-    initializeForm();
-}
-    </script>
-    <script>
-// ==================== FIXED PERSISTENT AUTHENTICATION ====================
-// This makes authentication persist across page refreshes
-
-// Override and enhance the authentication system
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for saved authentication on EVERY page load
-    restoreAuthentication();
-    
-    // Also check when page becomes visible (user returns to tab)
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            restoreAuthentication();
-        }
-    });
-});
-
-// Restore authentication from localStorage
-function restoreAuthentication() {
-    try {
-        const savedAuth = localStorage.getItem('agentAuth');
-        const savedConfig = localStorage.getItem('agentGitHubConfig');
-        
-        if (savedAuth && savedConfig) {
-            const auth = JSON.parse(savedAuth);
-            
-            // Only restore if it was authenticated and not expired
-            if (auth.isAuthenticated && auth.timestamp) {
-                // Check if authentication is less than 7 days old
-                const authAge = Date.now() - auth.timestamp;
-                const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-                
-                if (authAge < maxAge) {
-                    // Restore authentication state
-                    agentAuth = auth;
-                    githubConfig = JSON.parse(savedConfig);
-                    
-                    // Update UI
-                    autoFillAgentInfo();
-                    
-                    // Hide config panel
-                    configPanel.style.display = 'none';
-                    
-                    console.log('✅ Authentication restored from ' + new Date(auth.timestamp).toLocaleString());
-                } else {
-                    // Authentication expired, clear it
-                    console.log('Authentication expired, please login again');
-                    localStorage.removeItem('agentAuth');
-                    localStorage.removeItem('agentGitHubConfig');
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error restoring authentication:', error);
-    }
-}
-
-// Override authenticateAgent to add timestamp
-const originalAuthenticateAgent = authenticateAgent;
-authenticateAgent = async function() {
-    const agentName = document.getElementById('agentName').value.trim();
-    const agentPhone = document.getElementById('agentPhone').value.trim();
-    const agentPassword = document.getElementById('agentPassword').value.trim();
-    
-    if (!agentName || !agentPhone || !agentPassword) {
-        alert('Please enter all authentication details.');
-        return;
-    }
-    
-    const authBtn = document.querySelector('.config-btn');
-    const originalText = authBtn.innerHTML;
-    authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-    authBtn.disabled = true;
-    
-    try {
-        await fetchAgentConfig(agentPassword);
-        
-        // Save authentication with TIMESTAMP for persistence
-        agentAuth = {
-            isAuthenticated: true,
-            agentName: agentName,
-            agentPhone: agentPhone,
-            agentPassword: agentPassword,
-            timestamp: Date.now() // Add timestamp for expiry checking
-        };
-        
-        localStorage.setItem('agentAuth', JSON.stringify(agentAuth));
-        
-        autoFillAgentInfo();
-        configPanel.style.display = 'none';
-        
-        alert('✅ Authentication successful! You will stay logged in for 7 days.');
-        
-    } catch (error) {
-        alert('Authentication failed: ' + error.message);
-    } finally {
-        authBtn.innerHTML = originalText;
-        authBtn.disabled = false;
-    }
-};
-
-// Override resetAuth to clear everything properly
-resetAuth = function() {
-    agentAuth = {
-        isAuthenticated: false,
-        agentName: '',
-        agentPhone: '',
-        agentPassword: '',
-        timestamp: null
-    };
-    
-    // Clear ALL auth-related storage
-    localStorage.removeItem('agentAuth');
-    localStorage.removeItem('agentGitHubConfig');
-    localStorage.removeItem('githubConfig'); // Also clear this to force fresh fetch
-    
-    document.getElementById('agentName').value = '';
-    document.getElementById('agentPhone').value = '';
-    document.getElementById('agentPassword').value = '';
-    
-    const tradingNameField = document.getElementById('tradingName');
-    tradingNameField.value = '';
-    tradingNameField.readOnly = false;
-    tradingNameField.style.backgroundColor = '';
-    
-    alert('✅ Authentication reset. You have been logged out.');
-};
-
-// Fix autoFillAgentInfo to work with restored auth
-const originalAutoFill = autoFillAgentInfo;
-autoFillAgentInfo = function() {
-    if (agentAuth && agentAuth.isAuthenticated && agentAuth.agentName && agentAuth.agentPhone) {
-        const tradingNameField = document.getElementById('tradingName');
-        tradingNameField.value = `${agentAuth.agentName} ${agentAuth.agentPhone}`;
-        tradingNameField.readOnly = true;
-        tradingNameField.style.backgroundColor = '#f5f5f5';
-        console.log('✅ Auto-filled agent info from saved session');
-    }
-};
-
-// Make sure auth persists on page refresh by running immediately
-(function() {
-    // Try to restore on script load
-    setTimeout(restoreAuthentication, 100);
-})();
-
-console.log('✅ Persistent authentication enabled - Login lasts 7 days!');
-    </script>
-    <!-- ============ FIELD AGENT TRACKING ============ -->
-<script>
-// Report activity to admin
-function reportActivity(action) {
-    try {
-        if (window.agentAuth && window.agentAuth.isAuthenticated) {
-            // Store activity in localStorage for admin to detect
-            const activity = {
-                name: window.agentAuth.agentName,
-                phone: window.agentAuth.agentPhone,
-                action: action,
-                timestamp: new Date().toISOString()
-            };
-            
-            // Save to localStorage
-            let activities = JSON.parse(localStorage.getItem('fieldAgentActivities') || '[]');
-            activities.push(activity);
-            // Keep last 50 activities
-            if (activities.length > 50) activities.shift();
-            localStorage.setItem('fieldAgentActivities', JSON.stringify(activities));
-            
-            // Also update active agents list
-            let activeAgents = JSON.parse(localStorage.getItem('activeFieldAgents') || '[]');
-            const existing = activeAgents.find(a => a.phone === window.agentAuth.agentPhone);
-            
-            if (existing) {
-                existing.lastActive = activity.timestamp;
-                existing.lastAction = action;
-            } else {
-                activeAgents.push({
-                    name: window.agentAuth.agentName,
-                    phone: window.agentAuth.agentPhone,
-                    firstSeen: activity.timestamp,
-                    lastActive: activity.timestamp,
-                    lastAction: action,
-                    sessionCount: 1,
-                    submissions: 0
-                });
-            }
-            
-            localStorage.setItem('activeFieldAgents', JSON.stringify(activeAgents));
-            
-            // Trigger storage event for admin page
-            window.dispatchEvent(new Event('storage'));
-        }
-    } catch (e) {
-        console.log('Error reporting activity:', e);
-    }
-}
-
-// Override handleSubmit to report submissions
-const originalHandleSubmit = window.handleSubmit;
-window.handleSubmit = async function() {
-    await originalHandleSubmit.apply(this, arguments);
-    if (window.agentAuth && window.agentAuth.isAuthenticated) {
-        reportActivity('submitted new agent');
-    }
-};
-
-// Report on authentication
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        if (window.agentAuth && window.agentAuth.isAuthenticated) {
-            reportActivity('authenticated');
-        }
-    }, 1000);
-});
-
-console.log('✅ Field agent activity tracking enabled');
-</script>
-    <!-- ============ TRUE 7-DAY PERSISTENT LOGIN ============ -->
-<script>
-// ==================== TRUE PERSISTENT AUTHENTICATION ====================
-// This actually keeps users logged in for 7 days even after closing browser
-
-// Override the entire authentication system for true persistence
-(function() {
-    console.log('🔄 Installing TRUE 7-day persistent login...');
-    
-    // Clear any existing bad auth data
-    try {
-        const corrupted = localStorage.getItem('agentAuth');
-        if (corrupted) {
-            const test = JSON.parse(corrupted);
-            if (!test.timestamp || !test.expiry) {
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-            }
-        }
-    } catch (e) {
-        localStorage.removeItem('agentAuth');
-        localStorage.removeItem('agentGitHubConfig');
-    }
-    
-    // ========== TRUE PERSISTENT AUTHENTICATION ==========
-    // This version ACTUALLY persists for 7 days
-    
-    window.authenticateAgent = async function() {
-        const agentName = document.getElementById('agentName').value.trim();
-        const agentPhone = document.getElementById('agentPhone').value.trim();
-        const agentPassword = document.getElementById('agentPassword').value.trim();
-        
-        if (!agentName || !agentPhone || !agentPassword) {
-            alert('Please enter all authentication details.');
-            return;
-        }
-        
-        const authBtn = document.querySelector('.config-btn');
-        const originalText = authBtn.innerHTML;
-        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-        authBtn.disabled = true;
-        
-        try {
-            await window.fetchAgentConfig(agentPassword);
-            
-            // Calculate expiry date: NOW + 7 DAYS
-            const now = Date.now();
-            const sevenDays = 7 * 24 * 60 * 60 * 1000; // 604,800,000 ms
-            const expiryDate = now + sevenDays;
-            
-            // Create auth object with EXPIRY timestamp
-            const authData = {
-                isAuthenticated: true,
-                agentName: agentName,
-                agentPhone: agentPhone,
-                agentPassword: agentPassword, // Stored for re-authentication if needed
-                timestamp: now,
-                expiry: expiryDate, // CRITICAL: This is when login expires
-                version: '2.0', // Track version for future updates
-                deviceId: generateDeviceId(),
-                lastVerified: now
-            };
-            
-            // Save to localStorage - this SURVIVES browser restarts
-            localStorage.setItem('agentAuth', JSON.stringify(authData));
-            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
-            
-            // Also save to sessionStorage as backup
-            sessionStorage.setItem('agentAuth_backup', JSON.stringify(authData));
-            
-            // Update global state
-            window.agentAuth = authData;
-            
-            // Auto-fill the onboarding field
-            window.autoFillAgentInfo();
-            
-            // Hide config panel
-            configPanel.style.display = 'none';
-            
-            // Show success message with expiry date
-            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            alert(`✅ Authentication successful!\n\n` +
-                  `📱 Agent: ${agentName}\n` +
-                  `📞 Phone: ${agentPhone}\n\n` +
-                  `🔐 You are now logged in for 7 DAYS.\n` +
-                  `📅 Session expires: ${expiryDateFormatted}\n\n` +
-                  `You will NOT need to login again until ${expiryDateFormatted.split(',')[0]}.`);
-            
-        } catch (error) {
-            alert('Authentication failed: ' + error.message);
-        } finally {
-            authBtn.innerHTML = originalText;
-            authBtn.disabled = false;
-        }
-    };
-    
-    // Generate unique device ID for this browser
-    function generateDeviceId() {
-        let deviceId = localStorage.getItem('deviceId');
-        if (!deviceId) {
-            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-            localStorage.setItem('deviceId', deviceId);
-        }
-        return deviceId;
-    }
-    
-    // ========== TRUE SESSION RESTORATION ==========
-    // This actually works across browser restarts
-    
-    window.restoreAuthentication = function() {
-        try {
-            // Try to load from localStorage (survives browser restart)
-            const savedAuth = localStorage.getItem('agentAuth');
-            const savedConfig = localStorage.getItem('agentGitHubConfig');
-            
-            if (!savedAuth || !savedConfig) {
-                // Try backup from sessionStorage
-                const backupAuth = sessionStorage.getItem('agentAuth_backup');
-                const backupConfig = sessionStorage.getItem('agentGitHubConfig_backup');
-                
-                if (backupAuth && backupConfig) {
-                    localStorage.setItem('agentAuth', backupAuth);
-                    localStorage.setItem('agentGitHubConfig', backupConfig);
-                    return window.restoreAuthentication();
-                }
-                return false;
-            }
-            
-            // Parse the saved auth data
-            let auth;
+        // Connection Check
+        async function checkConnection() {
             try {
-                auth = JSON.parse(savedAuth);
-            } catch (e) {
-                localStorage.removeItem('agentAuth');
-                return false;
+                await fetchConfigFromGitHub();
+                document.getElementById('connectionStatus').className = 'status-indicator status-online';
+                document.getElementById('statusText').textContent = 'Connected to GitHub';
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status-indicator status-offline';
+                document.getElementById('statusText').textContent = 'Connection failed';
             }
-            
-            // CRITICAL: Check if we have expiry date
-            if (!auth.expiry) {
-                console.log('❌ No expiry date found, forcing re-login');
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                return false;
-            }
-            
-            // CRITICAL: Check if session is STILL VALID (not expired)
-            const now = Date.now();
-            if (now > auth.expiry) {
-                // Session expired
-                const expiryDate = new Date(auth.expiry).toLocaleString();
-                console.log(`❌ Session expired on ${expiryDate}`);
-                
-                // Clear expired session
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                sessionStorage.removeItem('agentAuth_backup');
-                
-                // Notify user only once per day
-                const lastNotify = localStorage.getItem('expiryNotify');
-                if (!lastNotify || (now - parseInt(lastNotify)) > 86400000) {
-                    alert('Your 7-day login session has expired. Please login again to continue.');
-                    localStorage.setItem('expiryNotify', now.toString());
-                }
-                
-                return false;
-            }
-            
-            // Calculate days remaining
-            const daysRemaining = Math.floor((auth.expiry - now) / (24 * 60 * 60 * 1000));
-            const hoursRemaining = Math.floor(((auth.expiry - now) % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-            
-            // Session is STILL VALID - restore it!
-            console.log(`✅ Restoring valid session - ${daysRemaining} days, ${hoursRemaining} hours remaining`);
-            
-            // Restore GitHub config
-            try {
-                window.githubConfig = JSON.parse(savedConfig);
-                localStorage.setItem('agentGitHubConfig', savedConfig);
-            } catch (e) {
-                console.error('Failed to restore GitHub config');
-            }
-            
-            // Restore auth state
-            window.agentAuth = auth;
-            
-            // Update UI
-            if (typeof window.autoFillAgentInfo === 'function') {
-                window.autoFillAgentInfo();
-            }
-            
-            // Hide config panel
-            if (configPanel) {
-                configPanel.style.display = 'none';
-            }
-            
-            // Show subtle reminder of session expiry (only once per day)
-            const lastReminder = localStorage.getItem('sessionReminder');
-            if (!lastReminder || (now - parseInt(lastReminder)) > 86400000) {
-                setTimeout(() => {
-                    const expiryDate = new Date(auth.expiry).toLocaleDateString();
-                    console.log(`ℹ️ Session expires on ${expiryDate} (${daysRemaining} days remaining)`);
-                }, 2000);
-                localStorage.setItem('sessionReminder', now.toString());
-            }
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Error restoring authentication:', error);
-            return false;
         }
-    };
-    
-    // ========== ENHANCED AUTO-FILL ==========
-    window.autoFillAgentInfo = function() {
-        if (window.agentAuth && window.agentAuth.isAuthenticated) {
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField) {
-                const value = `${window.agentAuth.agentName || ''} ${window.agentAuth.agentPhone || ''}`.trim();
-                if (value) {
-                    tradingNameField.value = value;
-                    tradingNameField.readOnly = true;
-                    tradingNameField.style.backgroundColor = '#f5f5f5';
-                    tradingNameField.style.cursor = 'not-allowed';
+
+        // Configuration Management
+        async function fetchConfigFromGitHub() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/BarasaGodwilTech/Ezee-money/contents/config.json`);
+                const data = await response.json();
+                config = JSON.parse(atob(data.content));
+                return config;
+            } catch (error) {
+                throw new Error('Failed to fetch configuration from GitHub');
+            }
+        }
+
+        // Authentication Management
+        async function restoreAuthentication() {
+            try {
+                const savedLoginTime = localStorage.getItem('loginTime');
+                const savedToken = localStorage.getItem('githubToken');
+                
+                if (savedLoginTime && savedToken) {
+                    loginTime = new Date(savedLoginTime);
+                    githubToken = savedToken;
                     
-                    // Add small badge showing expiry
-                    let badge = document.getElementById('sessionBadge');
-                    if (!badge && window.agentAuth.expiry) {
-                        badge = document.createElement('small');
-                        badge.id = 'sessionBadge';
-                        badge.style.display = 'block';
-                        badge.style.marginTop = '5px';
-                        badge.style.color = '#28a745';
-                        badge.style.fontSize = '12px';
+                    // Check if 7 days have passed
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    
+                    if (loginTime > sevenDaysAgo) {
+                        // Check session reset
+                        await fetchConfigFromGitHub();
+                        if (config.security && config.security.sessionResetAt) {
+                            const sessionResetTime = new Date(config.security.sessionResetAt);
+                            if (loginTime < sessionResetTime) {
+                                // Session was reset, logout
+                                logout();
+                                showAlert('Your session has been reset by admin. Please login again.', 'warning');
+                                return;
+                            }
+                        }
                         
-                        const daysLeft = Math.floor((window.agentAuth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
-                        badge.innerHTML = `<i class="fas fa-clock"></i> Session expires in ${daysLeft} days`;
-                        
-                        tradingNameField.parentNode.appendChild(badge);
+                        isAuthenticated = true;
+                        showRegistrationForm();
+                        reportActivity('Session restored');
+                    } else {
+                        logout();
+                        showAlert('Your session has expired. Please login again.', 'warning');
                     }
                 }
+            } catch (error) {
+                console.error('Error restoring authentication:', error);
             }
         }
-    };
-    
-    // ========== ENHANCED RESET AUTH ==========
-    window.resetAuth = function() {
-        // Clear ALL storage
-        localStorage.removeItem('agentAuth');
-        localStorage.removeItem('agentGitHubConfig');
-        localStorage.removeItem('deviceId');
-        localStorage.removeItem('sessionReminder');
-        
-        sessionStorage.removeItem('agentAuth_backup');
-        sessionStorage.removeItem('agentGitHubConfig_backup');
-        
-        // Reset state
-        window.agentAuth = {
-            isAuthenticated: false,
-            agentName: '',
-            agentPhone: '',
-            agentPassword: '',
-            timestamp: null,
-            expiry: null
-        };
-        
-        // Clear form fields
-        const nameField = document.getElementById('agentName');
-        const phoneField = document.getElementById('agentPhone');
-        const passField = document.getElementById('agentPassword');
-        const tradingField = document.getElementById('tradingName');
-        
-        if (nameField) nameField.value = '';
-        if (phoneField) phoneField.value = '';
-        if (passField) passField.value = '';
-        
-        if (tradingField) {
-            tradingField.value = '';
-            tradingField.readOnly = false;
-            tradingField.style.backgroundColor = '';
-            tradingField.style.cursor = 'text';
-        }
-        
-        // Remove expiry badge
-        const badge = document.getElementById('sessionBadge');
-        if (badge) badge.remove();
-        
-        alert('✅ You have been logged out. Your 7-day session has been cleared.');
-    };
-    
-    // ========== CHECK SESSION ON PAGE LOAD ==========
-    // This runs IMMEDIATELY and EVERY time page loads
-    
-    // Run restoration immediately
-    const restored = window.restoreAuthentication();
-    
-    // Also run after DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        window.restoreAuthentication();
-    });
-    
-    // Also run when page becomes visible (user returns to tab)
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            window.restoreAuthentication();
-        }
-    });
-    
-    // Also run before page unload to backup session
-    window.addEventListener('beforeunload', function() {
-        const auth = localStorage.getItem('agentAuth');
-        const config = localStorage.getItem('agentGitHubConfig');
-        if (auth && config) {
-            sessionStorage.setItem('agentAuth_backup', auth);
-            sessionStorage.setItem('agentGitHubConfig_backup', config);
-        }
-    });
-    
-    // Force check every hour to update expiry badge
-    setInterval(function() {
-        if (window.agentAuth && window.agentAuth.isAuthenticated) {
-            const now = Date.now();
-            if (now > window.agentAuth.expiry) {
-                window.restoreAuthentication(); // This will clear expired session
-            } else {
-                // Update expiry badge
-                const badge = document.getElementById('sessionBadge');
-                if (badge && window.agentAuth.expiry) {
-                    const daysLeft = Math.floor((window.agentAuth.expiry - now) / (24 * 60 * 60 * 1000));
-                    badge.innerHTML = `<i class="fas fa-clock"></i> Session expires in ${daysLeft} days`;
-                }
-            }
-        }
-    }, 3600000); // Every hour
-    
-    console.log('✅ TRUE 7-day persistent login INSTALLED!');
-    console.log('📅 Sessions survive browser restarts and computer shutdowns');
-})();
-</script>
-<!-- ============ END OF TRUE PERSISTENT LOGIN ============ -->
-<!-- ============ AUTO-LOGOUT ON PASSWORD CHANGE ============ -->
-<script>
-// This runs EVERY TIME page loads and BEFORE submission
-// It checks if admin changed/deleted the password and logs out immediately
 
-// Override fetchAgentConfig to check for session resets
-const originalFetchConfig = window.fetchAgentConfig;
-window.fetchAgentConfig = async function(password) {
-    try {
-        // First, get the config to check for session resets
-        const configData = await fetchConfigFromGitHub();
-        
-        // Check if we have a saved session timestamp
-        const savedAuth = localStorage.getItem('agentAuth');
-        if (savedAuth) {
-            const auth = JSON.parse(savedAuth);
-            
-            // If admin reset the session after we logged in, FORCE LOGOUT
-            if (configData.security && configData.security.sessionResetAt) {
-                const resetTime = new Date(configData.security.sessionResetAt).getTime();
-                const loginTime = auth.timestamp || 0;
-                
-                if (resetTime > loginTime) {
-                    console.log('🛑 Session reset detected - logging out');
-                    
-                    // Clear everything
-                    localStorage.removeItem('agentAuth');
-                    localStorage.removeItem('agentGitHubConfig');
-                    sessionStorage.removeItem('agentAuth_backup');
-                    
-                    // Show message
-                    alert('🔐 The admin has changed the access password.\n\nPlease login again with the new password.');
-                    
-                    // Clear form
-                    document.getElementById('agentName').value = auth.agentName || '';
-                    document.getElementById('agentPhone').value = auth.agentPhone || '';
-                    document.getElementById('agentPassword').value = '';
-                    
-                    // Show config panel
-                    configPanel.style.display = 'block';
-                    
-                    throw new Error('Session reset by admin');
-                }
-            }
-        }
-        
-        // Now proceed with normal authentication
-        return await originalFetchConfig.apply(this, arguments);
-        
-    } catch (error) {
-        throw error;
-    }
-};
-
-// Also check on every page load
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(async () => {
-        try {
-            const configData = await fetchConfigFromGitHub();
-            const savedAuth = localStorage.getItem('agentAuth');
-            
-            if (savedAuth && configData.security && configData.security.sessionResetAt) {
-                const auth = JSON.parse(savedAuth);
-                const resetTime = new Date(configData.security.sessionResetAt).getTime();
-                const loginTime = auth.timestamp || 0;
-                
-                if (resetTime > loginTime) {
-                    console.log('🛑 Session reset detected on page load');
-                    localStorage.removeItem('agentAuth');
-                    localStorage.removeItem('agentGitHubConfig');
-                    sessionStorage.removeItem('agentAuth_backup');
-                    
-                    // Only show alert if they were actually logged in
-                    if (auth.isAuthenticated) {
-                        alert('🔐 The admin has changed the access password.\n\nPlease login again with the new password.');
-                        window.location.reload();
-                    }
-                }
-            }
-        } catch (e) {
-            // Silent fail
-        }
-    }, 1000);
-});
-
-// And check BEFORE every submission
-const originalHandleSubmit = window.handleSubmit;
-window.handleSubmit = async function() {
-    // Check if session is still valid with current GitHub config
-    try {
-        const configData = await fetchConfigFromGitHub();
-        const savedAuth = localStorage.getItem('agentAuth');
-        
-        if (savedAuth && configData.security && configData.security.sessionResetAt) {
-            const auth = JSON.parse(savedAuth);
-            const resetTime = new Date(configData.security.sessionResetAt).getTime();
-            const loginTime = auth.timestamp || 0;
-            
-            if (resetTime > loginTime) {
-                alert('🔐 Your session has been revoked.\n\nThe admin changed the access password.\n\nPlease login again.');
-                
-                // Clear session
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                sessionStorage.removeItem('agentAuth_backup');
-                
-                // Show login panel
-                configPanel.style.display = 'block';
-                
-                return; // Stop submission
-            }
-        }
-        
-        // Proceed with submission
-        await originalHandleSubmit.apply(this, arguments);
-        
-    } catch (error) {
-        console.error('Session check failed:', error);
-        await originalHandleSubmit.apply(this, arguments);
-    }
-};
-
-console.log('✅ Auto-logout on password change ENABLED');
-        </script>
-    <!-- ============ FINAL FIX - EVERYTHING WORKS ============ -->
-<script>
-(function() {
-    console.log('🚀 INSTALLING FINAL FIXES - ALL ISSUES RESOLVED');
-    
-    // ===========================================
-    // 1. FIX PERSISTENT LOGIN - ACTUALLY WORKS
-    // ===========================================
-    
-    // Completely replace authenticateAgent - THIS ONE WORKS
-    window.authenticateAgent = async function() {
-        const agentName = document.getElementById('agentName').value.trim();
-        const agentPhone = document.getElementById('agentPhone').value.trim();
-        const agentPassword = document.getElementById('agentPassword').value.trim();
-        
-        if (!agentName || !agentPhone || !agentPassword) {
-            alert('Please enter all authentication details.');
-            return;
-        }
-        
-        const authBtn = document.querySelector('.config-btn');
-        const originalText = authBtn.innerHTML;
-        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-        authBtn.disabled = true;
-        
-        try {
-            // CRITICAL: First get admin config from localStorage
-            const adminConfig = localStorage.getItem('githubConfig');
-            if (adminConfig) {
-                const config = JSON.parse(adminConfig);
-                window.githubConfig = window.githubConfig || {};
-                window.githubConfig.repoOwner = config.repoOwner || 'BarasaGodwilTech';
-                window.githubConfig.repoName = config.repoName || 'Ezee-money';
-                window.githubConfig.accessToken = config.accessToken || '';
-                window.githubConfig.branchName = config.branchName || 'main';
-            }
-            
-            // Fetch config from GitHub
-            const configData = await window.fetchConfigFromGitHub();
-            
-            if (!configData || !configData.security || !configData.security.agentPasswordHash) {
-                throw new Error('System not configured. Contact admin.');
-            }
-            
-            // Verify password
-            const inputHash = await window.createSHA256Hash(agentPassword);
-            if (inputHash !== configData.security.agentPasswordHash) {
-                throw new Error('Invalid password.');
-            }
-            
-            // Get GitHub access token from admin config
-            if (adminConfig) {
-                const config = JSON.parse(adminConfig);
-                window.githubConfig.accessToken = config.accessToken || '';
-            }
-            
-            // Calculate expiry - 7 DAYS FROM NOW
-            const now = Date.now();
-            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
-            
-            // Create auth object with ALL required fields
-            const authData = {
-                isAuthenticated: true,
-                agentName: agentName,
-                agentPhone: agentPhone,
-                timestamp: now,
-                expiry: expiryDate,
-                version: '3.0'
-            };
-            
-            // Save to localStorage - THIS SURVIVES BROWSER RESTART
-            localStorage.setItem('agentAuth', JSON.stringify(authData));
-            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
-            
-            // Update global state
-            window.agentAuth = authData;
-            
-            // Auto-fill the onboarding field
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField) {
-                tradingNameField.value = `${agentName} ${agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            // Hide config panel
-            document.getElementById('configPanel').style.display = 'none';
-            
-            // Show success message
-            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-            
-            alert(`✅ Login successful!\n\n📱 Agent: ${agentName}\n📞 Phone: ${agentPhone}\n📅 Expires: ${expiryDateFormatted}\n\nYou will stay logged in for 7 days.`);
-            
-            // Report to admin
+        async function authenticateAgent(password, token) {
             try {
-                window.reportActivity('authenticated');
-            } catch(e) {}
-            
-        } catch (error) {
-            alert('❌ Authentication failed: ' + error.message);
-        } finally {
-            authBtn.innerHTML = originalText;
-            authBtn.disabled = false;
-        }
-    };
-    
-    // ===========================================
-    // 2. FIX SESSION RESTORATION - ACTUALLY WORKS
-    // ===========================================
-    
-    window.restoreAuthentication = function() {
-        try {
-            const savedAuth = localStorage.getItem('agentAuth');
-            const savedConfig = localStorage.getItem('agentGitHubConfig');
-            
-            if (!savedAuth || !savedConfig) return false;
-            
-            const auth = JSON.parse(savedAuth);
-            
-            // Check if expired
-            if (auth.expiry && Date.now() > auth.expiry) {
-                console.log('Session expired');
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                return false;
-            }
-            
-            // Restore everything
-            window.agentAuth = auth;
-            window.githubConfig = JSON.parse(savedConfig);
-            
-            // Auto-fill the form
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField && auth.agentName && auth.agentPhone) {
-                tradingNameField.value = `${auth.agentName} ${auth.agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            // Hide config panel
-            document.getElementById('configPanel').style.display = 'none';
-            
-            console.log('✅ Session restored - expires:', new Date(auth.expiry).toLocaleString());
-            return true;
-            
-        } catch (e) {
-            console.error('Restore failed:', e);
-            return false;
-        }
-    };
-    
-    // ===========================================
-    // 3. FIX AUTO-LOGOUT ON PASSWORD CHANGE
-    // ===========================================
-    
-    window.checkSessionReset = async function() {
-        try {
-            if (!window.githubConfig || !window.githubConfig.repoOwner) return false;
-            
-            const configData = await window.fetchConfigFromGitHub();
-            const savedAuth = localStorage.getItem('agentAuth');
-            
-            if (savedAuth && configData && configData.security && configData.security.sessionResetAt) {
-                const auth = JSON.parse(savedAuth);
-                const resetTime = new Date(configData.security.sessionResetAt).getTime();
-                const loginTime = auth.timestamp || 0;
+                // Fetch config to get password hash
+                await fetchConfigFromGitHub();
                 
-                if (resetTime > loginTime) {
-                    // Force logout
-                    localStorage.removeItem('agentAuth');
-                    localStorage.removeItem('agentGitHubConfig');
-                    
-                    alert('🔐 Admin changed the password. Please login again.');
-                    
-                    const tradingNameField = document.getElementById('tradingName');
-                    if (tradingNameField) {
-                        tradingNameField.value = '';
-                        tradingNameField.readOnly = false;
-                        tradingNameField.style.backgroundColor = '';
-                    }
-                    
-                    document.getElementById('configPanel').style.display = 'block';
-                    return true;
+                if (!config.security || !config.security.agentPasswordHash) {
+                    throw new Error('No password is configured. Please contact admin.');
                 }
-            }
-        } catch (e) {
-            console.log('Session check error:', e);
-        }
-        return false;
-    };
-    
-    // ===========================================
-    // 4. FIX SUBMISSION CHECK
-    // ===========================================
-    
-    const originalSubmit = window.handleSubmit;
-    window.handleSubmit = async function() {
-        // First check if authenticated
-        const savedAuth = localStorage.getItem('agentAuth');
-        if (!savedAuth) {
-            alert('Please login first. Click the gear icon ⚙️.');
-            document.getElementById('configPanel').style.display = 'block';
-            return;
-        }
-        
-        const auth = JSON.parse(savedAuth);
-        if (!auth.isAuthenticated || (auth.expiry && Date.now() > auth.expiry)) {
-            alert('Your session has expired. Please login again.');
-            localStorage.removeItem('agentAuth');
-            document.getElementById('configPanel').style.display = 'block';
-            return;
-        }
-        
-        // Check if password was changed
-        const wasReset = await window.checkSessionReset();
-        if (wasReset) return;
-        
-        // Proceed with submission
-        if (originalSubmit) {
-            await originalSubmit.apply(this, arguments);
-            
-            // Report submission
-            try {
-                if (window.agentAuth && window.agentAuth.agentPhone) {
-                    window.reportActivity('submitted new agent');
-                }
-            } catch(e) {}
-        }
-    };
-    
-    // ===========================================
-    // 5. FIX FETCH CONFIG - ALWAYS WORKS
-    // ===========================================
-    
-    window.fetchConfigFromGitHub = async function() {
-        if (!window.githubConfig || !window.githubConfig.repoOwner || !window.githubConfig.repoName) {
-            // Try to get from admin config
-            const adminConfig = localStorage.getItem('githubConfig');
-            if (adminConfig) {
-                const config = JSON.parse(adminConfig);
-                window.githubConfig = window.githubConfig || {};
-                window.githubConfig.repoOwner = config.repoOwner || 'BarasaGodwilTech';
-                window.githubConfig.repoName = config.repoName || 'Ezee-money';
-                window.githubConfig.branchName = config.branchName || 'main';
-            } else {
-                // Default fallback
-                window.githubConfig = {
-                    repoOwner: 'BarasaGodwilTech',
-                    repoName: 'Ezee-money',
-                    branchName: 'main',
-                    accessToken: ''
-                };
-            }
-        }
-        
-        const filepath = 'config.json';
-        const url = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/${filepath}`;
-        
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        
-        const response = await fetch(url, { headers });
-        
-        if (!response.ok) {
-            if (response.status === 404) {
-                return { security: {}, github: {} };
-            }
-            throw new Error('Cannot fetch config');
-        }
-        
-        const data = await response.json();
-        const content = decodeURIComponent(escape(atob(data.content)));
-        return JSON.parse(content);
-    };
-    
-    // ===========================================
-    // 6. ENSURE createSHA256Hash EXISTS
-    // ===========================================
-    
-    if (!window.createSHA256Hash) {
-        window.createSHA256Hash = async function(text) {
-            try {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(text);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                
+                // Verify password
+                const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (e) {
-                // Fallback
-                return btoa(text).split('').reverse().join('');
-            }
-        };
-    }
-    
-    // ===========================================
-    // 7. FIX REPORTING - REAL-TIME TRACKING
-    // ===========================================
-    
-    window.reportActivity = function(action) {
-        try {
-            const auth = JSON.parse(localStorage.getItem('agentAuth') || '{}');
-            if (!auth.isAuthenticated || !auth.agentName || !auth.agentPhone) return;
-            
-            const activity = {
-                name: auth.agentName,
-                phone: auth.agentPhone,
-                action: action,
-                timestamp: new Date().toISOString()
-            };
-            
-            // Update active agents
-            let activeAgents = JSON.parse(localStorage.getItem('activeFieldAgents') || '[]');
-            const existing = activeAgents.find(a => a.phone === auth.agentPhone);
-            
-            if (existing) {
-                existing.lastActive = activity.timestamp;
-                existing.lastAction = action;
-                existing.sessionCount = (existing.sessionCount || 0) + 1;
-                if (action === 'submitted new agent') {
-                    existing.submissions = (existing.submissions || 0) + 1;
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                if (hashHex !== config.security.agentPasswordHash) {
+                    throw new Error('Invalid password');
                 }
-            } else {
-                activeAgents.push({
-                    name: auth.agentName,
-                    phone: auth.agentPhone,
-                    firstSeen: activity.timestamp,
-                    lastActive: activity.timestamp,
-                    lastAction: action,
-                    sessionCount: 1,
-                    submissions: action === 'submitted new agent' ? 1 : 0
-                });
-            }
-            
-            localStorage.setItem('activeFieldAgents', JSON.stringify(activeAgents));
-            localStorage.setItem('lastActivity', JSON.stringify(activity));
-            
-            // Force storage event for admin page
-            window.dispatchEvent(new Event('storage'));
-            
-        } catch (e) {
-            console.log('Report error:', e);
-        }
-    };
-    
-    // ===========================================
-    // 8. RUN ON PAGE LOAD
-    // ===========================================
-    
-    // Try to restore immediately
-    setTimeout(() => {
-        window.restoreAuthentication();
-    }, 10);
-    
-    // Also run when page becomes visible
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            window.restoreAuthentication();
-        }
-    });
-    
-    console.log('✅ ALL FIXES INSTALLED - EVERYTHING WORKS!');
-})();
-</script>
-    <!-- ============ FINAL FIX - GITHUB TOKEN TRANSFER ============ -->
-<script>
-(function() {
-    console.log('🔥 INSTALLING CRITICAL TOKEN FIX');
-    
-    // ===========================================
-    // OVERRIDE AUTHENTICATION - FORCE TOKEN TRANSFER
-    // ===========================================
-    
-    window.authenticateAgent = async function() {
-        const agentName = document.getElementById('agentName').value.trim();
-        const agentPhone = document.getElementById('agentPhone').value.trim();
-        const agentPassword = document.getElementById('agentPassword').value.trim();
-        
-        if (!agentName || !agentPhone || !agentPassword) {
-            alert('Please enter all authentication details.');
-            return;
-        }
-        
-        const authBtn = document.querySelector('.config-btn');
-        const originalText = authBtn.innerHTML;
-        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-        authBtn.disabled = true;
-        
-        try {
-            // STEP 1: CRITICAL - GET ADMIN'S GITHUB CONFIG FROM localStorage
-            // This is set by the admin when they configure GitHub
-            const adminConfig = localStorage.getItem('githubConfig');
-            
-            if (!adminConfig) {
-                throw new Error('No GitHub configuration found. Please ensure admin has configured GitHub settings first.');
-            }
-            
-            const adminGitHubConfig = JSON.parse(adminConfig);
-            
-            if (!adminGitHubConfig.accessToken) {
-                throw new Error('Admin GitHub access token is missing. Admin must save GitHub configuration with token.');
-            }
-            
-            // STEP 2: Set GitHub config with the ADMIN'S TOKEN
-            window.githubConfig = {
-                repoOwner: adminGitHubConfig.repoOwner || 'BarasaGodwilTech',
-                repoName: adminGitHubConfig.repoName || 'Ezee-money',
-                accessToken: adminGitHubConfig.accessToken, // ← CRITICAL: This is the token!
-                branchName: adminGitHubConfig.branchName || 'main',
-                imagesSubfolder: 'images'
-            };
-            
-            // STEP 3: Now fetch config.json to verify password
-            const configUrl = `https://api.github.com/repos/${window.githubConfig.repoOwner}/${window.githubConfig.repoName}/contents/config.json?ref=${window.githubConfig.branchName}`;
-            
-            const configHeaders = {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token ${window.githubConfig.accessToken}` // ← USING THE TOKEN
-            };
-            
-            const configResponse = await fetch(configUrl, { headers: configHeaders });
-            
-            if (!configResponse.ok) {
-                throw new Error('Cannot verify password. Check GitHub configuration.');
-            }
-            
-            const configData = await configResponse.json();
-            const configContent = JSON.parse(decodeURIComponent(escape(atob(configData.content))));
-            
-            // STEP 4: Verify password
-            if (!configContent.security || !configContent.security.agentPasswordHash) {
-                throw new Error('System not configured. Contact admin.');
-            }
-            
-            const inputHash = await window.createSHA256Hash(agentPassword);
-            if (inputHash !== configContent.security.agentPasswordHash) {
-                throw new Error('Invalid password.');
-            }
-            
-            // STEP 5: Save EVERYTHING to localStorage for persistence
-            const now = Date.now();
-            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
-            
-            const authData = {
-                isAuthenticated: true,
-                agentName: agentName,
-                agentPhone: agentPhone,
-                timestamp: now,
-                expiry: expiryDate,
-                version: '4.0'
-            };
-            
-            // CRITICAL: Save both auth AND the GitHub config with token
-            localStorage.setItem('agentAuth', JSON.stringify(authData));
-            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
-            
-            // Also save as backup
-            sessionStorage.setItem('agentAuth_backup', JSON.stringify(authData));
-            sessionStorage.setItem('agentGitHubConfig_backup', JSON.stringify(window.githubConfig));
-            
-            // STEP 6: Update UI
-            window.agentAuth = authData;
-            
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField) {
-                tradingNameField.value = `${agentName} ${agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            
-            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-            
-            alert(`✅ LOGIN SUCCESSFUL!\n\n` +
-                  `📱 Agent: ${agentName}\n` +
-                  `📞 Phone: ${agentPhone}\n` +
-                  `📅 Session expires: ${expiryDateFormatted}\n\n` +
-                  `🔑 GitHub access token loaded from admin configuration.\n` +
-                  `📤 You can now upload images and submit agents.`);
-            
-            // Report activity
-            try {
-                window.reportActivity('authenticated');
-            } catch(e) {}
-            
-        } catch (error) {
-            console.error('Authentication error:', error);
-            alert('❌ Authentication failed: ' + error.message);
-        } finally {
-            authBtn.innerHTML = originalText;
-            authBtn.disabled = false;
-        }
-    };
-    
-    // ===========================================
-    // OVERRIDE SESSION RESTORATION - KEEP TOKEN
-    // ===========================================
-    
-    window.restoreAuthentication = function() {
-        try {
-            const savedAuth = localStorage.getItem('agentAuth');
-            const savedConfig = localStorage.getItem('agentGitHubConfig');
-            
-            if (!savedAuth || !savedConfig) {
-                return false;
-            }
-            
-            const auth = JSON.parse(savedAuth);
-            
-            // Check expiry
-            if (auth.expiry && Date.now() > auth.expiry) {
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                return false;
-            }
-            
-            // Restore everything - INCLUDING THE TOKEN
-            window.agentAuth = auth;
-            window.githubConfig = JSON.parse(savedConfig);
-            
-            // Verify token is still there
-            if (!window.githubConfig.accessToken) {
-                console.warn('Token missing, will need to re-authenticate');
-                return false;
-            }
-            
-            // Auto-fill form
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField && auth.agentName && auth.agentPhone) {
-                tradingNameField.value = `${auth.agentName} ${auth.agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            
-            const daysLeft = Math.floor((auth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
-            console.log(`✅ Session restored - ${daysLeft} days remaining, token present`);
-            
-            return true;
-            
-        } catch (e) {
-            console.error('Restore error:', e);
-            return false;
-        }
-    };
-    
-    // ===========================================
-    // OVERRIDE IMAGE UPLOAD - ENSURE TOKEN IS USED
-    // ===========================================
-    
-    const originalUploadImage = window.uploadImageToGitHub;
-    window.uploadImageToGitHub = async function(file, submissionId, imageType) {
-        if (!file) return '';
-        
-        // CRITICAL: Get the latest config from localStorage
-        const savedConfig = localStorage.getItem('agentGitHubConfig');
-        if (!savedConfig) {
-            throw new Error('GitHub configuration not found. Please login again.');
-        }
-        
-        const config = JSON.parse(savedConfig);
-        
-        if (!config.accessToken) {
-            throw new Error('GitHub access token missing. Please login again.');
-        }
-        
-        // Generate filename
-        const timestamp = Date.now();
-        const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
-        const filepath = `images/${filename}`;
-        
-        // Convert file to base64
-        const base64Content = await window.fileToBase64(file);
-        
-        // Prepare API URL
-        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}`;
-        
-        // CRITICAL: Use the token from the saved config
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `token ${config.accessToken}`
-        };
-        
-        const body = {
-            message: `Upload ${imageType} image for agent ${submissionId}`,
-            content: base64Content.split(',')[1],
-            branch: config.branchName || 'main'
-        };
-        
-        const response = await fetch(apiUrl, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(body)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-        }
-        
-        return `https://raw.githubusercontent.com/${config.repoOwner}/${config.repoName}/${config.branchName || 'main'}/images/${filename}`;
-    };
-    
-    // ===========================================
-    // OVERRIDE FETCH GITHUB DATA - USE TOKEN
-    // ===========================================
-    
-    window.fetchGitHubData = async function() {
-        const savedConfig = localStorage.getItem('agentGitHubConfig');
-        if (!savedConfig) {
-            throw new Error('GitHub configuration not found');
-        }
-        
-        const config = JSON.parse(savedConfig);
-        
-        const filepath = 'data.json';
-        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}?ref=${config.branchName || 'main'}`;
-        
-        const headers = {
-            'Accept': 'application/vnd.github.v3+json'
-        };
-        
-        if (config.accessToken) {
-            headers['Authorization'] = `token ${config.accessToken}`;
-        }
-        
-        const response = await fetch(apiUrl, { headers });
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch data: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const jsonContent = decodeURIComponent(escape(atob(data.content)));
-        return JSON.parse(jsonContent);
-    };
-    
-    // ===========================================
-    // ENSURE fileToBase64 EXISTS
-    // ===========================================
-    
-    if (!window.fileToBase64) {
-        window.fileToBase64 = function(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        };
-    }
-    
-    // ===========================================
-    // CHECK TOKEN ON PAGE LOAD
-    // ===========================================
-    
-    // Run restoration immediately
-    setTimeout(() => {
-        window.restoreAuthentication();
-        
-        // Verify token is present
-        const config = localStorage.getItem('agentGitHubConfig');
-        if (config) {
-            const parsed = JSON.parse(config);
-            if (parsed.accessToken) {
-                console.log('✅ GitHub token present and ready');
-            } else {
-                console.warn('⚠️ No GitHub token found - please login again');
-            }
-        }
-    }, 10);
-    
-    console.log('🔥 CRITICAL: GitHub token transfer fix installed!');
-    console.log('📌 Field agents will now receive admin GitHub token automatically');
-})();
-</script>
-    <!-- ============ UNIVERSAL AUTHENTICATION - WORKS ON ALL DEVICES ============ -->
-<script>
-(function() {
-    console.log('🔥 INSTALLING UNIVERSAL AUTHENTICATION');
-    
-    // ===========================================
-    // COMPLETE AUTHENTICATION - WORKS ON ANY DEVICE
-    // ===========================================
-    
-    window.authenticateAgent = async function() {
-        const agentName = document.getElementById('agentName').value.trim();
-        const agentPhone = document.getElementById('agentPhone').value.trim();
-        const agentPassword = document.getElementById('agentPassword').value.trim();
-        
-        if (!agentName || !agentPhone || !agentPassword) {
-            alert('Please enter all authentication details.');
-            return;
-        }
-        
-        const authBtn = document.querySelector('.config-btn');
-        const originalText = authBtn.innerHTML;
-        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-        authBtn.disabled = true;
-        
-        try {
-            // ===== STEP 1: FETCH CONFIG DIRECTLY FROM GITHUB =====
-            // This works on ANY device because it's public!
-            
-            // First, we need the repo info - try multiple sources
-            let repoOwner = 'BarasaGodwilTech';
-            let repoName = 'Ezee-money';
-            let branchName = 'main';
-            
-            // Try to get from admin's config (if this device has it)
-            const adminConfig = localStorage.getItem('githubConfig');
-            if (adminConfig) {
-                const config = JSON.parse(adminConfig);
-                repoOwner = config.repoOwner || repoOwner;
-                repoName = config.repoName || repoName;
-                branchName = config.branchName || branchName;
-            }
-            
-            // ===== STEP 2: FETCH config.json FROM GITHUB =====
-            // This is PUBLIC - no token needed to READ
-            const configUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/config.json?ref=${branchName}`;
-            
-            console.log('📡 Fetching config from:', configUrl);
-            
-            const configResponse = await fetch(configUrl, {
-                headers: { 'Accept': 'application/vnd.github.v3+json' }
-            });
-            
-            if (!configResponse.ok) {
-                if (configResponse.status === 404) {
-                    throw new Error('System not configured. Please contact admin.');
+                
+                // Save token if provided
+                if (token) {
+                    githubToken = token;
+                    localStorage.setItem('githubToken', token);
                 }
-                throw new Error('Cannot access configuration. Status: ' + configResponse.status);
+                
+                // Set authentication
+                isAuthenticated = true;
+                loginTime = new Date();
+                localStorage.setItem('loginTime', loginTime.toISOString());
+                
+                showRegistrationForm();
+                reportActivity('Agent authenticated');
+                showAlert('Authentication successful!', 'success');
+                
+            } catch (error) {
+                throw new Error('Authentication failed: ' + error.message);
             }
-            
-            const configData = await configResponse.json();
-            const configContent = JSON.parse(decodeURIComponent(escape(atob(configData.content))));
-            
-            // ===== STEP 3: VERIFY PASSWORD =====
-            if (!configContent.security || !configContent.security.agentPasswordHash) {
-                throw new Error('Password not set. Please contact admin.');
-            }
-            
-            const inputHash = await window.createSHA256Hash(agentPassword);
-            if (inputHash !== configContent.security.agentPasswordHash) {
-                throw new Error('Invalid password.');
-            }
-            
-            // ===== STEP 4: GET GITHUB CONFIG FROM THE SAME FILE =====
-            // This contains the repo details needed for uploads
-            if (!configContent.github) {
-                throw new Error('GitHub configuration missing. Please contact admin.');
-            }
-            
-            // ===== STEP 5: NOW GET THE ACCESS TOKEN =====
-            // This is the tricky part - we need the token from admin's localStorage
-            // But if this is a different device, admin's localStorage isn't available
-            
-            let accessToken = '';
-            
-            // Try to get from this device's localStorage (if admin configured here)
-            const localAdminConfig = localStorage.getItem('githubConfig');
-            if (localAdminConfig) {
-                const config = JSON.parse(localAdminConfig);
-                accessToken = config.accessToken || '';
-            }
-            
-            // If no token, we need to handle this gracefully
-            if (!accessToken) {
-                // Show warning but continue - maybe repo is public?
-                console.warn('⚠️ No GitHub access token found. Image upload may fail if repo is private.');
-            }
-            
-            // ===== STEP 6: SETUP GITHUB CONFIG =====
-            window.githubConfig = {
-                repoOwner: configContent.github.repoOwner || repoOwner,
-                repoName: configContent.github.repoName || repoName,
-                branchName: configContent.github.branchName || branchName,
-                accessToken: accessToken, // May be empty on new devices
-                imagesSubfolder: configContent.github.imagesFolder || 'images'
-            };
-            
-            // ===== STEP 7: SAVE AUTHENTICATION =====
-            const now = Date.now();
-            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
-            
-            const authData = {
-                isAuthenticated: true,
-                agentName: agentName,
-                agentPhone: agentPhone,
-                timestamp: now,
-                expiry: expiryDate,
-                version: '5.0',
-                repoOwner: window.githubConfig.repoOwner,
-                repoName: window.githubConfig.repoName,
-                branchName: window.githubConfig.branchName
-            };
-            
-            localStorage.setItem('agentAuth', JSON.stringify(authData));
-            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
-            
-            // ===== STEP 8: UPDATE UI =====
-            window.agentAuth = authData;
-            
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField) {
-                tradingNameField.value = `${agentName} ${agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            
-            // ===== STEP 9: SHOW SUCCESS =====
-            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-            
-            let message = `✅ LOGIN SUCCESSFUL!\n\n` +
-                         `📱 Agent: ${agentName}\n` +
-                         `📞 Phone: ${agentPhone}\n` +
-                         `📅 Session expires: ${expiryDateFormatted}\n\n`;
-            
-            if (accessToken) {
-                message += `🔑 GitHub token: ✓ LOADED\n📤 You can upload images.`;
-            } else {
-                message += `⚠️ GitHub token: NOT FOUND\n📤 Image upload may fail.\n\n` +
-                          `👉 Ask admin to log in on THIS device once to transfer the token.`;
-            }
-            
-            alert(message);
-            
-            // Report activity
-            try {
-                window.reportActivity('authenticated');
-            } catch(e) {}
-            
-        } catch (error) {
-            console.error('Authentication error:', error);
-            alert('❌ Authentication failed: ' + error.message);
-        } finally {
-            authBtn.innerHTML = originalText;
-            authBtn.disabled = false;
         }
-    };
-    
-    // ===========================================
-    // SESSION RESTORATION - WORKS ON ALL DEVICES
-    // ===========================================
-    
-    window.restoreAuthentication = function() {
-        try {
-            const savedAuth = localStorage.getItem('agentAuth');
-            const savedConfig = localStorage.getItem('agentGitHubConfig');
-            
-            if (!savedAuth || !savedConfig) return false;
-            
-            const auth = JSON.parse(savedAuth);
-            
-            if (auth.expiry && Date.now() > auth.expiry) {
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                return false;
-            }
-            
-            window.agentAuth = auth;
-            window.githubConfig = JSON.parse(savedConfig);
-            
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField && auth.agentName && auth.agentPhone) {
-                tradingNameField.value = `${auth.agentName} ${auth.agentPhone}`;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            
-            const daysLeft = Math.floor((auth.expiry - Date.now()) / (24 * 60 * 60 * 1000));
-            console.log(`✅ Session restored - ${daysLeft} days remaining`);
-            
-            return true;
-            
-        } catch (e) {
-            return false;
+
+        function logout() {
+            isAuthenticated = false;
+            loginTime = null;
+            localStorage.removeItem('loginTime');
+            showAuthPanel();
         }
-    };
-    
-    // ===========================================
-    // CHECK SESSION RESET - WORKS ON ALL DEVICES
-    // ===========================================
-    
-    window.checkSessionReset = async function() {
-        try {
-            // Get repo info from saved auth
-            const savedAuth = localStorage.getItem('agentAuth');
-            if (!savedAuth) return false;
-            
-            const auth = JSON.parse(savedAuth);
-            if (!auth.repoOwner || !auth.repoName) return false;
-            
-            // Fetch config from GitHub (public, no token needed)
-            const configUrl = `https://api.github.com/repos/${auth.repoOwner}/${auth.repoName}/contents/config.json?ref=${auth.branchName || 'main'}`;
-            
-            const response = await fetch(configUrl, {
-                headers: { 'Accept': 'application/vnd.github.v3+json' }
-            });
-            
-            if (!response.ok) return false;
-            
-            const data = await response.json();
-            const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+
+        function checkSessionReset() {
+            if (!isAuthenticated || !loginTime) return false;
             
             if (config.security && config.security.sessionResetAt) {
-                const resetTime = new Date(config.security.sessionResetAt).getTime();
-                const loginTime = auth.timestamp || 0;
-                
-                if (resetTime > loginTime) {
-                    localStorage.removeItem('agentAuth');
-                    localStorage.removeItem('agentGitHubConfig');
-                    alert('🔐 Admin changed the password. Please login again.');
-                    return true;
-                }
+                const sessionResetTime = new Date(config.security.sessionResetAt);
+                return loginTime < sessionResetTime;
             }
-        } catch (e) {}
-        
-        return false;
-    };
-    
-    // ===========================================
-    // FIX IMAGE UPLOAD - HANDLE MISSING TOKEN
-    // ===========================================
-    
-    const originalUploadImage = window.uploadImageToGitHub;
-    window.uploadImageToGitHub = async function(file, submissionId, imageType) {
-        if (!file) return '';
-        
-        const savedConfig = localStorage.getItem('agentGitHubConfig');
-        if (!savedConfig) {
-            throw new Error('Configuration not found. Please login again.');
-        }
-        
-        const config = JSON.parse(savedConfig);
-        
-        if (!config.accessToken) {
-            throw new Error('❌ GitHub access token missing!\n\nPlease ask the admin to log in on THIS device once to transfer the token.\n\nAlternative: Admin can make the repository public.');
-        }
-        
-        // Proceed with upload...
-        const timestamp = Date.now();
-        const filename = `${submissionId}_${imageType}_${timestamp}.jpg`;
-        const filepath = `images/${filename}`;
-        
-        const base64Content = await window.fileToBase64(file);
-        
-        const apiUrl = `https://api.github.com/repos/${config.repoOwner}/${config.repoName}/contents/${filepath}`;
-        
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `token ${config.accessToken}`
-        };
-        
-        const body = {
-            message: `Upload ${imageType} image for agent ${submissionId}`,
-            content: base64Content.split(',')[1],
-            branch: config.branchName || 'main'
-        };
-        
-        const response = await fetch(apiUrl, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(body)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`GitHub API error: ${errorData.message || response.statusText}`);
-        }
-        
-        return `https://raw.githubusercontent.com/${config.repoOwner}/${config.repoName}/${config.branchName || 'main'}/images/${filename}`;
-    };
-    
-    // ===========================================
-    // CREATE SHA256 HASH
-    // ===========================================
-    
-    if (!window.createSHA256Hash) {
-        window.createSHA256Hash = async function(text) {
-            try {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(text);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (e) {
-                // Fallback
-                return btoa(text).split('').reverse().join('');
-            }
-        };
-    }
-    
-    // ===========================================
-    // RUN ON PAGE LOAD
-    // ===========================================
-    
-    setTimeout(() => {
-        window.restoreAuthentication();
-        window.checkSessionReset();
-    }, 10);
-    
-    console.log('✅ UNIVERSAL AUTHENTICATION INSTALLED');
-    console.log('📌 Works on ANY device - config fetched from GitHub');
-})();
-</script>
-    <!-- ============ CHANGE PHONE TO SC CODE ============ -->
-<script>
-(function() {
-    console.log('📱 CHANGING FROM PHONE TO SC CODE');
-    
-    // Change the label and placeholder in authentication panel
-    setTimeout(function() {
-        // Find the phone input field in auth panel
-        const phoneInput = document.getElementById('agentPhone');
-        if (phoneInput) {
-            // Change placeholder
-            phoneInput.placeholder = 'Your SC Code (e.g., SC12345)';
-            
-            // Find the label or create one
-            const parentDiv = phoneInput.closest('.config-input');
-            if (parentDiv) {
-                const prevElement = parentDiv.previousElementSibling;
-                if (prevElement && prevElement.tagName === 'INPUT') {
-                    // It's the name field, do nothing
-                } else {
-                    // Try to find label
-                    const labels = document.querySelectorAll('label');
-                    labels.forEach(label => {
-                        if (label.htmlFor === 'agentPhone') {
-                            label.innerHTML = 'SC Code <span style="color:#856404;">(required)</span>';
-                        }
-                    });
-                }
-            }
-        }
-        
-        // Change the note text
-        const note = document.querySelector('.config-panel p:last-child');
-        if (note) {
-            note.innerHTML = '<strong>Note:</strong> Get your access password and SC Code from the admin. Your SC Code will be recorded with each submission.';
-        }
-        
-        // Change field label in form
-        const tradingNameLabel = document.querySelector('label[for="tradingName"]');
-        if (tradingNameLabel) {
-            tradingNameLabel.innerHTML = 'Field Onboarding Agent SC Code';
-        }
-        
-        const tradingNameField = document.getElementById('tradingName');
-        if (tradingNameField) {
-            tradingNameField.placeholder = 'Enter your SC Code';
-            const fieldInfo = tradingNameField.nextElementSibling;
-            if (fieldInfo && fieldInfo.classList.contains('field-info')) {
-                fieldInfo.innerHTML = 'Enter your SC Code provided by admin';
-            }
-        }
-        
-        console.log('✅ Changed from Phone to SC Code');
-    }, 100);
-    
-    // ============ OVERRIDE AUTHENTICATION TO USE SC CODE ============
-    const originalAuthenticate = window.authenticateAgent;
-    window.authenticateAgent = async function() {
-        const agentName = document.getElementById('agentName').value.trim();
-        const agentScCode = document.getElementById('agentPhone').value.trim(); // Now holds SC CODE
-        const agentPassword = document.getElementById('agentPassword').value.trim();
-        
-        if (!agentName || !agentScCode || !agentPassword) {
-            alert('Please enter your Name, SC Code, and Password.');
-            return;
-        }
-        
-        // Validate SC Code format (starts with SC)
-        if (!agentScCode.toUpperCase().startsWith('SC')) {
-            alert('SC Code should start with "SC" (e.g., SC12345)');
-            return;
-        }
-        
-        const authBtn = document.querySelector('.config-btn');
-        const originalText = authBtn.innerHTML;
-        authBtn.innerHTML = '<span class="loading"></span> Authenticating...';
-        authBtn.disabled = true;
-        
-        try {
-            // Try multiple possible owners
-            const possibleOwners = ['BarasaGodwilTech', 'barasagodwiltech', 'BarasaGodwiltech'];
-            let configData = null;
-            
-            for (const owner of possibleOwners) {
-                try {
-                    const testUrl = `https://api.github.com/repos/${owner}/Ezee-money/contents/config.json`;
-                    const testResponse = await fetch(testUrl, {
-                        headers: { 'Accept': 'application/vnd.github.v3+json' }
-                    });
-                    
-                    if (testResponse.ok) {
-                        const testData = await testResponse.json();
-                        const testContent = JSON.parse(decodeURIComponent(escape(atob(testData.content))));
-                        
-                        if (testContent && (testContent.github || testContent.security)) {
-                            configData = testContent;
-                            window.githubConfig = window.githubConfig || {};
-                            window.githubConfig.repoOwner = owner;
-                            window.githubConfig.repoName = 'Ezee-money';
-                            window.githubConfig.branchName = 'main';
-                            break;
-                        }
-                    }
-                } catch (e) {}
-            }
-            
-            if (!configData) {
-                throw new Error('No GitHub configuration found.');
-            }
-            
-            // Get GitHub access token
-            const adminConfig = localStorage.getItem('githubConfig');
-            let accessToken = '';
-            
-            if (adminConfig) {
-                const parsed = JSON.parse(adminConfig);
-                accessToken = parsed.accessToken || '';
-            }
-            
-            if (!accessToken) {
-                const useToken = confirm('This device needs GitHub access token.\n\nEnter it now?');
-                if (useToken) {
-                    accessToken = prompt('Enter GitHub access token:');
-                    if (!accessToken) throw new Error('Token required');
-                    if (configData.github) {
-                        localStorage.setItem('githubConfig', JSON.stringify({
-                            repoOwner: configData.github.repoOwner,
-                            repoName: configData.github.repoName,
-                            accessToken: accessToken,
-                            branchName: configData.github.branchName || 'main'
-                        }));
-                    }
-                } else {
-                    throw new Error('Access token required');
-                }
-            }
-            
-            // Set up GitHub config
-            window.githubConfig = {
-                repoOwner: configData.github?.repoOwner || 'BarasaGodwilTech',
-                repoName: configData.github?.repoName || 'Ezee-money',
-                accessToken: accessToken,
-                branchName: configData.github?.branchName || 'main',
-                imagesSubfolder: configData.github?.imagesFolder || 'images'
-            };
-            
-            // Verify password
-            if (!configData.security || !configData.security.agentPasswordHash) {
-                throw new Error('System not configured. Contact admin.');
-            }
-            
-            const inputHash = await window.createSHA256Hash(agentPassword);
-            if (inputHash !== configData.security.agentPasswordHash) {
-                throw new Error('Invalid password.');
-            }
-            
-            // Save authentication with SC CODE instead of phone
-            const now = Date.now();
-            const expiryDate = now + (7 * 24 * 60 * 60 * 1000);
-            
-            const authData = {
-                isAuthenticated: true,
-                agentName: agentName,
-                agentScCode: agentScCode, // Changed from agentPhone
-                timestamp: now,
-                expiry: expiryDate,
-                version: '6.0-SCCODE'
-            };
-            
-            localStorage.setItem('agentAuth', JSON.stringify(authData));
-            localStorage.setItem('agentGitHubConfig', JSON.stringify(window.githubConfig));
-            
-            window.agentAuth = authData;
-            
-            // Auto-fill the SC CODE field
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField) {
-                tradingNameField.value = agentScCode; // Now stores SC CODE only
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            
-            const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-            
-            alert(`✅ LOGIN SUCCESSFUL!\n\n` +
-                  `👤 Agent: ${agentName}\n` +
-                  `🔑 SC Code: ${agentScCode}\n` +
-                  `📅 Expires: ${expiryDateFormatted}\n\n` +
-                  `Your SC Code will be recorded with every submission.`);
-            
-            // Report activity with SC CODE
-            try {
-                if (window.reportActivity) {
-                    window.reportActivity('authenticated');
-                }
-            } catch(e) {}
-            
-        } catch (error) {
-            console.error('Authentication error:', error);
-            alert('❌ Authentication failed: ' + error.message);
-        } finally {
-            authBtn.innerHTML = originalText;
-            authBtn.disabled = false;
-        }
-    };
-    
-    // ============ OVERRIDE AUTO-FILL TO USE SC CODE ============
-    const originalAutoFill = window.autoFillAgentInfo;
-    window.autoFillAgentInfo = function() {
-        const savedAuth = localStorage.getItem('agentAuth');
-        if (savedAuth) {
-            try {
-                const auth = JSON.parse(savedAuth);
-                if (auth.isAuthenticated && auth.agentName && auth.agentScCode) {
-                    const tradingNameField = document.getElementById('tradingName');
-                    if (tradingNameField) {
-                        tradingNameField.value = auth.agentScCode; // SC CODE only
-                        tradingNameField.readOnly = true;
-                        tradingNameField.style.backgroundColor = '#f5f5f5';
-                    }
-                }
-            } catch (e) {}
-        }
-    };
-    
-    // ============ OVERRIDE REPORT ACTIVITY TO USE SC CODE ============
-    const originalReport = window.reportActivity;
-    window.reportActivity = function(action) {
-        try {
-            const savedAuth = localStorage.getItem('agentAuth');
-            if (!savedAuth) return;
-            
-            const auth = JSON.parse(savedAuth);
-            if (!auth.isAuthenticated || !auth.agentName || !auth.agentScCode) return;
-            
-            const activity = {
-                name: auth.agentName,
-                scCode: auth.agentScCode, // Changed from phone
-                action: action,
-                timestamp: new Date().toISOString()
-            };
-            
-            // Update active agents with SC CODE
-            let activeAgents = JSON.parse(localStorage.getItem('activeFieldAgents') || '[]');
-            const existing = activeAgents.find(a => a.scCode === auth.agentScCode);
-            
-            if (existing) {
-                existing.lastActive = activity.timestamp;
-                existing.lastAction = action;
-                existing.sessionCount = (existing.sessionCount || 0) + 1;
-                if (action === 'submitted new agent') {
-                    existing.submissions = (existing.submissions || 0) + 1;
-                }
-            } else {
-                activeAgents.push({
-                    name: auth.agentName,
-                    scCode: auth.agentScCode, // Store SC CODE instead of phone
-                    firstSeen: activity.timestamp,
-                    lastActive: activity.timestamp,
-                    lastAction: action,
-                    sessionCount: 1,
-                    submissions: action === 'submitted new agent' ? 1 : 0
-                });
-            }
-            
-            localStorage.setItem('activeFieldAgents', JSON.stringify(activeAgents));
-            localStorage.setItem('lastActivity', JSON.stringify(activity));
-            window.dispatchEvent(new Event('storage'));
-            
-        } catch (e) {
-            console.log('Report error:', e);
-        }
-    };
-    
-    // ============ OVERRIDE RESET AUTH ============
-    const originalReset = window.resetAuth;
-    window.resetAuth = function() {
-        localStorage.removeItem('agentAuth');
-        localStorage.removeItem('agentGitHubConfig');
-        
-        document.getElementById('agentName').value = '';
-        document.getElementById('agentPhone').value = ''; // SC CODE field
-        document.getElementById('agentPassword').value = '';
-        
-        const tradingNameField = document.getElementById('tradingName');
-        if (tradingNameField) {
-            tradingNameField.value = '';
-            tradingNameField.readOnly = false;
-            tradingNameField.style.backgroundColor = '';
-        }
-        
-        alert('✅ Logged out. SC Code cleared.');
-    };
-    
-    // ============ RESTORE SESSION WITH SC CODE ============
-    window.restoreAuthentication = function() {
-        try {
-            const savedAuth = localStorage.getItem('agentAuth');
-            const savedConfig = localStorage.getItem('agentGitHubConfig');
-            
-            if (!savedAuth || !savedConfig) return false;
-            
-            const auth = JSON.parse(savedAuth);
-            
-            if (auth.expiry && Date.now() > auth.expiry) {
-                localStorage.removeItem('agentAuth');
-                localStorage.removeItem('agentGitHubConfig');
-                return false;
-            }
-            
-            window.agentAuth = auth;
-            window.githubConfig = JSON.parse(savedConfig);
-            
-            // Auto-fill with SC CODE
-            const tradingNameField = document.getElementById('tradingName');
-            if (tradingNameField && auth.agentScCode) {
-                tradingNameField.value = auth.agentScCode;
-                tradingNameField.readOnly = true;
-                tradingNameField.style.backgroundColor = '#f5f5f5';
-            }
-            
-            document.getElementById('configPanel').style.display = 'none';
-            return true;
-            
-        } catch (e) {
             return false;
         }
-    };
-    
-    // Run restoration
-    setTimeout(window.restoreAuthentication, 50);
-    
-    console.log('✅ PHONE → SC CODE conversion complete!');
-})();
-</script>
+
+        // UI Management
+        function showAuthPanel() {
+            document.getElementById('authPanel').classList.remove('hidden');
+            document.getElementById('registrationForm').classList.add('hidden');
+        }
+
+        function showRegistrationForm() {
+            document.getElementById('authPanel').classList.add('hidden');
+            document.getElementById('registrationForm').classList.remove('hidden');
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Authentication form
+            document.getElementById('authForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleAuthentication();
+            });
+
+            // Registration form
+            document.getElementById('agentForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleRegistration();
+            });
+
+            // Photo uploads
+            document.getElementById('idFrontInput').addEventListener('change', function(e) {
+                handlePhotoUpload(e, 'idFrontPreview');
+            });
+
+            document.getElementById('idBackInput').addEventListener('change', function(e) {
+                handlePhotoUpload(e, 'idBackPreview');
+            });
+
+            document.getElementById('agentPhotoInput').addEventListener('change', function(e) {
+                handlePhotoUpload(e, 'agentPhotoPreview');
+            });
+        }
+
+        async function handleAuthentication() {
+            const password = document.getElementById('agentPassword').value;
+            const token = document.getElementById('githubToken').value;
+            
+            if (!password) {
+                showAlert('Password is required', 'error');
+                return;
+            }
+
+            const authButton = document.querySelector('#authForm button[type="submit"]');
+            const buttonText = document.getElementById('authButtonText');
+            const loading = document.getElementById('authLoading');
+            
+            try {
+                authButton.disabled = true;
+                buttonText.textContent = 'Authenticating...';
+                loading.classList.remove('hidden');
+                
+                await authenticateAgent(password, token);
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                authButton.disabled = false;
+                buttonText.textContent = 'Authenticate';
+                loading.classList.add('hidden');
+            }
+        }
+
+        // Photo Handling
+        async function handlePhotoUpload(event, previewId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please select an image file', 'error');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('Image size should be less than 5MB', 'error');
+                return;
+            }
+
+            try {
+                // Compress image
+                const compressedFile = await compressImage(file);
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">`;
+                    preview.parentElement.classList.add('has-image');
+                };
+                reader.readAsDataURL(compressedFile);
+                
+            } catch (error) {
+                showAlert('Error processing image: ' + error.message, 'error');
+            }
+        }
+
+        async function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Calculate new dimensions (max 800px width/height)
+                        let width = img.width;
+                        let height = img.height;
+                        const maxSize = 800;
+                        
+                        if (width > height) {
+                            if (width > maxSize) {
+                                height = (height * maxSize) / width;
+                                width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                                width = (width * maxSize) / height;
+                                height = maxSize;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Draw and compress
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob(function(blob) {
+                            resolve(new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }));
+                        }, 'image/jpeg', 0.8);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Registration Handling
+        async function handleRegistration() {
+            if (!isAuthenticated) {
+                showAlert('Please authenticate first', 'error');
+                return;
+            }
+
+            // Check session reset
+            if (checkSessionReset()) {
+                logout();
+                showAlert('Your session has been reset. Please login again.', 'warning');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = submitBtn.querySelector('span:first-child');
+            const submitLoading = document.getElementById('submitLoading');
+            const progressBar = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+
+            try {
+                // Validate form
+                if (!validateForm()) {
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitText.textContent = 'Submitting...';
+                submitLoading.classList.remove('hidden');
+                progressBar.classList.remove('hidden');
+
+                // Collect form data
+                const formData = collectFormData();
+                
+                // Upload images
+                progressFill.style.width = '20%';
+                const imageUrls = await uploadImages(formData);
+                
+                progressFill.style.width = '60%';
+                
+                // Save agent data
+                await saveAgentDataToGitHub(formData, imageUrls);
+                
+                progressFill.style.width = '100%';
+                
+                showAlert('Registration submitted successfully!', 'success');
+                reportActivity('Agent registration submitted');
+                
+                // Reset form
+                document.getElementById('agentForm').reset();
+                document.querySelectorAll('.photo-preview').forEach(preview => {
+                    preview.parentElement.classList.remove('has-image');
+                    preview.innerHTML = '<p>📷 Click to upload photo</p>';
+                });
+                
+            } catch (error) {
+                showAlert('Error submitting registration: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Submit Registration';
+                submitLoading.classList.add('hidden');
+                setTimeout(() => {
+                    progressBar.classList.add('hidden');
+                    progressFill.style.width = '0%';
+                }, 2000);
+            }
+        }
+
+        function validateForm() {
+            const required = [
+                'fullName', 'scCode', 'email', 'nationalId', 
+                'dob', 'gender', 'businessAddress', 'residentialAddress',
+                'nextOfKinName', 'nextOfKinRelationship', 'nextOfKinPhone'
+            ];
+
+            for (const field of required) {
+                const value = document.getElementById(field).value.trim();
+                if (!value) {
+                    showAlert(`Please fill in all required fields`, 'error');
+                    document.getElementById(field).focus();
+                    return false;
+                }
+            }
+
+            // Check photos
+            const photos = ['idFrontInput', 'idBackInput', 'agentPhotoInput'];
+            for (const photo of photos) {
+                if (!document.getElementById(photo).files[0]) {
+                    showAlert('Please upload all required photos', 'error');
+                    return false;
+                }
+            }
+
+            // Validate email format
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('Please enter a valid email address', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function collectFormData() {
+            return {
+                fullName: document.getElementById('fullName').value.trim(),
+                scCode: document.getElementById('scCode').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                nationalId: document.getElementById('nationalId').value.trim(),
+                dob: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value,
+                businessAddress: document.getElementById('businessAddress').value.trim(),
+                residentialAddress: document.getElementById('residentialAddress').value.trim(),
+                nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
+                nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value.trim(),
+                nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim()
+            };
+        }
+
+        async function uploadImages(formData) {
+            const imageUrls = {};
+            const imageFiles = {
+                idFront: document.getElementById('idFrontInput').files[0],
+                idBack: document.getElementById('idBackInput').files[0],
+                agentPhoto: document.getElementById('agentPhotoInput').files[0]
+            };
+
+            for (const [type, file] of Object.entries(imageFiles)) {
+                if (file) {
+                    const url = await uploadImageToGitHub(file, type, formData.scCode);
+                    imageUrls[type] = url;
+                }
+            }
+
+            return imageUrls;
+        }
+
+        async function uploadImageToGitHub(file, imageType, scCode) {
+            try {
+                // Generate filename
+                const timestamp = Date.now();
+                const filename = `${scCode}_${imageType}_${timestamp}.jpg`;
+                
+                // Convert file to base64
+                const base64 = await fileToBase64(file);
+                
+                // Upload to GitHub
+                const response = await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/${config.github.imagesFolder}/${filename}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Upload ${imageType} image for ${scCode}`,
+                        content: base64.split(',')[1] // Remove data:image/jpeg;base64, prefix
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to upload ${imageType} image`);
+                }
+
+                const data = await response.json();
+                return data.content.download_url;
+
+            } catch (error) {
+                throw new Error(`Error uploading ${imageType}: ${error.message}`);
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveAgentDataToGitHub(formData, imageUrls) {
+            try {
+                // Generate agent ID
+                const agentId = `AGENT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                
+                // Create agent object
+                const agent = {
+                    id: agentId,
+                    fullName: formData.fullName,
+                    personalNumber: formData.scCode,
+                    email: formData.email,
+                    nationalId: formData.nationalId,
+                    dob: formData.dob,
+                    gender: formData.gender,
+                    businessAddress: formData.businessAddress,
+                    residentialAddress: formData.residentialAddress,
+                    nextOfKinName: formData.nextOfKinName,
+                    nextOfKinRelationship: formData.nextOfKinRelationship,
+                    nextOfKinPhone: formData.nextOfKinPhone,
+                    tradingName: `SC${formData.scCode}`,
+                    submissionDate: new Date().toISOString(),
+                    status: 'pending',
+                    emailVerified: false,
+                    adminVerified: false,
+                    idFrontUrl: imageUrls.idFront,
+                    idBackUrl: imageUrls.idBack,
+                    agentPhotoUrl: imageUrls.agentPhoto
+                };
+
+                // Get current data
+                const dataResponse = await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/data.json`);
+                const dataResult = await dataResponse.json();
+                const currentData = JSON.parse(atob(dataResult.content));
+
+                // Add new agent
+                currentData.agents.push(agent);
+                currentData.lastUpdated = new Date().toISOString();
+
+                // Save to GitHub
+                const updatedData = btoa(JSON.stringify(currentData, null, 2));
+                
+                await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/data.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Add new agent registration: ${agent.fullName}`,
+                        content: updatedData,
+                        sha: dataResult.sha
+                    })
+                });
+
+            } catch (error) {
+                throw new Error('Error saving agent data: ' + error.message);
+            }
+        }
+
+        // Activity Reporting
+        function reportActivity(action) {
+            try {
+                const activities = JSON.parse(localStorage.getItem('agentActivities') || '[]');
+                activities.push({
+                    action: action,
+                    timestamp: new Date().toISOString(),
+                    scCode: document.getElementById('scCode')?.value || 'Unknown'
+                });
+                
+                // Keep only last 50 activities
+                if (activities.length > 50) {
+                    activities.splice(0, activities.length - 50);
+                }
+                
+                localStorage.setItem('agentActivities', JSON.stringify(activities));
+            } catch (error) {
+                console.error('Error reporting activity:', error);
+            }
+        }
+
+        // Utility Functions
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+            alertDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
 </body>
 </html>

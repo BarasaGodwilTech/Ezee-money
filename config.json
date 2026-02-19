@@ -6,19 +6,16 @@
     "imagesFolder": "images"
   },
   "security": {
-    "passwordSetAt": "2026-02-12T08:43:17.721Z",
+    "passwordSetAt": "2026-02-19T00:00:00.000Z",
     "passwordSetBy": "admin",
-    "sessionResetAt": "2026-02-12T08:43:17.721Z",
-    "sessionResetReason": "password_changed",
-    "passwordResetAt": "2026-02-12T08:42:46.208Z",
-    "passwordResetBy": "admin",
-    "passwordDeleted": true,
+    "sessionResetAt": "2026-02-19T00:00:00.000Z",
+    "sessionResetReason": "initial_setup",
     "agentPasswordHash": "13a5f70432460ae0d6fc5270d62d70a6e5f73cc35b8fe2741f7f86e0c0c576ed"
   },
   "system": {
     "appName": "Ezee Money Agent Registration",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "lastConfiguredBy": "admin",
-    "lastConfiguredAt": "2026-02-13T13:12:33.820Z"
+    "lastConfiguredAt": "2026-02-19T00:00:00.000Z"
   }
 }
