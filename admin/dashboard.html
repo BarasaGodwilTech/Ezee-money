@@ -579,18 +579,27 @@
                     <form id="settingsForm">
                         <div class="form-group">
                             <label for="adminPassword">Admin Password</label>
-                            <input type="password" id="adminPassword" placeholder="Change admin password">
-                        </div>
-                        <div class="form-group">
-                            <label for="systemEmail">System Email</label>
-                            <input type="email" id="systemEmail" placeholder="admin@ezeemoney.com">
+                            <input type="password" id="adminPassword" placeholder="Enter new admin password">
                         </div>
                         <div class="form-group">
                             <label for="dataRetention">Data Retention (days)</label>
                             <input type="number" id="dataRetention" placeholder="365" min="30" max="3650">
                         </div>
                         <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="button" class="btn btn-danger" onclick="clearConfiguration()" style="margin-left: 10px;">Clear All Configuration</button>
                     </form>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #2a5298; margin-bottom: 10px;">📋 Configuration Status</h4>
+                        <p><strong>GitHub Token:</strong> <span id="tokenStatus">Checking...</span></p>
+                        <p><strong>Real-Time Service:</strong> <span id="realTimeServiceStatus">Checking...</span></p>
+                        <p><strong>Data Storage:</strong> <span id="dataStorageStatus">Checking...</span></p>
+                        <p><strong>Configuration Persistence:</strong> <span style="color: #28a745;">✅ Saved to localStorage</span></p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                            <strong>Note:</strong> Configuration is automatically saved and persists across devices on the same domain. 
+                            Only clear configuration if you want to reset all settings.
+                        </p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -635,14 +644,63 @@
         }
 
         function loadConfig() {
-            const saved = localStorage.getItem('ezeeAdminConfig');
-            if (saved) {
-                config = JSON.parse(saved);
+            try {
+                // Always load from localStorage first (persists across devices)
+                const saved = localStorage.getItem('ezeeAdminConfig');
+                if (saved) {
+                    config = JSON.parse(saved);
+                    console.log('Configuration loaded from localStorage:', config);
+                } else {
+                    console.log('No saved configuration found, using defaults');
+                }
+                
+                // Update GitHub service with loaded config
+                if (githubService) {
+                    githubService.saveConfig(config.github);
+                }
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                showAlert('Error loading configuration', 'error');
             }
         }
 
         function saveConfig() {
             localStorage.setItem('ezeeAdminConfig', JSON.stringify(config));
+            console.log('Configuration saved to localStorage');
+        }
+
+        function clearConfiguration() {
+            if (confirm('Are you sure you want to clear all configuration? This will remove GitHub settings and local data.')) {
+                localStorage.removeItem('ezeeAdminConfig');
+                localStorage.removeItem('ezeeAgents');
+                localStorage.removeItem('adminSubmissions');
+                localStorage.removeItem('ezeeSubmissions');
+                
+                // Reset to defaults
+                config = {
+                    github: {
+                        repoOwner: '',
+                        repoName: '',
+                        branchName: 'main',
+                        token: ''
+                    },
+                    agents: [],
+                    submissions: []
+                };
+                
+                // Stop real-time service
+                if (realTimeService) {
+                    realTimeService.stopRealTimePolling();
+                }
+                
+                updateRealTimeStatus(false);
+                populateConfigForm();
+                renderAgents();
+                renderSubmissions();
+                updateStats();
+                
+                showAlert('Configuration cleared successfully!', 'success');
+            }
         }
 
         function setupEventListeners() {
@@ -685,7 +743,7 @@
             document.getElementById('githubToken').value = config.github.token || '';
         }
 
-        async function saveGitHubConfig() {
+        function saveGitHubConfig() {
             const repoOwner = document.getElementById('repoOwner').value;
             const repoName = document.getElementById('repoName').value;
             const branchName = document.getElementById('branchName').value;
@@ -696,13 +754,28 @@
                 return;
             }
 
+            // Update configuration
             config.github = { repoOwner, repoName, branchName, token };
+            
+            // Save to localStorage (persists across devices if same domain)
+            localStorage.setItem('ezeeAdminConfig', JSON.stringify(config));
             
             // Update GitHub service configuration
             githubService.saveConfig(config.github);
-            saveConfig();
-
-            showAlert('GitHub configuration saved successfully!', 'success');
+            
+            // Reinitialize real-time service with new config
+            if (realTimeService) {
+                const initialized = realTimeService.init(config.github);
+                if (initialized) {
+                    updateRealTimeStatus(true);
+                    showAlert('GitHub configuration saved and real-time service updated!', 'success');
+                } else {
+                    updateRealTimeStatus(false);
+                    showAlert('GitHub configuration saved but real-time service failed to initialize', 'warning');
+                }
+            } else {
+                showAlert('GitHub configuration saved successfully!', 'success');
+            }
         }
 
         async function testGitHubConnection() {
@@ -758,31 +831,76 @@
                 }
             } catch (error) {
                 console.error('Failed to save agents to GitHub:', error);
-                // Fallback to localStorage
-                localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+
+        function updateConfigurationStatus() {
+            // Update token status
+            const tokenStatus = document.getElementById('tokenStatus');
+            if (config.github?.token) {
+                tokenStatus.innerHTML = '<span style="color: #28a745;">✅ Configured</span>';
+            } else {
+                tokenStatus.innerHTML = '<span style="color: #dc3545;">❌ Not configured</span>';
+            }
+
+            // Update real-time service status
+            const realTimeServiceStatus = document.getElementById('realTimeServiceStatus');
+            if (realTimeService && realTimeService.token) {
+                realTimeServiceStatus.innerHTML = '<span style="color: #28a745;">✅ Active</span>';
+            } else {
+                realTimeServiceStatus.innerHTML = '<span style="color: #dc3545;">❌ Inactive</span>';
+            }
+
+            // Update data storage status
+            const dataStorageStatus = document.getElementById('dataStorageStatus');
+            if (config.github?.token) {
+                dataStorageStatus.innerHTML = '<span style="color: #28a745;">✅ GitHub Repository</span>';
+            } else {
+                dataStorageStatus.innerHTML = '<span style="color: #ffc107;">⚠️ Local Storage Only</span>';
             }
         }
 
-        function renderAgents() {
-            const agentList = document.getElementById('agentList');
+        function updateRealTimeStatus(isConnected) {
+            const statusElement = document.getElementById('realTimeStatus');
+            if (statusElement) {
+                if (isConnected) {
+                    statusElement.innerHTML = '<span style="color: #28a745;">● Connected</span>';
+                    statusElement.title = 'Real-time updates are active';
+                } else {
+                    statusElement.innerHTML = '<span style="color: #dc3545;">● Offline</span>';
+                    statusElement.title = 'Real-time updates are not available';
+                }
+            }
+        }
+
+        function renderSubmissions() {
+            const tbody = document.querySelector('#submissionsTable tbody');
             
-            if (config.agents.length === 0) {
-                agentList.innerHTML = '<p style="color: #6b7280; text-align: center;">No field agents configured</p>';
+            if (config.submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">No submissions found</td></tr>';
                 return;
             }
 
-            agentList.innerHTML = config.agents.map(agent => `
-                <div class="agent-item">
-                    <div class="agent-info">
-                        <div class="agent-name">${agent.fullName}</div>
-                        <div class="agent-details">SC Code: ${agent.scCode} | Status: ${agent.status}</div>
-                    </div>
-                    <div class="agent-actions">
-                        <button class="btn btn-sm btn-warning" onclick="editAgent('${agent.id}')">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.id}')">Delete</button>
-                    </div>
-                </div>
-            `).join('');
+            let html = '';
+            for (const submission of config.submissions) {
+                // Handle different submission formats
+                const agentCode = submission.agentInfo?.scCode || submission.scCode || 'N/A';
+                const agentName = submission.agentInfo?.fullName || submission.agentName || submission.fullName || 'N/A';
+                const submissionDate = submission.submissionDate || submission.date || new Date().toISOString();
+                const status = submission.status || 'submitted';
+                
+                html += `
+                    <tr>
+                        <td>${agentCode}</td>
+                        <td>${agentName}</td>
+                        <td>${new Date(submissionDate).toLocaleDateString()}</td>
+                        <td><span class="status-badge status-${status}">${status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="viewSubmission('${submission.id}')">View</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            tbody.innerHTML = html;
         }
 
         async function showAddAgentModal() {
