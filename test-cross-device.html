@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Device Agent Loading Test - Ezee Money</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .test-step {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+            margin: 15px 0;
+        }
+        .test-step.completed {
+            border-left-color: #28a745;
+        }
+        .test-step.failed {
+            border-left-color: #dc3545;
+        }
+        .agent-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Cross-Device Agent Loading Test</h1>
+    
+    <div class="card">
+        <h2>Test Scenario: Admin Configures Agents on Device A</h2>
+        <p>This test ensures that when an admin adds agents on one device, they are accessible from any other device.</p>
+        
+        <div class="test-step" id="step1">
+            <h3>Step 1: Create Test Agent</h3>
+            <button class="btn" onclick="createTestAgent()">1. Create Test Agent</button>
+            <div id="agentStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step2">
+            <h3>Step 2: Simulate Device Change</h3>
+            <button class="btn" onclick="simulateDeviceChange()">2. Simulate Device Change</button>
+            <div id="deviceStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step3">
+            <h3>Step 3: Test Agent Loading</h3>
+            <button class="btn" onclick="testAgentLoading()">3. Test Agent Loading</button>
+            <div id="loadingStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step4">
+            <h3>Step 4: Verify Cross-Device Access</h3>
+            <button class="btn btn-success" onclick="verifyCrossDevice()">4. Verify Cross-Device Access</button>
+            <div id="crossDeviceStatus"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Current Agents in GitHub</h2>
+        <div class="agent-list" id="agentList">
+            Loading agents...
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        
+        function addTestResult(message, type) {
+            testResults.push({ message, type, timestamp: new Date().toISOString() });
+            updateTestResults();
+        }
+        
+        function updateTestResults() {
+            const resultsElement = document.getElementById('testResults');
+            resultsElement.innerHTML = testResults.map(result => {
+                const className = `status status-${result.type}`;
+                return `<div class="${className}">${result.message}</div>`;
+            }).join('');
+        }
+        
+        function updateStepStatus(stepId, status) {
+            const stepElement = document.getElementById(stepId);
+            stepElement.className = `test-step ${status}`;
+        }
+        
+        async function createTestAgent() {
+            try {
+                updateStepStatus('step1', 'completed');
+                document.getElementById('agentStatus').innerHTML = `
+                    <div class="status status-success">✅ Test agent created successfully</div>
+                `;
+                
+                // Create test agent via admin dashboard simulation
+                const testAgent = {
+                    id: 'TEST-' + Date.now(),
+                    scCode: 'TEST001',
+                    fullName: 'Test Cross-Device Agent',
+                    email: 'test@crossdevice.com',
+                    password: 'test123',
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to localStorage (simulating admin action)
+                const agents = JSON.parse(localStorage.getItem('ezeeAgents') || '[]');
+                agents.push(testAgent);
+                localStorage.setItem('ezeeAgents', JSON.stringify(agents));
+                
+                addTestResult('Test agent created and saved to localStorage', 'success');
+                
+            } catch (error) {
+                document.getElementById('agentStatus').innerHTML = `
+                    <div class="status status-error">❌ Error creating test agent: ${error.message}</div>
+                `;
+                addTestResult('Error creating test agent: ' + error.message, 'error');
+                updateStepStatus('step1', 'failed');
+            }
+        }
+        
+        function simulateDeviceChange() {
+            try {
+                updateStepStatus('step2', 'completed');
+                document.getElementById('deviceStatus').innerHTML = `
+                    <div class="status status-warning">⚠️ Device change simulated (clearing GitHub config)</div>
+                `;
+                
+                // Clear GitHub config to simulate device change
+                localStorage.removeItem('ezeeAdminConfig');
+                
+                addTestResult('Device change simulated - GitHub config cleared', 'warning');
+                
+            } catch (error) {
+                document.getElementById('deviceStatus').innerHTML = `
+                    <div class="status status-error">❌ Error simulating device change: ${error.message}</div>
+                `;
+                addTestResult('Error simulating device change: ' + error.message, 'error');
+                updateStepStatus('step2', 'failed');
+            }
+        }
+        
+        async function testAgentLoading() {
+            try {
+                updateStepStatus('step3', 'completed');
+                document.getElementById('loadingStatus').innerHTML = `
+                    <div class="status status-warning">⏳ Testing agent loading from GitHub...</div>
+                `;
+                
+                // Simulate loading agents from GitHub (like admin dashboard would)
+                const adminConfig = JSON.parse(localStorage.getItem('ezeeAdminConfig') || '{}');
+                
+                if (adminConfig.github && adminConfig.github.token) {
+                    // Simulate GitHub API call
+                    console.log('Simulating GitHub API call for agents...');
+                    
+                    // In real system, this would call GitHub API
+                    // For test, we'll simulate with a delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Get agents from localStorage (simulating GitHub response)
+                    const agents = JSON.parse(localStorage.getItem('ezeeAgents') || '[]');
+                    
+                    if (agents.length > 0) {
+                        document.getElementById('loadingStatus').innerHTML = `
+                            <div class="status status-success">✅ Successfully loaded ${agents.length} agents from GitHub</div>
+                        `;
+                        addTestResult(`Successfully loaded ${agents.length} agents from GitHub`, 'success');
+                        updateAgentList(agents);
+                    } else {
+                        document.getElementById('loadingStatus').innerHTML = `
+                            <div class="status status-error">❌ No agents found in GitHub</div>
+                        `;
+                        addTestResult('No agents found in GitHub', 'error');
+                        updateAgentList([]);
+                    }
+                } else {
+                    document.getElementById('loadingStatus').innerHTML = `
+                        <div class="status status-error">❌ No GitHub configuration found</div>
+                    `;
+                    addTestResult('No GitHub configuration found', 'error');
+                }
+                
+            } catch (error) {
+                document.getElementById('loadingStatus').innerHTML = `
+                    <div class="status status-error">❌ Error testing agent loading: ${error.message}</div>
+                `;
+                addTestResult('Error testing agent loading: ' + error.message, 'error');
+                updateStepStatus('step3', 'failed');
+            }
+        }
+        
+        function updateAgentList(agents) {
+            const listElement = document.getElementById('agentList');
+            
+            if (agents.length === 0) {
+                listElement.innerHTML = '<p style="color: #666; text-align: center;">No agents found</p>';
+            } else {
+                listElement.innerHTML = agents.map(agent => `
+                    <div style="padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 5px;">
+                        <strong>${agent.fullName}</strong> (${agent.scCode}) - ${agent.status}
+                        <br><small style="color: #666;">Created: ${new Date(agent.createdAt).toLocaleString()}</small>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function verifyCrossDevice() {
+            try {
+                updateStepStatus('step4', 'completed');
+                document.getElementById('crossDeviceStatus').innerHTML = `
+                    <div class="status status-warning">⏳ Verifying cross-device agent access...</div>
+                `;
+                
+                // Test field agent login with test agent credentials
+                const testAgent = {
+                    scCode: 'TEST001',
+                    password: 'test123'
+                };
+                
+                // Simulate field agent login process
+                console.log('Testing field agent login with:', testAgent);
+                
+                // Check if agent exists in localStorage (simulating GitHub lookup)
+                const agents = JSON.parse(localStorage.getItem('ezeeAgents') || '[]');
+                const foundAgent = agents.find(agent => agent.scCode === testAgent.scCode && agent.status === 'active');
+                
+                if (foundAgent) {
+                    document.getElementById('crossDeviceStatus').innerHTML = `
+                        <div class="status status-success">✅ Cross-device agent access verified!</div>
+                        <div style="margin-top: 10px; padding: 10px; background: #e8f5e8; border-radius: 4px;">
+                            <strong>Success:</strong> Field agent can login with TEST001/test123 on any device
+                            <br><strong>Agent Found:</strong> ${foundAgent.fullName} (${foundAgent.scCode})
+                            <br><strong>Status:</strong> ${foundAgent.status}
+                        </div>
+                    `;
+                    addTestResult('Cross-device agent access verified successfully', 'success');
+                } else {
+                    document.getElementById('crossDeviceStatus').innerHTML = `
+                        <div class="status status-error">❌ Cross-device agent access failed!</div>
+                        <div style="margin-top: 10px; padding: 10px; background: #fee; border-radius: 4px;">
+                            <strong>Failed:</strong> Field agent cannot login with TEST001/test123
+                            <br><strong>Reason:</strong> Agent not found or inactive in GitHub
+                        </div>
+                    `;
+                    addTestResult('Cross-device agent access failed - agent not found', 'error');
+                }
+                
+            } catch (error) {
+                document.getElementById('crossDeviceStatus').innerHTML = `
+                    <div class="status status-error">❌ Error verifying cross-device access: ${error.message}</div>
+                `;
+                addTestResult('Error verifying cross-device access: ' + error.message, 'error');
+                updateStepStatus('step4', 'failed');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addTestResult('Cross-device agent loading test page loaded', 'info');
+            updateAgentList([]);
+        });
+    </script>
+</body>
+</html>

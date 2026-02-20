@@ -848,19 +848,47 @@
         async function loadAgents() {
             try {
                 console.log('Loading agents...');
+                console.log('GitHub config:', config.github);
                 
-                // Try to load from GitHub first if configured
-                if (realTimeService && realTimeService.token) {
-                    console.log('Loading agents from GitHub via real-time service...');
-                    config.agents = await realTimeService.getAgents();
-                    console.log(`Loaded ${config.agents.length} agents from GitHub`);
-                } else if (githubService && githubService.config.token) {
-                    console.log('Loading agents from GitHub via GitHub service...');
-                    config.agents = await githubService.getAgents();
-                    console.log(`Loaded ${config.agents.length} agents from GitHub`);
+                // Always try GitHub first if token is configured (regardless of device)
+                if (config.github && config.github.token) {
+                    console.log('GitHub token found, loading agents from GitHub...');
+                    
+                    try {
+                        // Try real-time service first
+                        if (realTimeService) {
+                            console.log('Loading agents via real-time service...');
+                            config.agents = await realTimeService.getAgents();
+                            console.log(`Loaded ${config.agents.length} agents from GitHub via real-time service`);
+                        } else {
+                            // Fallback to GitHub service
+                            console.log('Loading agents via GitHub service...');
+                            config.agents = await githubService.getAgents();
+                            console.log(`Loaded ${config.agents.length} agents from GitHub via GitHub service`);
+                        }
+                        
+                        // Also save to localStorage as backup
+                        localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+                        console.log('Agents cached to localStorage as backup');
+                        
+                    } catch (githubError) {
+                        console.error('GitHub loading failed:', githubError);
+                        showAlert('GitHub loading failed, using local cache: ' + githubError.message, 'warning');
+                        
+                        // Fallback to localStorage cache
+                        const savedAgents = localStorage.getItem('ezeeAgents');
+                        if (savedAgents) {
+                            config.agents = JSON.parse(savedAgents);
+                            console.log(`Loaded ${config.agents.length} agents from localStorage cache`);
+                        } else {
+                            config.agents = [];
+                            console.log('No agents found in cache');
+                        }
+                    }
+                    
                 } else {
-                    // Fallback to localStorage for demo
-                    console.log('Loading agents from localStorage...');
+                    // No GitHub token configured, use localStorage only
+                    console.log('No GitHub token configured, using localStorage...');
                     const savedAgents = localStorage.getItem('ezeeAgents');
                     if (savedAgents) {
                         config.agents = JSON.parse(savedAgents);
@@ -874,26 +902,20 @@
                 renderAgents();
                 console.log('Agents loaded and rendered successfully');
                 
+                // Show status to user
+                if (config.github && config.github.token) {
+                    showAlert(`Loaded ${config.agents.length} agents from GitHub`, 'success');
+                } else {
+                    showAlert(`Loaded ${config.agents.length} agents from local cache`, 'info');
+                }
+                
             } catch (error) {
                 console.error('Failed to load agents:', error);
                 showAlert('Error loading agents: ' + error.message, 'error');
                 
-                // Fallback to localStorage
-                try {
-                    const savedAgents = localStorage.getItem('ezeeAgents');
-                    if (savedAgents) {
-                        config.agents = JSON.parse(savedAgents);
-                        renderAgents();
-                        console.log('Fallback to localStorage successful');
-                    } else {
-                        config.agents = [];
-                        renderAgents();
-                    }
-                } catch (fallbackError) {
-                    console.error('Fallback also failed:', fallbackError);
-                    config.agents = [];
-                    renderAgents();
-                }
+                // Final fallback
+                config.agents = [];
+                renderAgents();
             }
         }
 
@@ -1000,20 +1022,40 @@
             try {
                 console.log('Saving agents...');
                 
-                // Save to GitHub if configured
-                if (realTimeService && realTimeService.token) {
-                    console.log('Saving agents to GitHub via real-time service...');
-                    await realTimeService.saveAgents(config.agents);
-                    console.log('Agents saved to GitHub successfully');
-                } else if (githubService && githubService.config.token) {
-                    console.log('Saving agents to GitHub via GitHub service...');
-                    await githubService.saveAgents(config.agents);
-                    console.log('Agents saved to GitHub successfully');
+                // Always try to save to GitHub first if token is configured (regardless of device)
+                if (config.github && config.github.token) {
+                    console.log('GitHub token found, saving agents to GitHub...');
+                    
+                    try {
+                        // Try real-time service first
+                        if (realTimeService) {
+                            console.log('Saving agents via real-time service...');
+                            await realTimeService.saveAgents(config.agents);
+                            console.log('Agents saved to GitHub via real-time service');
+                        } else {
+                            // Fallback to GitHub service
+                            console.log('Saving agents via GitHub service...');
+                            await githubService.saveAgents(config.agents);
+                            console.log('Agents saved to GitHub via GitHub service');
+                        }
+                        
+                        showAlert('Agents saved to GitHub successfully!', 'success');
+                        
+                    } catch (githubError) {
+                        console.error('GitHub saving failed:', githubError);
+                        showAlert('GitHub saving failed, using local cache: ' + githubError.message, 'warning');
+                        
+                        // Fallback to localStorage
+                        localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+                        console.log('Agents saved to localStorage as fallback');
+                    }
+                    
                 } else {
-                    // Fallback to localStorage
-                    console.log('Saving agents to localStorage...');
+                    // No GitHub token configured, save to localStorage only
+                    console.log('No GitHub token configured, saving to localStorage...');
                     localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
-                    console.log('Agents saved to localStorage successfully');
+                    console.log('Agents saved to localStorage');
+                    showAlert('Agents saved to local cache', 'info');
                 }
                 
             } catch (error) {
@@ -1024,29 +1066,70 @@
 
         async function loadSubmissions() {
             try {
-                // Try real-time service first
-                if (realTimeService && realTimeService.token) {
-                    console.log('Loading submissions via real-time service...');
-                    const submissions = await realTimeService.getSubmissions();
-                    config.submissions = submissions;
-                    renderSubmissions();
-                    updateStats();
-                    return;
-                }
+                console.log('Loading submissions...');
+                console.log('GitHub config:', config.github);
                 
-                // Fallback to localStorage
-                console.log('Loading submissions from localStorage...');
-                const savedSubmissions = localStorage.getItem('adminSubmissions');
-                if (savedSubmissions) {
-                    const data = JSON.parse(savedSubmissions);
-                    // Handle both formats: direct array or object with submissions array
-                    config.submissions = data.submissions || data || [];
+                // Always try GitHub first if token is configured (regardless of device)
+                if (config.github && config.github.token) {
+                    console.log('GitHub token found, loading submissions from GitHub...');
+                    
+                    try {
+                        // Try real-time service first
+                        if (realTimeService) {
+                            console.log('Loading submissions via real-time service...');
+                            const submissions = await realTimeService.getSubmissions();
+                            config.submissions = submissions;
+                            console.log(`Loaded ${config.submissions.length} submissions from GitHub via real-time service`);
+                        } else {
+                            // Fallback to GitHub service
+                            console.log('Loading submissions via GitHub service...');
+                            config.submissions = await githubService.getSubmissions();
+                            console.log(`Loaded ${config.submissions.length} submissions from GitHub via GitHub service`);
+                        }
+                        
+                        // Also save to localStorage as backup
+                        localStorage.setItem('adminSubmissions', JSON.stringify({ submissions: config.submissions }));
+                        console.log('Submissions cached to localStorage as backup');
+                        
+                    } catch (githubError) {
+                        console.error('GitHub loading failed:', githubError);
+                        showAlert('GitHub loading failed, using local cache: ' + githubError.message, 'warning');
+                        
+                        // Fallback to localStorage cache
+                        const savedSubmissions = localStorage.getItem('adminSubmissions');
+                        if (savedSubmissions) {
+                            const data = JSON.parse(savedSubmissions);
+                            config.submissions = data.submissions || data || [];
+                            console.log(`Loaded ${config.submissions.length} submissions from localStorage cache`);
+                        } else {
+                            config.submissions = [];
+                            console.log('No submissions found in cache');
+                        }
+                    }
+                    
+                } else {
+                    // No GitHub token configured, use localStorage only
+                    console.log('No GitHub token configured, loading submissions from localStorage...');
+                    const savedSubmissions = localStorage.getItem('adminSubmissions');
+                    if (savedSubmissions) {
+                        const data = JSON.parse(savedSubmissions);
+                        config.submissions = data.submissions || data || [];
+                        console.log(`Loaded ${config.submissions.length} submissions from localStorage`);
+                    } else {
+                        config.submissions = [];
+                        console.log('No submissions found in localStorage');
+                    }
                 }
                 
                 renderSubmissions();
                 updateStats();
+                
             } catch (error) {
                 console.error('Failed to load submissions:', error);
+                showAlert('Error loading submissions: ' + error.message, 'error');
+                
+                // Fallback to empty submissions
+                config.submissions = [];
                 renderSubmissions();
                 updateStats();
             }
