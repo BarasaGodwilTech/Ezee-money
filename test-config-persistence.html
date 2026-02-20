@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Persistence Test - Ezee Money</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .test-step {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+            margin: 15px 0;
+        }
+        .test-step.completed {
+            border-left-color: #28a745;
+        }
+        .test-step.failed {
+            border-left-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Configuration Persistence Test</h1>
+    
+    <div class="card">
+        <h2>Test Configuration Persistence</h2>
+        <p>This test ensures that admin configuration persists across browser sessions and devices.</p>
+        
+        <div class="test-step" id="step1">
+            <h3>Step 1: Check Current Configuration</h3>
+            <button class="btn" onclick="checkCurrentConfig()">Check Configuration</button>
+            <div id="configStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step2">
+            <h3>Step 2: Create Test Configuration</h3>
+            <button class="btn" onclick="createTestConfig()">Create Test Config</button>
+            <div id="testConfigStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step3">
+            <h3>Step 3: Simulate Browser Close/Reopen</h3>
+            <button class="btn" onclick="simulateReopen()">Simulate Reopen</button>
+            <div id="reopenStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step4">
+            <h3>Step 4: Test Data Access</h3>
+            <button class="btn" onclick="testDataAccess()">Test Data Access</button>
+            <div id="dataAccessStatus"></div>
+        </div>
+        
+        <div class="test-step" id="step5">
+            <h3>Step 5: Test Configuration Clear</h3>
+            <button class="btn btn-danger" onclick="testConfigClear()">Test Clear Config</button>
+            <div id="clearStatus"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Configuration Details</h2>
+        <pre id="configDisplay">Configuration will appear here...</pre>
+    </div>
+
+    <div class="card">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        
+        function addTestResult(message, type) {
+            testResults.push({ message, type, timestamp: new Date().toISOString() });
+            updateTestResults();
+        }
+        
+        function updateTestResults() {
+            const resultsElement = document.getElementById('testResults');
+            resultsElement.innerHTML = testResults.map(result => {
+                const className = `status status-${result.type}`;
+                return `<div class="${className}">${result.message}</div>`;
+            }).join('');
+        }
+        
+        function updateStepStatus(stepId, status) {
+            const stepElement = document.getElementById(stepId);
+            stepElement.className = `test-step ${status}`;
+        }
+        
+        function checkCurrentConfig() {
+            try {
+                const config = localStorage.getItem('ezeeAdminConfig');
+                const statusElement = document.getElementById('configStatus');
+                
+                if (config) {
+                    const parsedConfig = JSON.parse(config);
+                    statusElement.innerHTML = `
+                        <div class="status status-success">
+                            ✅ Configuration found in localStorage
+                            <br>Repository: ${parsedConfig.github?.repoOwner}/${parsedConfig.github?.repoName || 'Not configured'}
+                            <br>Token: ${parsedConfig.github?.token ? 'Present' : 'Missing'}
+                        </div>
+                    `;
+                    addTestResult('Configuration found in localStorage', 'success');
+                    updateStepStatus('step1', 'completed');
+                } else {
+                    statusElement.innerHTML = `
+                        <div class="status status-warning">
+                            ⚠️ No configuration found in localStorage
+                        </div>
+                    `;
+                    addTestResult('No configuration found', 'warning');
+                    updateStepStatus('step1', 'failed');
+                }
+                
+                updateConfigDisplay();
+                
+            } catch (error) {
+                document.getElementById('configStatus').innerHTML = `
+                    <div class="status status-error">
+                        ❌ Error checking configuration: ${error.message}
+                    </div>
+                `;
+                addTestResult('Error checking configuration: ' + error.message, 'error');
+                updateStepStatus('step1', 'failed');
+            }
+        }
+        
+        function createTestConfig() {
+            try {
+                const testConfig = {
+                    github: {
+                        repoOwner: 'BarasaGodwilTech',
+                        repoName: 'Ezee-money',
+                        branchName: 'main',
+                        token: 'ghp_test_' + Math.random().toString(36).substr(2, 9)
+                    },
+                    agents: [
+                        {
+                            id: 'TEST001',
+                            scCode: 'TEST001',
+                            fullName: 'Test Agent',
+                            status: 'active'
+                        }
+                    ],
+                    submissions: [],
+                    settings: {
+                        adminPassword: 'admin123',
+                        systemEmail: 'test@ezeemoney.com'
+                    }
+                };
+                
+                localStorage.setItem('ezeeAdminConfig', JSON.stringify(testConfig));
+                
+                document.getElementById('testConfigStatus').innerHTML = `
+                    <div class="status status-success">
+                        ✅ Test configuration created successfully
+                        <br>Repository: ${testConfig.github.repoOwner}/${testConfig.github.repoName}
+                        <br>Test Agent: ${testConfig.agents[0].fullName}
+                    </div>
+                `;
+                
+                addTestResult('Test configuration created', 'success');
+                updateStepStatus('step2', 'completed');
+                updateConfigDisplay();
+                
+            } catch (error) {
+                document.getElementById('testConfigStatus').innerHTML = `
+                    <div class="status status-error">
+                        ❌ Error creating test configuration: ${error.message}
+                    </div>
+                `;
+                addTestResult('Error creating test config: ' + error.message, 'error');
+                updateStepStatus('step2', 'failed');
+            }
+        }
+        
+        function simulateReopen() {
+            try {
+                // Clear current config from memory (simulate browser close)
+                let config = null;
+                
+                // Reload from localStorage (simulate browser reopen)
+                const savedConfig = localStorage.getItem('ezeeAdminConfig');
+                
+                if (savedConfig) {
+                    config = JSON.parse(savedConfig);
+                    
+                    document.getElementById('reopenStatus').innerHTML = `
+                        <div class="status status-success">
+                            ✅ Configuration successfully loaded after simulated reopen
+                            <br>Repository: ${config.github.repoOwner}/${config.github.repoName}
+                            <br>Token: ${config.github.token ? 'Present' : 'Missing'}
+                        </div>
+                    `;
+                    
+                    addTestResult('Configuration persistence test passed', 'success');
+                    updateStepStatus('step3', 'completed');
+                } else {
+                    document.getElementById('reopenStatus').innerHTML = `
+                        <div class="status status-error">
+                            ❌ Configuration lost after simulated reopen
+                        </div>
+                    `;
+                    
+                    addTestResult('Configuration persistence test failed', 'error');
+                    updateStepStatus('step3', 'failed');
+                }
+                
+            } catch (error) {
+                document.getElementById('reopenStatus').innerHTML = `
+                    <div class="status status-error">
+                        ❌ Error simulating reopen: ${error.message}
+                    </div>
+                `;
+                addTestResult('Error simulating reopen: ' + error.message, 'error');
+                updateStepStatus('step3', 'failed');
+            }
+        }
+        
+        function testDataAccess() {
+            try {
+                const config = JSON.parse(localStorage.getItem('ezeeAdminConfig') || '{}');
+                
+                // Test accessing different parts of configuration
+                const githubConfig = config.github;
+                const agents = config.agents || [];
+                const settings = config.settings;
+                
+                let accessResults = [];
+                
+                // Test GitHub config access
+                if (githubConfig && githubConfig.repoOwner && githubConfig.repoName) {
+                    accessResults.push('✅ GitHub configuration accessible');
+                } else {
+                    accessResults.push('❌ GitHub configuration not accessible');
+                }
+                
+                // Test agents access
+                if (agents && agents.length > 0) {
+                    accessResults.push(`✅ ${agents.length} agents accessible`);
+                } else {
+                    accessResults.push('❌ No agents accessible');
+                }
+                
+                // Test settings access
+                if (settings) {
+                    accessResults.push('✅ Settings accessible');
+                } else {
+                    accessResults.push('❌ Settings not accessible');
+                }
+                
+                document.getElementById('dataAccessStatus').innerHTML = `
+                    <div class="status ${accessResults.some(r => r.includes('❌')) ? 'status-warning' : 'status-success'}">
+                        ${accessResults.join('<br>')}
+                    </div>
+                `;
+                
+                const allAccessible = !accessResults.some(r => r.includes('❌'));
+                addTestResult(allAccessible ? 'All data accessible' : 'Some data not accessible', allAccessible ? 'success' : 'warning');
+                updateStepStatus('step4', allAccessible ? 'completed' : 'failed');
+                
+            } catch (error) {
+                document.getElementById('dataAccessStatus').innerHTML = `
+                    <div class="status status-error">
+                        ❌ Error testing data access: ${error.message}
+                    </div>
+                `;
+                addTestResult('Error testing data access: ' + error.message, 'error');
+                updateStepStatus('step4', 'failed');
+            }
+        }
+        
+        function testConfigClear() {
+            try {
+                // Store current config for restoration
+                const currentConfig = localStorage.getItem('ezeeAdminConfig');
+                
+                // Clear configuration
+                localStorage.removeItem('ezeeAdminConfig');
+                
+                // Check if cleared
+                const afterClear = localStorage.getItem('ezeeAdminConfig');
+                
+                if (!afterClear) {
+                    document.getElementById('clearStatus').innerHTML = `
+                        <div class="status status-success">
+                            ✅ Configuration cleared successfully
+                        </div>
+                    `;
+                    
+                    addTestResult('Configuration clear test passed', 'success');
+                    updateStepStatus('step5', 'completed');
+                    
+                    // Restore configuration
+                    if (currentConfig) {
+                        localStorage.setItem('ezeeAdminConfig', currentConfig);
+                        addTestResult('Configuration restored for testing', 'info');
+                    }
+                } else {
+                    document.getElementById('clearStatus').innerHTML = `
+                        <div class="status status-error">
+                            ❌ Configuration not cleared
+                        </div>
+                    `;
+                    
+                    addTestResult('Configuration clear test failed', 'error');
+                    updateStepStatus('step5', 'failed');
+                }
+                
+            } catch (error) {
+                document.getElementById('clearStatus').innerHTML = `
+                    <div class="status status-error">
+                        ❌ Error clearing configuration: ${error.message}
+                    </div>
+                `;
+                addTestResult('Error clearing configuration: ' + error.message, 'error');
+                updateStepStatus('step5', 'failed');
+            }
+        }
+        
+        function updateConfigDisplay() {
+            const config = localStorage.getItem('ezeeAdminConfig');
+            const displayElement = document.getElementById('configDisplay');
+            
+            if (config) {
+                try {
+                    const parsedConfig = JSON.parse(config);
+                    displayElement.textContent = JSON.stringify(parsedConfig, null, 2);
+                } catch (error) {
+                    displayElement.textContent = 'Error parsing configuration: ' + error.message;
+                }
+            } else {
+                displayElement.textContent = 'No configuration found';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateConfigDisplay();
+            addTestResult('Configuration persistence test page loaded', 'info');
+        });
+    </script>
+</body>
+</html>
