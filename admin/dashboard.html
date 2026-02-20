@@ -712,16 +712,44 @@
             updateStats();
         }
 
-        function loadAgents() {
-            const savedAgents = localStorage.getItem('ezeeAgents');
-            if (savedAgents) {
-                config.agents = JSON.parse(savedAgents);
+        async function loadAgents() {
+            try {
+                // Try to load from GitHub first
+                if (githubService && githubService.config.token) {
+                    config.agents = await githubService.getAgents();
+                } else {
+                    // Fallback to localStorage for demo
+                    const savedAgents = localStorage.getItem('ezeeAgents');
+                    if (savedAgents) {
+                        config.agents = JSON.parse(savedAgents);
+                    }
+                }
+                renderAgents();
+            } catch (error) {
+                console.error('Failed to load agents:', error);
+                // Fallback to localStorage
+                const savedAgents = localStorage.getItem('ezeeAgents');
+                if (savedAgents) {
+                    config.agents = JSON.parse(savedAgents);
+                }
                 renderAgents();
             }
         }
 
-        function saveAgents() {
-            localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+        async function saveAgents() {
+            try {
+                // Save to GitHub if configured
+                if (githubService && githubService.config.token) {
+                    await githubService.saveAgents(config.agents);
+                } else {
+                    // Fallback to localStorage
+                    localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+                }
+            } catch (error) {
+                console.error('Failed to save agents to GitHub:', error);
+                // Fallback to localStorage
+                localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+            }
         }
 
         function renderAgents() {
@@ -746,7 +774,7 @@
             `).join('');
         }
 
-        function showAddAgentModal() {
+        async function showAddAgentModal() {
             const fullName = prompt('Enter agent full name:');
             if (!fullName) return;
 
@@ -766,16 +794,43 @@
             };
 
             config.agents.push(newAgent);
-            saveAgents();
+            await saveAgents();
             renderAgents();
             showAlert('Agent added successfully!', 'success');
         }
 
-        function deleteAgent(agentId) {
+        async function editAgent(agentId) {
+            const agent = config.agents.find(a => a.id === agentId);
+            if (!agent) return;
+
+            const fullName = prompt('Edit agent full name:', agent.fullName);
+            if (fullName === null) return;
+
+            const scCode = prompt('Edit agent SC code:', agent.scCode);
+            if (scCode === null) return;
+
+            const password = prompt('Edit agent password:', agent.password);
+            if (password === null) return;
+
+            const status = prompt('Edit agent status (active/inactive):', agent.status);
+            if (status === null) return;
+
+            // Update agent
+            agent.fullName = fullName || agent.fullName;
+            agent.scCode = scCode || agent.scCode;
+            agent.password = password || agent.password;
+            agent.status = (status && ['active', 'inactive'].includes(status)) ? status : agent.status;
+
+            await saveAgents();
+            renderAgents();
+            showAlert('Agent updated successfully!', 'success');
+        }
+
+        async function deleteAgent(agentId) {
             if (!confirm('Are you sure you want to delete this agent?')) return;
 
             config.agents = config.agents.filter(agent => agent.id !== agentId);
-            saveAgents();
+            await saveAgents();
             renderAgents();
             showAlert('Agent deleted successfully!', 'success');
         }

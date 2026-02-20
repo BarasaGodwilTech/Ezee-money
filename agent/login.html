@@ -313,15 +313,18 @@
 
         async function loadAgents() {
             try {
-                // In a real implementation, this would fetch from GitHub
-                // For demo, we'll use some default agents
+                // Try to load from GitHub first
+                const response = await fetch('https://api.github.com/repos/BarasaGodwilTech/Ezee-money/contents/agents.json');
+                const data = await response.json();
+                agents = JSON.parse(atob(data.content)).agents || [];
+            } catch (error) {
+                console.error('Failed to load agents from GitHub:', error);
+                // Fallback to demo agents
                 agents = [
                     { scCode: 'SC001', fullName: 'John Doe', password: 'agent123', status: 'active' },
                     { scCode: 'SC002', fullName: 'Jane Smith', password: 'agent123', status: 'active' },
                     { scCode: 'SC003', fullName: 'Mike Johnson', password: 'agent123', status: 'active' }
                 ];
-            } catch (error) {
-                console.error('Failed to load agents:', error);
             }
         }
 
@@ -356,7 +359,8 @@
                 // Find agent by SC Code and verify credentials
                 const agent = agents.find(a => 
                     a.scCode.toLowerCase() === scCode.toLowerCase() && 
-                    a.password === password
+                    a.password === password &&
+                    a.status === 'active'
                 );
 
                 if (agent) {
@@ -375,7 +379,7 @@
                         window.location.href = 'submit.html';
                     }, 1500);
                 } else {
-                    showAlert('Invalid SC Code or password', 'error');
+                    showAlert('Invalid SC Code, password, or account is inactive', 'error');
                 }
 
             } catch (error) {
