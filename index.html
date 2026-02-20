@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ezee Money Agent Registration</title>
+    <title>Ezee Money - Field Agent Data Collection System</title>
     <style>
         * {
             margin: 0;
@@ -12,1007 +12,163 @@
         }
 
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --secondary: #06b6d4;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
             --dark: #1f2937;
             --light: #f9fafb;
             --border: #e5e7eb;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: var(--dark);
-            line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .header {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            padding: 3rem;
+            max-width: 500px;
+            width: 90%;
             text-align: center;
-            color: white;
-            margin-bottom: 2rem;
         }
 
-        .header h1 {
-            font-size: 2.5rem;
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            color: var(--primary);
             margin-bottom: 0.5rem;
+            font-size: 2rem;
         }
 
-        .header p {
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 2rem;
             font-size: 1.1rem;
-            opacity: 0.9;
         }
 
-        .auth-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-
-        .auth-panel h2 {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .form-section {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-
-        .form-section h3 {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .photo-upload {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            transition: border-color 0.3s;
-            cursor: pointer;
-            margin-bottom: 1rem;
-        }
-
-        .photo-upload:hover {
-            border-color: var(--primary);
-        }
-
-        .photo-upload.has-image {
-            border-color: var(--success);
-            background: #f0fdf4;
-        }
-
-        .photo-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 8px;
-            margin: 1rem auto;
-            display: block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+        .role-selection {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-        }
-
-        .alert-warning {
-            background: #fed7aa;
-            color: #92400e;
-            border: 1px solid #fdba74;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 1rem 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s;
-            border-radius: 4px;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-        }
-
-        .status-online {
-            background: var(--success);
-        }
-
-        .status-offline {
-            background: var(--danger);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .mt-2 {
+            flex-direction: column;
+            gap: 1rem;
             margin-top: 2rem;
         }
 
-        .mb-2 {
-            margin-bottom: 2rem;
+        .role-btn {
+            padding: 1.5rem 2rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.1rem;
+            font-weight: 500;
         }
 
-        @media (max-width: 768px) {
+        .role-btn:hover {
+            border-color: var(--primary);
+            background: var(--light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .role-btn.admin {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .role-btn.admin:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .role-btn.agent {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        .role-btn.agent:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .role-icon {
+            font-size: 2rem;
+        }
+
+        .role-description {
+            text-align: left;
+            flex: 1;
+        }
+
+        .role-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .role-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 640px) {
             .container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .role-btn {
                 padding: 1rem;
             }
 
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .auth-panel, .form-section {
-                padding: 1.5rem;
+            .role-icon {
+                font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>🏦 Ezee Money</h1>
-            <p>Field Agent Registration System</p>
-            <div>
-                <span class="status-indicator" id="connectionStatus"></span>
-                <span id="statusText">Checking connection...</span>
-            </div>
-        </header>
-
-        <div id="alertContainer"></div>
-
-        <!-- Authentication Panel -->
-        <div id="authPanel" class="auth-panel">
-            <h2>🔐 Agent Authentication</h2>
-            <form id="authForm">
-                <div class="form-group">
-                    <label for="agentPassword">Agent Password</label>
-                    <input type="password" id="agentPassword" placeholder="Enter your agent password" required>
+        <div class="logo">🏦</div>
+        <h1>Ezee Money</h1>
+        <p class="subtitle">Field Agent Data Collection System</p>
+        
+        <div class="role-selection">
+            <a href="admin/login.html" class="role-btn admin">
+                <span class="role-icon">👨‍💼</span>
+                <div class="role-description">
+                    <div class="role-title">Administrator</div>
+                    <div class="role-subtitle">Manage agents, view submissions, configure system</div>
                 </div>
-                <div class="form-group">
-                    <label for="githubToken">GitHub Token (if required)</label>
-                    <input type="password" id="githubToken" placeholder="Enter GitHub personal access token">
+            </a>
+            
+            <a href="agent/login.html" class="role-btn agent">
+                <span class="role-icon">👤</span>
+                <div class="role-description">
+                    <div class="role-title">Field Agent</div>
+                    <div class="role-subtitle">Submit data and photos to Ezee Money Database</div>
                 </div>
-                <button type="submit" class="btn btn-primary">
-                    <span id="authButtonText">Authenticate</span>
-                    <span class="loading hidden" id="authLoading"></span>
-                </button>
-            </form>
-        </div>
-
-        <!-- Registration Form -->
-        <div id="registrationForm" class="hidden">
-            <form id="agentForm">
-                <!-- Personal Information -->
-                <section class="form-section">
-                    <h3>👤 Personal Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="fullName">Full Name *</label>
-                            <input type="text" id="fullName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="scCode">Field Onboarding Agent SC Code *</label>
-                            <input type="text" id="scCode" placeholder="SCXXXXXX" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="nationalId">National ID Number *</label>
-                            <input type="text" id="nationalId" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="dob">Date of Birth *</label>
-                            <input type="date" id="dob" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="gender">Gender *</label>
-                            <select id="gender" required>
-                                <option value="">Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Address Information -->
-                <section class="form-section">
-                    <h3>📍 Address Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="businessAddress">Business Address *</label>
-                            <input type="text" id="businessAddress" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="residentialAddress">Residential Address *</label>
-                            <input type="text" id="residentialAddress" required>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Next of Kin Information -->
-                <section class="form-section">
-                    <h3>👨‍👩‍👧‍👦 Next of Kin Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="nextOfKinName">Next of Kin Name *</label>
-                            <input type="text" id="nextOfKinName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="nextOfKinRelationship">Relationship *</label>
-                            <input type="text" id="nextOfKinRelationship" placeholder="e.g., Parent, Sibling, Spouse" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="nextOfKinPhone">Next of Kin Phone *</label>
-                            <input type="tel" id="nextOfKinPhone" required>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Photo Documentation -->
-                <section class="form-section">
-                    <h3>📸 Photo Documentation</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>ID Front Photo *</label>
-                            <div class="photo-upload" onclick="document.getElementById('idFrontInput').click()">
-                                <input type="file" id="idFrontInput" accept="image/*" style="display: none;" required>
-                                <div id="idFrontPreview">
-                                    <p>📷 Click to upload ID Front</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>ID Back Photo *</label>
-                            <div class="photo-upload" onclick="document.getElementById('idBackInput').click()">
-                                <input type="file" id="idBackInput" accept="image/*" style="display: none;" required>
-                                <div id="idBackPreview">
-                                    <p>📷 Click to upload ID Back</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Agent Photo *</label>
-                            <div class="photo-upload" onclick="document.getElementById('agentPhotoInput').click()">
-                                <input type="file" id="agentPhotoInput" accept="image/*" style="display: none;" required>
-                                <div id="agentPhotoPreview">
-                                    <p>📷 Click to upload Agent Photo</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Submit Section -->
-                <section class="form-section text-center">
-                    <div class="progress-bar hidden" id="uploadProgress">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <button type="submit" class="btn btn-success" id="submitBtn">
-                        <span>Submit Registration</span>
-                        <span class="loading hidden" id="submitLoading"></span>
-                    </button>
-                    <p class="mt-2">
-                        <small>By submitting, you confirm all information is accurate and true</small>
-                    </p>
-                </section>
-            </form>
+            </a>
         </div>
     </div>
-
-    <script>
-        // Global variables
-        let config = {};
-        let githubToken = localStorage.getItem('githubToken') || '';
-        let isAuthenticated = false;
-        let loginTime = null;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-        });
-
-        async function initializeApp() {
-            try {
-                await checkConnection();
-                await restoreAuthentication();
-                setupEventListeners();
-            } catch (error) {
-                showAlert('Error initializing application: ' + error.message, 'error');
-            }
-        }
-
-        // Connection Check
-        async function checkConnection() {
-            try {
-                await fetchConfigFromGitHub();
-                document.getElementById('connectionStatus').className = 'status-indicator status-online';
-                document.getElementById('statusText').textContent = 'Connected to GitHub';
-            } catch (error) {
-                document.getElementById('connectionStatus').className = 'status-indicator status-offline';
-                document.getElementById('statusText').textContent = 'Connection failed';
-            }
-        }
-
-        // Configuration Management
-        async function fetchConfigFromGitHub() {
-            try {
-                const response = await fetch(`https://api.github.com/repos/BarasaGodwilTech/Ezee-money/contents/config.json`);
-                const data = await response.json();
-                config = JSON.parse(atob(data.content));
-                return config;
-            } catch (error) {
-                throw new Error('Failed to fetch configuration from GitHub');
-            }
-        }
-
-        // Authentication Management
-        async function restoreAuthentication() {
-            try {
-                const savedLoginTime = localStorage.getItem('loginTime');
-                const savedToken = localStorage.getItem('githubToken');
-                
-                if (savedLoginTime && savedToken) {
-                    loginTime = new Date(savedLoginTime);
-                    githubToken = savedToken;
-                    
-                    // Check if 7 days have passed
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    
-                    if (loginTime > sevenDaysAgo) {
-                        // Check session reset
-                        await fetchConfigFromGitHub();
-                        if (config.security && config.security.sessionResetAt) {
-                            const sessionResetTime = new Date(config.security.sessionResetAt);
-                            if (loginTime < sessionResetTime) {
-                                // Session was reset, logout
-                                logout();
-                                showAlert('Your session has been reset by admin. Please login again.', 'warning');
-                                return;
-                            }
-                        }
-                        
-                        isAuthenticated = true;
-                        showRegistrationForm();
-                        reportActivity('Session restored');
-                    } else {
-                        logout();
-                        showAlert('Your session has expired. Please login again.', 'warning');
-                    }
-                }
-            } catch (error) {
-                console.error('Error restoring authentication:', error);
-            }
-        }
-
-        async function authenticateAgent(password, token) {
-            try {
-                // Fetch config to get password hash
-                await fetchConfigFromGitHub();
-                
-                if (!config.security || !config.security.agentPasswordHash) {
-                    throw new Error('No password is configured. Please contact admin.');
-                }
-                
-                // Verify password
-                const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                
-                if (hashHex !== config.security.agentPasswordHash) {
-                    throw new Error('Invalid password');
-                }
-                
-                // Save token if provided
-                if (token) {
-                    githubToken = token;
-                    localStorage.setItem('githubToken', token);
-                }
-                
-                // Set authentication
-                isAuthenticated = true;
-                loginTime = new Date();
-                localStorage.setItem('loginTime', loginTime.toISOString());
-                
-                showRegistrationForm();
-                reportActivity('Agent authenticated');
-                showAlert('Authentication successful!', 'success');
-                
-            } catch (error) {
-                throw new Error('Authentication failed: ' + error.message);
-            }
-        }
-
-        function logout() {
-            isAuthenticated = false;
-            loginTime = null;
-            localStorage.removeItem('loginTime');
-            showAuthPanel();
-        }
-
-        function checkSessionReset() {
-            if (!isAuthenticated || !loginTime) return false;
-            
-            if (config.security && config.security.sessionResetAt) {
-                const sessionResetTime = new Date(config.security.sessionResetAt);
-                return loginTime < sessionResetTime;
-            }
-            return false;
-        }
-
-        // UI Management
-        function showAuthPanel() {
-            document.getElementById('authPanel').classList.remove('hidden');
-            document.getElementById('registrationForm').classList.add('hidden');
-        }
-
-        function showRegistrationForm() {
-            document.getElementById('authPanel').classList.add('hidden');
-            document.getElementById('registrationForm').classList.remove('hidden');
-        }
-
-        // Event Listeners
-        function setupEventListeners() {
-            // Authentication form
-            document.getElementById('authForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await handleAuthentication();
-            });
-
-            // Registration form
-            document.getElementById('agentForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await handleRegistration();
-            });
-
-            // Photo uploads
-            document.getElementById('idFrontInput').addEventListener('change', function(e) {
-                handlePhotoUpload(e, 'idFrontPreview');
-            });
-
-            document.getElementById('idBackInput').addEventListener('change', function(e) {
-                handlePhotoUpload(e, 'idBackPreview');
-            });
-
-            document.getElementById('agentPhotoInput').addEventListener('change', function(e) {
-                handlePhotoUpload(e, 'agentPhotoPreview');
-            });
-        }
-
-        async function handleAuthentication() {
-            const password = document.getElementById('agentPassword').value;
-            const token = document.getElementById('githubToken').value;
-            
-            if (!password) {
-                showAlert('Password is required', 'error');
-                return;
-            }
-
-            const authButton = document.querySelector('#authForm button[type="submit"]');
-            const buttonText = document.getElementById('authButtonText');
-            const loading = document.getElementById('authLoading');
-            
-            try {
-                authButton.disabled = true;
-                buttonText.textContent = 'Authenticating...';
-                loading.classList.remove('hidden');
-                
-                await authenticateAgent(password, token);
-                
-            } catch (error) {
-                showAlert(error.message, 'error');
-            } finally {
-                authButton.disabled = false;
-                buttonText.textContent = 'Authenticate';
-                loading.classList.add('hidden');
-            }
-        }
-
-        // Photo Handling
-        async function handlePhotoUpload(event, previewId) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                showAlert('Please select an image file', 'error');
-                return;
-            }
-
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showAlert('Image size should be less than 5MB', 'error');
-                return;
-            }
-
-            try {
-                // Compress image
-                const compressedFile = await compressImage(file);
-                
-                // Show preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById(previewId);
-                    preview.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">`;
-                    preview.parentElement.classList.add('has-image');
-                };
-                reader.readAsDataURL(compressedFile);
-                
-            } catch (error) {
-                showAlert('Error processing image: ' + error.message, 'error');
-            }
-        }
-
-        async function compressImage(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Calculate new dimensions (max 800px width/height)
-                        let width = img.width;
-                        let height = img.height;
-                        const maxSize = 800;
-                        
-                        if (width > height) {
-                            if (width > maxSize) {
-                                height = (height * maxSize) / width;
-                                width = maxSize;
-                            }
-                        } else {
-                            if (height > maxSize) {
-                                width = (width * maxSize) / height;
-                                height = maxSize;
-                            }
-                        }
-                        
-                        canvas.width = width;
-                        canvas.height = height;
-                        
-                        // Draw and compress
-                        ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob(function(blob) {
-                            resolve(new File([blob], file.name, {
-                                type: 'image/jpeg',
-                                lastModified: Date.now()
-                            }));
-                        }, 'image/jpeg', 0.8);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // Registration Handling
-        async function handleRegistration() {
-            if (!isAuthenticated) {
-                showAlert('Please authenticate first', 'error');
-                return;
-            }
-
-            // Check session reset
-            if (checkSessionReset()) {
-                logout();
-                showAlert('Your session has been reset. Please login again.', 'warning');
-                return;
-            }
-
-            const submitBtn = document.getElementById('submitBtn');
-            const submitText = submitBtn.querySelector('span:first-child');
-            const submitLoading = document.getElementById('submitLoading');
-            const progressBar = document.getElementById('uploadProgress');
-            const progressFill = document.getElementById('progressFill');
-
-            try {
-                // Validate form
-                if (!validateForm()) {
-                    return;
-                }
-
-                submitBtn.disabled = true;
-                submitText.textContent = 'Submitting...';
-                submitLoading.classList.remove('hidden');
-                progressBar.classList.remove('hidden');
-
-                // Collect form data
-                const formData = collectFormData();
-                
-                // Upload images
-                progressFill.style.width = '20%';
-                const imageUrls = await uploadImages(formData);
-                
-                progressFill.style.width = '60%';
-                
-                // Save agent data
-                await saveAgentDataToGitHub(formData, imageUrls);
-                
-                progressFill.style.width = '100%';
-                
-                showAlert('Registration submitted successfully!', 'success');
-                reportActivity('Agent registration submitted');
-                
-                // Reset form
-                document.getElementById('agentForm').reset();
-                document.querySelectorAll('.photo-preview').forEach(preview => {
-                    preview.parentElement.classList.remove('has-image');
-                    preview.innerHTML = '<p>📷 Click to upload photo</p>';
-                });
-                
-            } catch (error) {
-                showAlert('Error submitting registration: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitText.textContent = 'Submit Registration';
-                submitLoading.classList.add('hidden');
-                setTimeout(() => {
-                    progressBar.classList.add('hidden');
-                    progressFill.style.width = '0%';
-                }, 2000);
-            }
-        }
-
-        function validateForm() {
-            const required = [
-                'fullName', 'scCode', 'email', 'nationalId', 
-                'dob', 'gender', 'businessAddress', 'residentialAddress',
-                'nextOfKinName', 'nextOfKinRelationship', 'nextOfKinPhone'
-            ];
-
-            for (const field of required) {
-                const value = document.getElementById(field).value.trim();
-                if (!value) {
-                    showAlert(`Please fill in all required fields`, 'error');
-                    document.getElementById(field).focus();
-                    return false;
-                }
-            }
-
-            // Check photos
-            const photos = ['idFrontInput', 'idBackInput', 'agentPhotoInput'];
-            for (const photo of photos) {
-                if (!document.getElementById(photo).files[0]) {
-                    showAlert('Please upload all required photos', 'error');
-                    return false;
-                }
-            }
-
-            // Validate email format
-            const email = document.getElementById('email').value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showAlert('Please enter a valid email address', 'error');
-                return false;
-            }
-
-            return true;
-        }
-
-        function collectFormData() {
-            return {
-                fullName: document.getElementById('fullName').value.trim(),
-                scCode: document.getElementById('scCode').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                nationalId: document.getElementById('nationalId').value.trim(),
-                dob: document.getElementById('dob').value,
-                gender: document.getElementById('gender').value,
-                businessAddress: document.getElementById('businessAddress').value.trim(),
-                residentialAddress: document.getElementById('residentialAddress').value.trim(),
-                nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
-                nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value.trim(),
-                nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim()
-            };
-        }
-
-        async function uploadImages(formData) {
-            const imageUrls = {};
-            const imageFiles = {
-                idFront: document.getElementById('idFrontInput').files[0],
-                idBack: document.getElementById('idBackInput').files[0],
-                agentPhoto: document.getElementById('agentPhotoInput').files[0]
-            };
-
-            for (const [type, file] of Object.entries(imageFiles)) {
-                if (file) {
-                    const url = await uploadImageToGitHub(file, type, formData.scCode);
-                    imageUrls[type] = url;
-                }
-            }
-
-            return imageUrls;
-        }
-
-        async function uploadImageToGitHub(file, imageType, scCode) {
-            try {
-                // Generate filename
-                const timestamp = Date.now();
-                const filename = `${scCode}_${imageType}_${timestamp}.jpg`;
-                
-                // Convert file to base64
-                const base64 = await fileToBase64(file);
-                
-                // Upload to GitHub
-                const response = await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/${config.github.imagesFolder}/${filename}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Upload ${imageType} image for ${scCode}`,
-                        content: base64.split(',')[1] // Remove data:image/jpeg;base64, prefix
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to upload ${imageType} image`);
-                }
-
-                const data = await response.json();
-                return data.content.download_url;
-
-            } catch (error) {
-                throw new Error(`Error uploading ${imageType}: ${error.message}`);
-            }
-        }
-
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function saveAgentDataToGitHub(formData, imageUrls) {
-            try {
-                // Generate agent ID
-                const agentId = `AGENT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-                
-                // Create agent object
-                const agent = {
-                    id: agentId,
-                    fullName: formData.fullName,
-                    personalNumber: formData.scCode,
-                    email: formData.email,
-                    nationalId: formData.nationalId,
-                    dob: formData.dob,
-                    gender: formData.gender,
-                    businessAddress: formData.businessAddress,
-                    residentialAddress: formData.residentialAddress,
-                    nextOfKinName: formData.nextOfKinName,
-                    nextOfKinRelationship: formData.nextOfKinRelationship,
-                    nextOfKinPhone: formData.nextOfKinPhone,
-                    tradingName: `SC${formData.scCode}`,
-                    submissionDate: new Date().toISOString(),
-                    status: 'pending',
-                    emailVerified: false,
-                    adminVerified: false,
-                    idFrontUrl: imageUrls.idFront,
-                    idBackUrl: imageUrls.idBack,
-                    agentPhotoUrl: imageUrls.agentPhoto
-                };
-
-                // Get current data
-                const dataResponse = await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/data.json`);
-                const dataResult = await dataResponse.json();
-                const currentData = JSON.parse(atob(dataResult.content));
-
-                // Add new agent
-                currentData.agents.push(agent);
-                currentData.lastUpdated = new Date().toISOString();
-
-                // Save to GitHub
-                const updatedData = btoa(JSON.stringify(currentData, null, 2));
-                
-                await fetch(`https://api.github.com/repos/${config.github.repoOwner}/${config.github.repoName}/contents/data.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Add new agent registration: ${agent.fullName}`,
-                        content: updatedData,
-                        sha: dataResult.sha
-                    })
-                });
-
-            } catch (error) {
-                throw new Error('Error saving agent data: ' + error.message);
-            }
-        }
-
-        // Activity Reporting
-        function reportActivity(action) {
-            try {
-                const activities = JSON.parse(localStorage.getItem('agentActivities') || '[]');
-                activities.push({
-                    action: action,
-                    timestamp: new Date().toISOString(),
-                    scCode: document.getElementById('scCode')?.value || 'Unknown'
-                });
-                
-                // Keep only last 50 activities
-                if (activities.length > 50) {
-                    activities.splice(0, activities.length - 50);
-                }
-                
-                localStorage.setItem('agentActivities', JSON.stringify(activities));
-            } catch (error) {
-                console.error('Error reporting activity:', error);
-            }
-        }
-
-        // Utility Functions
-        function showAlert(message, type = 'info') {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            
-            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-            alertDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
-            
-            alertContainer.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
-    </script>
 </body>
 </html>

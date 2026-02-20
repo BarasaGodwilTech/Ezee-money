@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Ezee Money</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--dark);
+            color: white;
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 1rem 2rem;
+            color: white;
+            text-decoration: none;
+            transition: background 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary);
+        }
+
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--light);
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-submitted {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .alert-warning {
+            background: #fed7aa;
+            color: #92400e;
+            border: 1px solid #fdba74;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .agent-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .agent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .agent-details {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .agent-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .agent-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🏦</span>
+                    <span class="logo-text">Ezee Money</span>
+                </div>
+                <div style="font-size: 0.875rem; opacity: 0.8;">Admin Panel</div>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-item active" data-section="overview">📊 Overview</a></li>
+                <li><a href="#" class="nav-item" data-section="github">⚙️ GitHub Config</a></li>
+                <li><a href="#" class="nav-item" data-section="agents">👥 Field Agents</a></li>
+                <li><a href="#" class="nav-item" data-section="submissions">📋 Submissions</a></li>
+                <li><a href="#" class="nav-item" data-section="settings">🔧 Settings</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>Admin Dashboard</h1>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </header>
+
+            <div id="alertContainer"></div>
+
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalAgents">0</div>
+                        <div class="stat-label">Total Field Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalSubmissions">0</div>
+                        <div class="stat-label">Total Submissions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todaySubmissions">0</div>
+                        <div class="stat-label">Today's Submissions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeAgents">0</div>
+                        <div class="stat-label">Active Agents</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Activity</h2>
+                    </div>
+                    <div id="recentActivity">
+                        <p style="color: #6b7280; text-align: center;">No recent activity</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GitHub Configuration Section -->
+            <section id="github" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">GitHub Configuration</h2>
+                        <button class="btn btn-primary" onclick="testGitHubConnection()">Test Connection</button>
+                    </div>
+                    <form id="githubConfigForm">
+                        <div class="form-group">
+                            <label for="repoOwner">Repository Owner</label>
+                            <input type="text" id="repoOwner" placeholder="e.g., username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="repoName">Repository Name</label>
+                            <input type="text" id="repoName" placeholder="e.g., my-repo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="branchName">Branch Name</label>
+                            <input type="text" id="branchName" placeholder="e.g., main" value="main" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="githubToken">GitHub Personal Access Token</label>
+                            <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" required>
+                            <small style="color: #6b7280; display: block; margin-top: 0.25rem;">
+                                This token will be stored securely and used to submit field agent data
+                            </small>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <span>Save Configuration</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Field Agents Section -->
+            <section id="agents" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Field Agent Management</h2>
+                        <button class="btn btn-primary" onclick="showAddAgentModal()">Add New Agent</button>
+                    </div>
+                    <div class="agent-list" id="agentList">
+                        <p style="color: #6b7280; text-align: center;">No field agents configured</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Submissions Section -->
+            <section id="submissions" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Field Agent Submissions</h2>
+                        <button class="btn btn-primary" onclick="refreshSubmissions()">Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="submissionsTable">
+                            <thead>
+                                <tr>
+                                    <th>SC Code</th>
+                                    <th>Agent Name</th>
+                                    <th>Submission Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #6b7280;">No submissions found</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">System Settings</h2>
+                    </div>
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label for="adminPassword">Admin Password</label>
+                            <input type="password" id="adminPassword" placeholder="Change admin password">
+                        </div>
+                        <div class="form-group">
+                            <label for="systemEmail">System Email</label>
+                            <input type="email" id="systemEmail" placeholder="admin@ezeemoney.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="dataRetention">Data Retention (days)</label>
+                            <input type="number" id="dataRetention" placeholder="365" min="30" max="3650">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="../js/github-service.js"></script>
+    <script>
+        // Global state
+        let githubService;
+        let config = {
+            github: {
+                repoOwner: '',
+                repoName: '',
+                branchName: 'main',
+                token: ''
+            },
+            agents: [],
+            submissions: []
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            githubService = new GitHubService();
+            loadConfig();
+            setupEventListeners();
+            loadDashboardData();
+        });
+
+        function checkAuth() {
+            if (localStorage.getItem('adminLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('ezeeAdminConfig');
+            if (savedConfig) {
+                config = { ...config, ...JSON.parse(savedConfig) };
+                populateConfigForm();
+            }
+        }
+
+        function saveConfig() {
+            localStorage.setItem('ezeeAdminConfig', JSON.stringify(config));
+        }
+
+        function setupEventListeners() {
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.dataset.section;
+                    showSection(section);
+                    
+                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // GitHub Config Form
+            document.getElementById('githubConfigForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveGitHubConfig();
+            });
+
+            // Settings Form
+            document.getElementById('settingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings();
+            });
+        }
+
+        function showSection(sectionName) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionName).classList.add('active');
+        }
+
+        function populateConfigForm() {
+            document.getElementById('repoOwner').value = config.github.repoOwner || '';
+            document.getElementById('repoName').value = config.github.repoName || '';
+            document.getElementById('branchName').value = config.github.branchName || 'main';
+            document.getElementById('githubToken').value = config.github.token || '';
+        }
+
+        async function saveGitHubConfig() {
+            const repoOwner = document.getElementById('repoOwner').value;
+            const repoName = document.getElementById('repoName').value;
+            const branchName = document.getElementById('branchName').value;
+            const token = document.getElementById('githubToken').value;
+
+            if (!repoOwner || !repoName || !token) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+
+            config.github = { repoOwner, repoName, branchName, token };
+            
+            // Update GitHub service configuration
+            githubService.saveConfig(config.github);
+            saveConfig();
+
+            showAlert('GitHub configuration saved successfully!', 'success');
+        }
+
+        async function testGitHubConnection() {
+            try {
+                showAlert('Testing GitHub connection...', 'success');
+                
+                await githubService.testConnection();
+                
+                showAlert('GitHub connection successful! Repository is accessible.', 'success');
+            } catch (error) {
+                showAlert('GitHub connection failed: ' + error.message, 'error');
+            }
+        }
+
+        function loadDashboardData() {
+            loadAgents();
+            loadSubmissions();
+            updateStats();
+        }
+
+        function loadAgents() {
+            const savedAgents = localStorage.getItem('ezeeAgents');
+            if (savedAgents) {
+                config.agents = JSON.parse(savedAgents);
+                renderAgents();
+            }
+        }
+
+        function saveAgents() {
+            localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
+        }
+
+        function renderAgents() {
+            const agentList = document.getElementById('agentList');
+            
+            if (config.agents.length === 0) {
+                agentList.innerHTML = '<p style="color: #6b7280; text-align: center;">No field agents configured</p>';
+                return;
+            }
+
+            agentList.innerHTML = config.agents.map(agent => `
+                <div class="agent-item">
+                    <div class="agent-info">
+                        <div class="agent-name">${agent.fullName}</div>
+                        <div class="agent-details">SC Code: ${agent.scCode} | Status: ${agent.status}</div>
+                    </div>
+                    <div class="agent-actions">
+                        <button class="btn btn-sm btn-warning" onclick="editAgent('${agent.id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showAddAgentModal() {
+            const fullName = prompt('Enter agent full name:');
+            if (!fullName) return;
+
+            const scCode = prompt('Enter agent SC code:');
+            if (!scCode) return;
+
+            const password = prompt('Enter agent password:');
+            if (!password) return;
+
+            const newAgent = {
+                id: Date.now().toString(),
+                fullName,
+                scCode,
+                password,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+
+            config.agents.push(newAgent);
+            saveAgents();
+            renderAgents();
+            showAlert('Agent added successfully!', 'success');
+        }
+
+        function deleteAgent(agentId) {
+            if (!confirm('Are you sure you want to delete this agent?')) return;
+
+            config.agents = config.agents.filter(agent => agent.id !== agentId);
+            saveAgents();
+            renderAgents();
+            showAlert('Agent deleted successfully!', 'success');
+        }
+
+        function loadSubmissions() {
+            // In a real implementation, this would fetch from GitHub
+            const savedSubmissions = localStorage.getItem('ezeeSubmissions');
+            if (savedSubmissions) {
+                config.submissions = JSON.parse(savedSubmissions);
+                renderSubmissions();
+            }
+        }
+
+        function renderSubmissions() {
+            const tbody = document.querySelector('#submissionsTable tbody');
+            
+            if (config.submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">No submissions found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = config.submissions.map(submission => `
+                <tr>
+                    <td>${submission.scCode}</td>
+                    <td>${submission.agentName}</td>
+                    <td>${new Date(submission.submissionDate).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${submission.status}">${submission.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewSubmission('${submission.id}')">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalAgents').textContent = config.agents.length;
+            document.getElementById('totalSubmissions').textContent = config.submissions.length;
+            
+            const today = new Date().toDateString();
+            const todaySubmissions = config.submissions.filter(s => 
+                new Date(s.submissionDate).toDateString() === today
+            ).length;
+            document.getElementById('todaySubmissions').textContent = todaySubmissions;
+            
+            const activeAgents = config.agents.filter(a => a.status === 'active').length;
+            document.getElementById('activeAgents').textContent = activeAgents;
+        }
+
+        function saveSettings() {
+            const adminPassword = document.getElementById('adminPassword').value;
+            
+            if (adminPassword) {
+                // In a real implementation, this would update the admin password
+                showAlert('Admin password updated successfully!', 'success');
+                document.getElementById('adminPassword').value = '';
+            }
+            
+            showAlert('Settings saved successfully!', 'success');
+        }
+
+        function logout() {
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminLoginTime');
+            window.location.href = 'login.html';
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+            alertDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function refreshSubmissions() {
+            showAlert('Refreshing submissions...', 'success');
+            loadSubmissions();
+            updateStats();
+        }
+
+        function viewSubmission(submissionId) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (submission) {
+                alert(`Submission Details:\n\nAgent: ${submission.agentName}\nSC Code: ${submission.scCode}\nDate: ${new Date(submission.submissionDate).toLocaleString()}\n\nFull data would be displayed here in a modal.`);
+            }
+        }
+    </script>
+</body>
+</html>

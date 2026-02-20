@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Agent Login - Ezee Money</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            padding: 3rem;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-warning {
+            background: #fed7aa;
+            color: #92400e;
+            border: 1px solid #fdba74;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            color: #0c4a6e;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background: var(--success);
+        }
+
+        .status-offline {
+            background: var(--danger);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">🏦</div>
+            <h1>Field Agent Login</h1>
+            <p class="subtitle">Ezee Money Database System</p>
+        </div>
+
+        <div class="connection-status">
+            <span class="status-indicator" id="connectionIndicator"></span>
+            <span id="connectionText">Checking connection...</span>
+        </div>
+
+        <div class="info-box">
+            <strong>📝 Important:</strong> Enter your field agent credentials to access the Ezee Money Database submission system. Your data will be securely stored in our database.
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="scCode">SC Code</label>
+                <input type="text" id="scCode" placeholder="Enter your SC Code" required>
+            </div>
+
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn">
+                <span id="loginText">Access Database</span>
+                <span class="loading hidden" id="loginLoading"></span>
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="../index.html">← Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let agents = [];
+        let config = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadConfig();
+            loadAgents();
+            setupEventListeners();
+        });
+
+        async function checkConnection() {
+            try {
+                // Try to fetch config from GitHub to test connection
+                const response = await fetch('https://api.github.com/repos/BarasaGodwilTech/Ezee-money/contents/config.json');
+                if (response.ok) {
+                    document.getElementById('connectionIndicator').className = 'status-indicator status-online';
+                    document.getElementById('connectionText').textContent = 'Connected to Ezee Money Database';
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                document.getElementById('connectionIndicator').className = 'status-indicator status-offline';
+                document.getElementById('connectionText').textContent = 'Database connection failed';
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('https://api.github.com/repos/BarasaGodwilTech/Ezee-money/contents/config.json');
+                const data = await response.json();
+                config = JSON.parse(atob(data.content));
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                // Use default config for demo
+                config = {
+                    github: {
+                        repoOwner: 'BarasaGodwilTech',
+                        repoName: 'Ezee-money',
+                        branchName: 'main'
+                    }
+                };
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                // In a real implementation, this would fetch from GitHub
+                // For demo, we'll use some default agents
+                agents = [
+                    { scCode: 'SC001', fullName: 'John Doe', password: 'agent123', status: 'active' },
+                    { scCode: 'SC002', fullName: 'Jane Smith', password: 'agent123', status: 'active' },
+                    { scCode: 'SC003', fullName: 'Mike Johnson', password: 'agent123', status: 'active' }
+                ];
+            } catch (error) {
+                console.error('Failed to load agents:', error);
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const scCode = document.getElementById('scCode').value.trim();
+            const fullName = document.getElementById('fullName').value.trim();
+            const password = document.getElementById('password').value;
+
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginText');
+            const loginLoading = document.getElementById('loginLoading');
+
+            if (!scCode || !fullName || !password) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                loginBtn.disabled = true;
+                loginText.textContent = 'Authenticating...';
+                loginLoading.classList.remove('hidden');
+
+                // Simulate authentication delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Find agent by SC Code and verify credentials
+                const agent = agents.find(a => 
+                    a.scCode.toLowerCase() === scCode.toLowerCase() && 
+                    a.password === password
+                );
+
+                if (agent) {
+                    // Store session info
+                    localStorage.setItem('agentLoggedIn', 'true');
+                    localStorage.setItem('agentInfo', JSON.stringify({
+                        scCode: agent.scCode,
+                        fullName: agent.fullName,
+                        loginTime: new Date().toISOString()
+                    }));
+
+                    showAlert('Authentication successful! Redirecting to database...', 'success');
+
+                    // Redirect to submission form
+                    setTimeout(() => {
+                        window.location.href = 'submit.html';
+                    }, 1500);
+                } else {
+                    showAlert('Invalid SC Code or password', 'error');
+                }
+
+            } catch (error) {
+                showAlert('Login failed: ' + error.message, 'error');
+            } finally {
+                loginBtn.disabled = false;
+                loginText.textContent = 'Access Database';
+                loginLoading.classList.add('hidden');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+            alertDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
