@@ -522,6 +522,9 @@
         </div>
     </div>
 
+    <script src="../js/github-service.js"></script>
+    <script src="../js/submission-service.js"></script>
+    <script src="../js/real-time-service.js"></script>
     <script>
         // Configuration
         let githubConfig = {
@@ -534,6 +537,9 @@
         
         // Agent info from login
         let agentInfo = {};
+        
+        // Real-time service
+        let realTimeService;
         
         // Form data and photo storage
         let formData = {
@@ -558,6 +564,7 @@
             setupPhotoUploads();
             setupEventListeners();
             initializeForm();
+            initializeRealTimeService();
         });
         
         function loadAgentInfo() {
@@ -683,6 +690,23 @@
                 }
             }
         }
+
+        function initializeRealTimeService() {
+            realTimeService = new RealTimeService();
+            
+            // Initialize with admin config (agents use same token as admin)
+            const adminConfig = JSON.parse(localStorage.getItem('ezeeAdminConfig') || '{}');
+            if (adminConfig.github?.token) {
+                const initialized = realTimeService.init(adminConfig.github);
+                if (initialized) {
+                    console.log('Real-time service initialized successfully');
+                } else {
+                    console.warn('Real-time service initialization failed');
+                }
+            } else {
+                console.warn('No GitHub token available - using fallback mode');
+            }
+        }
         
         async function handleSubmit() {
             try {
@@ -720,29 +744,50 @@
                 };
                 
                 progressFill.style.width = '40%';
-                uploadStatus.textContent = 'Uploading images...';
+                uploadStatus.textContent = 'Processing images...';
                 
-                // Upload images and get URLs
-                const imageUrls = await uploadImages();
+                // Process images
+                const imageUrls = {};
+                if (formData.idFront) {
+                    imageUrls.idFront = await processImage(formData.idFront);
+                }
+                if (formData.idBack) {
+                    imageUrls.idBack = await processImage(formData.idBack);
+                }
+                if (formData.agentPhoto) {
+                    imageUrls.agentPhoto = await processImage(formData.agentPhoto);
+                }
                 
                 progressFill.style.width = '70%';
-                uploadStatus.textContent = 'Saving to database...';
+                uploadStatus.textContent = 'Submitting to database...';
                 
-                // Create submission with image URLs
+                // Create submission
                 const submission = {
                     ...clientData,
                     images: imageUrls,
                     id: generateSubmissionId()
                 };
                 
-                // Save to JSON file (simulating database)
-                await saveSubmissionToJSON(submission);
-                
-                progressFill.style.width = '100%';
-                uploadStatus.textContent = 'Submission complete!';
-                
-                // Show success message
-                showSuccessMessage(submission.id);
+                // Submit using real-time service if available, otherwise fallback
+                if (realTimeService && realTimeService.token) {
+                    console.log('Submitting via real-time service to GitHub...');
+                    const result = await realTimeService.submitAgentData(submission);
+                    
+                    if (result.success) {
+                        progressFill.style.width = '100%';
+                        uploadStatus.textContent = 'Submission complete!';
+                        showSuccessMessage(result.submissionId);
+                    } else {
+                        throw new Error('Failed to submit to GitHub');
+                    }
+                } else {
+                    console.log('Using fallback localStorage submission...');
+                    // Fallback to localStorage
+                    await saveSubmissionToJSON(submission);
+                    progressFill.style.width = '100%';
+                    uploadStatus.textContent = 'Submission complete!';
+                    showSuccessMessage(submission.id);
+                }
                 
             } catch (error) {
                 console.error('Submission error:', error);
@@ -755,6 +800,14 @@
                     progressFill.style.width = '0%';
                 }, 3000);
             }
+        }
+
+        async function processImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
         }
         
         function validateForm() {

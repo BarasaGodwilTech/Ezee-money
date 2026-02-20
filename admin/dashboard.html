@@ -454,7 +454,12 @@
         <main class="main-content">
             <header class="header">
                 <h1>Admin Dashboard</h1>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="realTimeStatus" style="font-size: 14px; color: #666;">
+                        <span style="color: #6c757d;">● Checking...</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
             </header>
 
             <div id="alertContainer"></div>
@@ -593,10 +598,12 @@
 
     <script src="../js/github-service.js"></script>
     <script src="../js/submission-service.js"></script>
+    <script src="../js/real-time-service.js"></script>
     <script>
         // Global state
         let githubService;
         let submissionService;
+        let realTimeService;
         let config = {
             github: {
                 repoOwner: '',
@@ -613,8 +620,10 @@
             checkAuth();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
+            realTimeService = new RealTimeService();
             loadConfig();
             setupEventListeners();
+            initializeRealTimeService();
             loadDashboardData();
         });
 
@@ -626,10 +635,9 @@
         }
 
         function loadConfig() {
-            const savedConfig = localStorage.getItem('ezeeAdminConfig');
-            if (savedConfig) {
-                config = { ...config, ...JSON.parse(savedConfig) };
-                populateConfigForm();
+            const saved = localStorage.getItem('ezeeAdminConfig');
+            if (saved) {
+                config = JSON.parse(saved);
             }
         }
 
@@ -709,9 +717,9 @@
             }
         }
 
-        function loadDashboardData() {
-            loadAgents();
-            loadSubmissions();
+        async function loadDashboardData() {
+            await loadAgents();
+            await loadSubmissions();
             updateStats();
         }
 
@@ -838,9 +846,20 @@
             showAlert('Agent deleted successfully!', 'success');
         }
 
-        function loadSubmissions() {
+        async function loadSubmissions() {
             try {
-                // Load from localStorage where field agent submissions are stored
+                // Try real-time service first
+                if (realTimeService && realTimeService.token) {
+                    console.log('Loading submissions via real-time service...');
+                    const submissions = await realTimeService.getSubmissions();
+                    config.submissions = submissions;
+                    renderSubmissions();
+                    updateStats();
+                    return;
+                }
+                
+                // Fallback to localStorage
+                console.log('Loading submissions from localStorage...');
                 const savedSubmissions = localStorage.getItem('adminSubmissions');
                 if (savedSubmissions) {
                     const data = JSON.parse(savedSubmissions);
@@ -848,23 +867,8 @@
                     config.submissions = data.submissions || data || [];
                 }
                 
-                // Also try to load from GitHub if configured
-                if (githubService && githubService.config.token) {
-                    githubService.getSubmissions().then(githubSubmissions => {
-                        if (githubSubmissions && githubSubmissions.length > 0) {
-                            config.submissions = [...config.submissions, ...githubSubmissions];
-                        }
-                        renderSubmissions();
-                        updateStats();
-                    }).catch(error => {
-                        console.log('Failed to load GitHub submissions:', error);
-                        renderSubmissions();
-                        updateStats();
-                    });
-                } else {
-                    renderSubmissions();
-                    updateStats();
-                }
+                renderSubmissions();
+                updateStats();
             } catch (error) {
                 console.error('Failed to load submissions:', error);
                 renderSubmissions();
@@ -872,8 +876,8 @@
             }
         }
 
-        function refreshSubmissions() {
-            loadSubmissions();
+        async function refreshSubmissions() {
+            await loadSubmissions();
             showAlert('Submissions refreshed!', 'success');
         }
 
