@@ -592,9 +592,11 @@
     </div>
 
     <script src="../js/github-service.js"></script>
+    <script src="../js/submission-service.js"></script>
     <script>
         // Global state
         let githubService;
+        let submissionService;
         let config = {
             github: {
                 repoOwner: '',
@@ -610,6 +612,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
             githubService = new GitHubService();
+            submissionService = new SubmissionService();
             loadConfig();
             setupEventListeners();
             loadDashboardData();
@@ -836,11 +839,34 @@
         }
 
         function loadSubmissions() {
-            // In a real implementation, this would fetch from GitHub
-            const savedSubmissions = localStorage.getItem('ezeeSubmissions');
-            if (savedSubmissions) {
-                config.submissions = JSON.parse(savedSubmissions);
+            try {
+                // Load from localStorage where field agent submissions are stored
+                const savedSubmissions = localStorage.getItem('adminSubmissions');
+                if (savedSubmissions) {
+                    config.submissions = JSON.parse(savedSubmissions);
+                }
+                
+                // Also try to load from GitHub if configured
+                if (githubService && githubService.config.token) {
+                    githubService.getSubmissions().then(githubSubmissions => {
+                        if (githubSubmissions && githubSubmissions.length > 0) {
+                            config.submissions = [...config.submissions, ...githubSubmissions];
+                        }
+                        renderSubmissions();
+                        updateStats();
+                    }).catch(error => {
+                        console.log('Failed to load GitHub submissions:', error);
+                        renderSubmissions();
+                        updateStats();
+                    });
+                } else {
+                    renderSubmissions();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Failed to load submissions:', error);
                 renderSubmissions();
+                updateStats();
             }
         }
 
