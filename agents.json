@@ -1,0 +1,14 @@
+{
+  "agents": [
+    {
+      "id": "1771597985946",
+      "fullName": "Barasa Godwill",
+      "scCode": "SC001",
+      "password": "Barasa256",
+      "status": "active",
+      "createdAt": "2026-02-20T14:33:05.946Z"
+    }
+  ],
+  "lastUpdated": "2026-02-20T14:33:05.947Z",
+  "totalAgents": 1
+}
