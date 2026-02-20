@@ -561,11 +561,18 @@
         });
         
         function loadAgentInfo() {
-            const saved = localStorage.getItem('agentInfo');
-            if (saved) {
-                agentInfo = JSON.parse(saved);
-                document.getElementById('agentName').textContent = agentInfo.fullName;
-            } else {
+            try {
+                const saved = localStorage.getItem('agentInfo');
+                if (saved) {
+                    agentInfo = JSON.parse(saved);
+                    document.getElementById('agentName').textContent = agentInfo.fullName || 'Unknown Agent';
+                    console.log('Agent info loaded:', agentInfo);
+                } else {
+                    console.log('No agent info found, redirecting to login');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Error loading agent info:', error);
                 window.location.href = 'login.html';
             }
         }
@@ -678,18 +685,23 @@
         }
         
         async function handleSubmit() {
-            // Validate form
-            if (!validateForm()) {
-                return;
-            }
-            
-            // Show progress
-            submitBtn.disabled = true;
-            uploadProgress.classList.remove('hidden');
-            progressFill.style.width = '20%';
-            uploadStatus.textContent = 'Validating data...';
-            
             try {
+                // Validate form
+                if (!validateForm()) {
+                    return;
+                }
+                
+                // Show progress
+                submitBtn.disabled = true;
+                uploadProgress.classList.remove('hidden');
+                progressFill.style.width = '20%';
+                uploadStatus.textContent = 'Validating data...';
+                
+                // Check agent info is loaded
+                if (!agentInfo || !agentInfo.fullName) {
+                    throw new Error('Agent information not loaded. Please login again.');
+                }
+                
                 // Collect form data
                 const clientData = {
                     fullName: document.getElementById('fullName').value.trim(),
@@ -735,9 +747,12 @@
             } catch (error) {
                 console.error('Submission error:', error);
                 uploadStatus.textContent = 'Error: ' + error.message;
+                submitBtn.disabled = false;
+                
+                // Keep progress visible for 3 seconds so user sees the error
                 setTimeout(() => {
                     uploadProgress.classList.add('hidden');
-                    submitBtn.disabled = false;
+                    progressFill.style.width = '0%';
                 }, 3000);
             }
         }
@@ -818,21 +833,36 @@
         }
         
         async function saveSubmissionToJSON(submission) {
-            // Load existing submissions
-            const existingData = localStorage.getItem('ezeeSubmissions') || '{"submissions": []}';
-            const data = JSON.parse(existingData);
-            
-            // Add new submission
-            data.submissions.push(submission);
-            
-            // Save back to localStorage (simulating JSON file/database)
-            localStorage.setItem('ezeeSubmissions', JSON.stringify(data, null, 2));
-            
-            // Also save for admin to see
-            localStorage.setItem('adminSubmissions', JSON.stringify(data, null, 2));
-            
-            // Simulate delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            try {
+                console.log('Saving submission:', submission);
+                
+                // Load existing submissions
+                const existingData = localStorage.getItem('ezeeSubmissions') || '{"submissions": []}';
+                const data = JSON.parse(existingData);
+                
+                // Ensure we have an array
+                const submissions = data.submissions || data || [];
+                
+                // Add new submission
+                submissions.push(submission);
+                
+                // Save back to localStorage (simulating JSON file/database)
+                const updatedData = { submissions: submissions };
+                localStorage.setItem('ezeeSubmissions', JSON.stringify(updatedData, null, 2));
+                
+                // Also save for admin to see
+                localStorage.setItem('adminSubmissions', JSON.stringify(updatedData, null, 2));
+                
+                console.log('Submission saved successfully');
+                console.log('Total submissions now:', submissions.length);
+                
+                // Simulate delay for realism
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+            } catch (error) {
+                console.error('Error saving submission:', error);
+                throw new Error('Failed to save submission: ' + error.message);
+            }
         }
         
         function generateSubmissionId() {
