@@ -843,7 +843,9 @@
                 // Load from localStorage where field agent submissions are stored
                 const savedSubmissions = localStorage.getItem('adminSubmissions');
                 if (savedSubmissions) {
-                    config.submissions = JSON.parse(savedSubmissions);
+                    const data = JSON.parse(savedSubmissions);
+                    // Handle both formats: direct array or object with submissions array
+                    config.submissions = data.submissions || data || [];
                 }
                 
                 // Also try to load from GitHub if configured
@@ -870,6 +872,11 @@
             }
         }
 
+        function refreshSubmissions() {
+            loadSubmissions();
+            showAlert('Submissions refreshed!', 'success');
+        }
+
         function renderSubmissions() {
             const tbody = document.querySelector('#submissionsTable tbody');
             
@@ -878,17 +885,142 @@
                 return;
             }
 
-            tbody.innerHTML = config.submissions.map(submission => `
-                <tr>
-                    <td>${submission.scCode}</td>
-                    <td>${submission.agentName}</td>
-                    <td>${new Date(submission.submissionDate).toLocaleDateString()}</td>
-                    <td><span class="status-badge status-${submission.status}">${submission.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="viewSubmission('${submission.id}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = config.submissions.map(submission => {
+                // Handle different submission formats
+                const agentCode = submission.agentInfo?.scCode || submission.scCode || 'N/A';
+                const agentName = submission.agentInfo?.fullName || submission.agentName || submission.fullName || 'N/A';
+                const submissionDate = submission.submissionDate || submission.date || new Date().toISOString();
+                const status = submission.status || 'submitted';
+                
+                return `
+                    <tr>
+                        <td>${agentCode}</td>
+                        <td>${agentName}</td>
+                        <td>${new Date(submissionDate).toLocaleDateString()}</td>
+                        <td><span class="status-badge status-${status}">${status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="viewSubmission('${submission.id}')">View</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function viewSubmission(submissionId) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (!submission) {
+                alert('Submission not found');
+                return;
+            }
+            
+            // Create modal to show submission details
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                max-width: 800px;
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+            `;
+            
+            const agentInfo = submission.agentInfo || {};
+            const images = submission.images || {};
+            
+            modalContent.innerHTML = `
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">×</button>
+                
+                <h2 style="color: #1e3c72; margin-bottom: 20px;">
+                    <i class="fas fa-file-alt"></i> Submission Details
+                </h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="color: #2a5298; margin-bottom: 10px;">Client Information</h3>
+                        <p><strong>Name:</strong> ${submission.fullName || 'N/A'}</p>
+                        <p><strong>Personal Number:</strong> ${submission.personalNumber || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${submission.email || 'N/A'}</p>
+                        <p><strong>National ID:</strong> ${submission.nationalId || 'N/A'}</p>
+                        <p><strong>Date of Birth:</strong> ${submission.dob || 'N/A'}</p>
+                        <p><strong>Gender:</strong> ${submission.gender || 'N/A'}</p>
+                        <p><strong>Business Address:</strong> ${submission.businessAddress || 'N/A'}</p>
+                        <p><strong>Residential Address:</strong> ${submission.residentialAddress || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #2a5298; margin-bottom: 10px;">Next of Kin Information</h3>
+                        <p><strong>Name:</strong> ${submission.nextOfKinName || 'N/A'}</p>
+                        <p><strong>Relationship:</strong> ${submission.nextOfKinRelationship || 'N/A'}</p>
+                        <p><strong>Phone:</strong> ${submission.nextOfKinPhone || 'N/A'}</p>
+                        
+                        <h3 style="color: #2a5298; margin-bottom: 10px; margin-top: 20px;">Agent Information</h3>
+                        <p><strong>Agent Name:</strong> ${agentInfo.fullName || 'N/A'}</p>
+                        <p><strong>Agent SC Code:</strong> ${agentInfo.scCode || 'N/A'}</p>
+                        <p><strong>Submission Date:</strong> ${new Date(submission.submissionDate).toLocaleString()}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${submission.status}">${submission.status}</span></p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #2a5298; margin-bottom: 10px;">Uploaded Images</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        ${images.idFront ? `
+                            <div>
+                                <p><strong>ID Front:</strong></p>
+                                <img src="${images.idFront}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+                            </div>
+                        ` : ''}
+                        ${images.idBack ? `
+                            <div>
+                                <p><strong>ID Back:</strong></p>
+                                <img src="${images.idBack}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+                            </div>
+                        ` : ''}
+                        ${images.agentPhoto ? `
+                            <div>
+                                <p><strong>Agent Photo:</strong></p>
+                                <img src="${images.agentPhoto}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-primary">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
         }
 
         function updateStats() {

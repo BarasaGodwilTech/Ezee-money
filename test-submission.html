@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submission System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Ezee Money Submission System Test</h1>
+    
+    <div class="card">
+        <h2>Test Field Agent Submission</h2>
+        <p>This will create a test submission to verify the system works.</p>
+        <button class="btn" onclick="createTestAgent()">1. Create Test Agent</button>
+        <button class="btn" onclick="createTestSubmission()">2. Create Test Submission</button>
+        <button class="btn" onclick="checkLocalStorage()">3. Check localStorage</button>
+        <button class="btn" onclick="clearTestData()">Clear Test Data</button>
+    </div>
+
+    <div class="card">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="card">
+        <h2>Current localStorage Data</h2>
+        <pre id="localStorageData"></pre>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : '');
+            results.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function createTestAgent() {
+            try {
+                const testAgent = {
+                    id: 'TEST-' + Date.now(),
+                    scCode: 'TEST001',
+                    fullName: 'Test Agent',
+                    email: 'test@ezee.com',
+                    password: 'test123',
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Save to agents
+                const agents = JSON.parse(localStorage.getItem('ezeeAgents') || '[]');
+                agents.push(testAgent);
+                localStorage.setItem('ezeeAgents', JSON.stringify(agents));
+
+                log('✅ Test agent created: TEST001 / test123', 'success');
+                log('Agent data saved to localStorage', 'success');
+            } catch (error) {
+                log('❌ Error creating test agent: ' + error.message, 'error');
+            }
+        }
+
+        function createTestSubmission() {
+            try {
+                const testSubmission = {
+                    id: 'SUB-' + Date.now(),
+                    fullName: 'Test Client',
+                    personalNumber: 'TEST123456',
+                    email: 'client@test.com',
+                    nationalId: 'TESTID123',
+                    dob: '1990-01-01',
+                    gender: 'male',
+                    businessAddress: 'Test Business Address',
+                    residentialAddress: 'Test Residential Address',
+                    nextOfKinName: 'Test Kin',
+                    nextOfKinRelationship: 'spouse',
+                    nextOfKinPhone: '+256700000000',
+                    agentInfo: {
+                        scCode: 'TEST001',
+                        fullName: 'Test Agent'
+                    },
+                    images: {
+                        idFront: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                        idBack: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                        agentPhoto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                    },
+                    submissionDate: new Date().toISOString(),
+                    status: 'submitted'
+                };
+
+                // Save to submissions
+                const submissions = JSON.parse(localStorage.getItem('ezeeSubmissions') || '{"submissions": []}');
+                if (submissions.submissions) {
+                    submissions.submissions.push(testSubmission);
+                } else {
+                    submissions.push(testSubmission);
+                }
+                localStorage.setItem('ezeeSubmissions', JSON.stringify(submissions));
+                
+                // Also save for admin
+                localStorage.setItem('adminSubmissions', JSON.stringify(submissions));
+
+                log('✅ Test submission created successfully', 'success');
+                log('Submission ID: ' + testSubmission.id, 'success');
+                log('Data saved to both ezeeSubmissions and adminSubmissions', 'success');
+            } catch (error) {
+                log('❌ Error creating test submission: ' + error.message, 'error');
+            }
+        }
+
+        function checkLocalStorage() {
+            try {
+                const agents = localStorage.getItem('ezeeAgents');
+                const submissions = localStorage.getItem('ezeeSubmissions');
+                const adminSubmissions = localStorage.getItem('adminSubmissions');
+
+                log('📊 Checking localStorage data...', 'info');
+                log('Agents found: ' + (agents ? JSON.parse(agents).length : 0), 'info');
+                log('Submissions found: ' + (submissions ? (JSON.parse(submissions).submissions || JSON.parse(submissions)).length : 0), 'info');
+                log('Admin submissions found: ' + (adminSubmissions ? (JSON.parse(adminSubmissions).submissions || JSON.parse(adminSubmissions)).length : 0), 'info');
+
+                updateLocalStorageDisplay();
+            } catch (error) {
+                log('❌ Error checking localStorage: ' + error.message, 'error');
+            }
+        }
+
+        function clearTestData() {
+            try {
+                localStorage.removeItem('ezeeAgents');
+                localStorage.removeItem('ezeeSubmissions');
+                localStorage.removeItem('adminSubmissions');
+                log('🗑️ Test data cleared from localStorage', 'success');
+                updateLocalStorageDisplay();
+            } catch (error) {
+                log('❌ Error clearing test data: ' + error.message, 'error');
+            }
+        }
+
+        function updateLocalStorageDisplay() {
+            const data = {
+                ezeeAgents: localStorage.getItem('ezeeAgents'),
+                ezeeSubmissions: localStorage.getItem('ezeeSubmissions'),
+                adminSubmissions: localStorage.getItem('adminSubmissions')
+            };
+            document.getElementById('localStorageData').textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Initialize
+        updateLocalStorageDisplay();
+        log('🧪 Test page loaded. Ready to test submission system.', 'info');
+    </script>
+</body>
+</html>
