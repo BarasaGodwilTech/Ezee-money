@@ -1223,201 +1223,351 @@ window.EnhancedAdminDashboard = EnhancedAdminDashboard;
 window.EnhancedSubmissionHandler = EnhancedSubmissionHandler;
 window.ConfigManager = ConfigManager;
 
-// ==================== ULTIMATE PHOTO UPLOAD FIX ====================
-// Add this at the very bottom of integration.js
+// ==================== FIX: Photo Upload and Validation Issues ====================
+// Add this at the VERY BOTTOM of integration.js
 
-/**
- * COMPLETE PHOTO UPLOAD FIX
- * This ensures photos appear INSIDE the boxes and are properly detected on submission
- */
-(function fixPhotoUploads() {
+(function fixPhotoUploadIssues() {
     // Only run on submit page
     if (!window.location.pathname.includes('submit.html')) return;
     
-    console.log('🔧 Applying ultimate photo upload fix...');
+    console.log('🔧 Applying photo upload fixes...');
     
-    // Wait for DOM to be ready
+    // Wait for DOM to be fully loaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupPhotoSystem);
+        document.addEventListener('DOMContentLoaded', setupFixedPhotoHandlers);
     } else {
-        setupPhotoSystem();
+        setupFixedPhotoHandlers();
     }
     
-    function setupPhotoSystem() {
-        // Create global photo storage if not exists
-        window.photoFiles = {
-            idFront: null,
-            idBack: null,
-            agentPhoto: null
-        };
-        
-        // Fix each upload area
-        fixUploadArea('idFront');
-        fixUploadArea('idBack');
-        fixUploadArea('agentPhoto');
-        
-        // Override the submit function completely
-        overrideSubmitFunction();
-        
-        // Add missing CSS for proper preview inside boxes
-        addPreviewStyles();
-        
-        console.log('✅ Photo upload fix applied');
-    }
-    
-    function fixUploadArea(type) {
-        const uploadArea = document.getElementById(`${type}Upload`);
-        const fileInput = document.getElementById(`${type}Input`);
-        const previewDiv = document.getElementById(`${type}Preview`);
-        const previewImg = document.getElementById(`${type}Image`);
-        
-        if (!uploadArea || !fileInput || !previewDiv || !previewImg) {
-            console.warn(`Missing elements for ${type}`);
-            return;
+    function setupFixedPhotoHandlers() {
+        // Fix 1: Ensure window.formData exists and persists
+        if (!window.formData) {
+            window.formData = {
+                idFront: null,
+                idBack: null,
+                agentPhoto: null
+            };
         }
         
-        // Remove all existing event listeners by cloning
-        const newUploadArea = uploadArea.cloneNode(true);
-        uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
+        // Fix 2: Completely replace photo upload areas with fixed versions
+        replacePhotoAreas();
         
-        // Get new references
-        const newFileInput = document.getElementById(`${type}Input`);
-        const newPreviewDiv = document.getElementById(`${type}Preview`);
-        const newPreviewImg = document.getElementById(`${type}Image`);
+        // Fix 3: Override the submit handler
+        overrideSubmitValidation();
         
-        // Style the upload area to show preview INSIDE
-        newUploadArea.style.position = 'relative';
-        newUploadArea.style.overflow = 'hidden';
-        newUploadArea.style.display = 'flex';
-        newUploadArea.style.flexDirection = 'column';
-        newUploadArea.style.justifyContent = 'center';
-        newUploadArea.style.alignItems = 'center';
-        
-        // Click handler
-        newUploadArea.addEventListener('click', function(e) {
-            // Don't trigger if clicking remove button
-            if (e.target.classList.contains('remove-photo') || 
-                e.target.closest('.remove-photo')) {
-                return;
+        // Fix 4: Fix existing previews
+        fixExistingPreviews();
+    }
+    
+    function replacePhotoAreas() {
+        // Define the three photo areas
+        const photoConfigs = [
+            {
+                id: 'idFront',
+                label: 'National ID Front *',
+                uploadId: 'idFrontUpload',
+                inputId: 'idFrontInput',
+                previewId: 'idFrontPreview',
+                imageId: 'idFrontImage'
+            },
+            {
+                id: 'idBack',
+                label: 'National ID Back *',
+                uploadId: 'idBackUpload',
+                inputId: 'idBackInput',
+                previewId: 'idBackPreview',
+                imageId: 'idBackImage'
+            },
+            {
+                id: 'agentPhoto',
+                label: 'Agent Passport Photo *',
+                uploadId: 'agentPhotoUpload',
+                inputId: 'agentPhotoInput',
+                previewId: 'agentPhotoPreview',
+                imageId: 'agentPhotoImage'
             }
-            newFileInput.click();
+        ];
+        
+        photoConfigs.forEach(config => {
+            createFixedPhotoArea(config);
+        });
+    }
+    
+    function createFixedPhotoArea(config) {
+        // Find existing elements
+        const existingArea = document.getElementById(config.uploadId);
+        if (!existingArea) return;
+        
+        const container = existingArea.parentElement;
+        const existingPreview = document.getElementById(config.previewId);
+        const existingInput = document.getElementById(config.inputId);
+        
+        if (!container) return;
+        
+        // Create new HTML structure
+        const newHtml = `
+            <div class="photo-label">${config.label}</div>
+            <div class="fixed-photo-upload-area" id="${config.uploadId}" style="
+                border: 2px dashed #2a5298;
+                border-radius: 10px;
+                padding: 0;
+                text-align: center;
+                background-color: #f8fafc;
+                cursor: pointer;
+                transition: all 0.3s;
+                height: 200px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+                overflow: hidden;
+            ">
+                <div class="photo-icon" style="font-size: 48px; color: #2a5298; margin-bottom: 10px;">
+                    <i class="fas ${config.id === 'agentPhoto' ? 'fa-user-circle' : 'fa-id-card'}"></i>
+                </div>
+                <p><strong>Tap to upload ${config.label.replace(' *', '')}</strong></p>
+                <input type="file" id="${config.inputId}" accept="image/*" capture="environment" style="display: none;">
+            </div>
+            <div class="fixed-photo-preview hidden" id="${config.previewId}" style="
+                position: relative;
+                margin-top: 10px;
+                display: none;
+            ">
+                <img id="${config.imageId}" src="" alt="${config.label}" style="
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                ">
+                <div class="remove-photo" data-target="${config.id}" style="
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                ">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        `;
+        
+        // Replace content
+        container.innerHTML = newHtml;
+        
+        // Setup handlers for this new area
+        setupPhotoHandlers(config.id);
+    }
+    
+    function setupPhotoHandlers(photoType) {
+        const uploadArea = document.getElementById(photoType + 'Upload');
+        const fileInput = document.getElementById(photoType + 'Input');
+        const preview = document.getElementById(photoType + 'Preview');
+        const previewImage = document.getElementById(photoType + 'Image');
+        const removeBtn = preview?.querySelector('.remove-photo');
+        
+        if (!uploadArea || !fileInput) return;
+        
+        // Click upload area to trigger file input
+        uploadArea.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-photo')) return;
+            fileInput.click();
         });
         
-        // File change handler
-        newFileInput.addEventListener('change', function(e) {
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            // Store file globally
-            window.photoFiles[type] = file;
-            
-            // Read and display image
             const reader = new FileReader();
             reader.onload = function(event) {
-                newPreviewImg.src = event.target.result;
-                newPreviewDiv.classList.remove('hidden');
-                newUploadArea.classList.add('has-image');
-                
-                // Hide the upload content when image is present
-                const uploadContent = newUploadArea.querySelector('.photo-icon, p');
-                if (uploadContent) {
-                    uploadContent.style.display = 'none';
+                // Update preview
+                if (previewImage) {
+                    previewImage.src = event.target.result;
                 }
+                
+                if (preview) {
+                    preview.style.display = 'block';
+                    preview.classList.remove('hidden');
+                }
+                
+                // Style the upload area to show it has image
+                uploadArea.style.borderColor = '#28a745';
+                uploadArea.style.backgroundColor = '#d4edda';
+                
+                // Hide the icon and text in upload area
+                const icon = uploadArea.querySelector('.photo-icon');
+                const text = uploadArea.querySelector('p');
+                if (icon) icon.style.display = 'none';
+                if (text) text.style.display = 'none';
+                
+                // Store file in window.formData
+                if (!window.formData) window.formData = {};
+                window.formData[photoType] = file;
+                
+                console.log(`✅ ${photoType} stored:`, file.name);
             };
             reader.readAsDataURL(file);
         });
         
-        // Fix remove button
-        const removeBtn = newPreviewDiv.querySelector('.remove-photo');
+        // Handle remove button
         if (removeBtn) {
             removeBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 
-                // Clear file
-                window.photoFiles[type] = null;
-                newFileInput.value = '';
+                // Reset file input
+                fileInput.value = '';
                 
                 // Hide preview
-                newPreviewDiv.classList.add('hidden');
-                newUploadArea.classList.remove('has-image');
-                
-                // Show upload content again
-                const uploadContent = newUploadArea.querySelector('.photo-icon, p');
-                if (uploadContent) {
-                    uploadContent.style.display = 'flex';
+                if (preview) {
+                    preview.style.display = 'none';
+                    preview.classList.add('hidden');
                 }
                 
-                // Reset preview image
-                newPreviewImg.src = '';
+                // Reset upload area
+                uploadArea.style.borderColor = '#2a5298';
+                uploadArea.style.backgroundColor = '#f8fafc';
+                
+                // Show icon and text again
+                const icon = uploadArea.querySelector('.photo-icon');
+                const text = uploadArea.querySelector('p');
+                if (icon) icon.style.display = 'block';
+                if (text) text.style.display = 'block';
+                
+                // Remove from window.formData
+                if (window.formData) {
+                    window.formData[photoType] = null;
+                }
+                
+                console.log(`🗑️ ${photoType} removed`);
             });
         }
     }
     
-    function overrideSubmitFunction() {
-        // Store original if exists
+    function fixExistingPreviews() {
+        // Check if there are any existing photos in window.formData and update previews
+        setTimeout(() => {
+            if (!window.formData) return;
+            
+            const photoTypes = ['idFront', 'idBack', 'agentPhoto'];
+            
+            photoTypes.forEach(type => {
+                const file = window.formData[type];
+                if (file) {
+                    const preview = document.getElementById(type + 'Preview');
+                    const previewImage = document.getElementById(type + 'Image');
+                    const uploadArea = document.getElementById(type + 'Upload');
+                    
+                    if (preview && previewImage && uploadArea) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            previewImage.src = event.target.result;
+                            preview.style.display = 'block';
+                            preview.classList.remove('hidden');
+                            uploadArea.style.borderColor = '#28a745';
+                            uploadArea.style.backgroundColor = '#d4edda';
+                            
+                            const icon = uploadArea.querySelector('.photo-icon');
+                            const text = uploadArea.querySelector('p');
+                            if (icon) icon.style.display = 'none';
+                            if (text) text.style.display = 'none';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            });
+        }, 500);
+    }
+    
+    function overrideSubmitValidation() {
+        // Store original submit handler if exists
         const originalSubmit = window.handleSubmit;
         
-        // Completely replace submit handler
+        // Create new submit handler
         window.handleSubmit = async function() {
-            console.log('📤 Submit triggered, checking photos...');
+            console.log('📝 Submit called, checking photos...');
             
-            // Check if photos exist in global storage
-            const hasIdFront = window.photoFiles && window.photoFiles.idFront;
-            const hasIdBack = window.photoFiles && window.photoFiles.idBack;
-            const hasAgentPhoto = window.photoFiles && window.photoFiles.agentPhoto;
+            // Check if window.formData exists
+            if (!window.formData) {
+                window.formData = {
+                    idFront: null,
+                    idBack: null,
+                    agentPhoto: null
+                };
+            }
             
-            console.log('Photo status:', {
-                idFront: hasIdFront ? '✅' : '❌',
-                idBack: hasIdBack ? '✅' : '❌',
-                agentPhoto: hasAgentPhoto ? '✅' : '❌'
-            });
+            // Also check file inputs directly as backup
+            const idFrontInput = document.getElementById('idFrontInput');
+            const idBackInput = document.getElementById('idBackInput');
+            const agentPhotoInput = document.getElementById('agentPhotoInput');
+            
+            // Update window.formData from file inputs if needed
+            if (idFrontInput?.files?.[0] && !window.formData.idFront) {
+                window.formData.idFront = idFrontInput.files[0];
+            }
+            if (idBackInput?.files?.[0] && !window.formData.idBack) {
+                window.formData.idBack = idBackInput.files[0];
+            }
+            if (agentPhotoInput?.files?.[0] && !window.formData.agentPhoto) {
+                window.formData.agentPhoto = agentPhotoInput.files[0];
+            }
+            
+            // Check if all photos are present
+            const hasIdFront = !!(window.formData.idFront || idFrontInput?.files?.[0]);
+            const hasIdBack = !!(window.formData.idBack || idBackInput?.files?.[0]);
+            const hasAgentPhoto = !!(window.formData.agentPhoto || agentPhotoInput?.files?.[0]);
+            
+            console.log('Photo check:', { hasIdFront, hasIdBack, hasAgentPhoto });
+            console.log('FormData:', window.formData);
             
             if (!hasIdFront || !hasIdBack || !hasAgentPhoto) {
                 alert('Please upload all required photos (ID Front, ID Back, and Agent Photo)');
                 return;
             }
             
-            // Get submit button
-            const submitBtn = document.getElementById('submitBtn');
-            if (!submitBtn) return;
+            // Update window.formData with actual files
+            if (idFrontInput?.files?.[0]) window.formData.idFront = idFrontInput.files[0];
+            if (idBackInput?.files?.[0]) window.formData.idBack = idBackInput.files[0];
+            if (agentPhotoInput?.files?.[0]) window.formData.agentPhoto = agentPhotoInput.files[0];
             
-            const originalText = submitBtn.innerHTML;
-            
+            // Proceed with submission using the enhanced handler
             try {
-                // Show loading
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
                 submitBtn.disabled = true;
                 
-                // Collect form data
+                // Get form data
                 const formData = {
-                    fullName: document.getElementById('fullName')?.value || '',
-                    personalNumber: document.getElementById('personalNumber')?.value || '',
-                    email: document.getElementById('email')?.value || '',
-                    nationalId: document.getElementById('nationalId')?.value || '',
-                    dob: document.getElementById('dob')?.value || '',
-                    gender: document.getElementById('gender')?.value || '',
-                    businessAddress: document.getElementById('businessAddress')?.value || '',
-                    residentialAddress: document.getElementById('residentialAddress')?.value || '',
-                    nextOfKinName: document.getElementById('nextOfKinName')?.value || '',
-                    nextOfKinRelationship: document.getElementById('nextOfKinRelationship')?.value || '',
-                    nextOfKinPhone: document.getElementById('nextOfKinPhone')?.value || ''
+                    fullName: document.getElementById('fullName')?.value,
+                    personalNumber: document.getElementById('personalNumber')?.value,
+                    email: document.getElementById('email')?.value,
+                    nationalId: document.getElementById('nationalId')?.value,
+                    dob: document.getElementById('dob')?.value,
+                    gender: document.getElementById('gender')?.value,
+                    businessAddress: document.getElementById('businessAddress')?.value,
+                    residentialAddress: document.getElementById('residentialAddress')?.value,
+                    nextOfKinName: document.getElementById('nextOfKinName')?.value,
+                    nextOfKinRelationship: document.getElementById('nextOfKinRelationship')?.value,
+                    nextOfKinPhone: document.getElementById('nextOfKinPhone')?.value
                 };
                 
-                // Get agent info
-                let agentInfo = {};
-                try {
-                    const saved = localStorage.getItem('agentInfo');
-                    if (saved) agentInfo = JSON.parse(saved);
-                } catch (e) {}
+                // Use enhanced handler
+                const enhancedHandler = new EnhancedSubmissionHandler();
+                const result = await enhancedHandler.handleSubmission(formData, window.formData);
                 
-                // Create enhanced handler
-                const handler = new EnhancedSubmissionHandler();
-                
-                // Submit with photos from global storage
-                const result = await handler.handleSubmission(formData, window.photoFiles);
-                
-                if (result && result.success) {
-                    // Show success
+                if (result.success) {
+                    // Show success message
                     const formContainer = document.querySelector('.form-container');
                     const successMessage = document.getElementById('successMessage');
                     
@@ -1427,171 +1577,17 @@ window.ConfigManager = ConfigManager;
                         const submissionIdEl = document.getElementById('submissionId');
                         if (submissionIdEl) submissionIdEl.textContent = result.submissionId;
                     }
-                    
-                    // Clear photos
-                    window.photoFiles = {
-                        idFront: null,
-                        idBack: null,
-                        agentPhoto: null
-                    };
                 }
-                
             } catch (error) {
-                console.error('Submission error:', error);
                 alert('Submission failed: ' + error.message);
-                submitBtn.innerHTML = originalText;
+                console.error(error);
+                
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Agent Registration';
                 submitBtn.disabled = false;
             }
         };
         
-        // Also attach to any existing submit button
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            // Remove all existing listeners
-            const newBtn = submitBtn.cloneNode(true);
-            submitBtn.parentNode.replaceChild(newBtn, submitBtn);
-            
-            // Add new listener
-            newBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.handleSubmit();
-            });
-        }
-    }
-    
-    function addPreviewStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            /* Force preview INSIDE the upload area */
-            .photo-upload-area {
-                position: relative !important;
-                min-height: 200px !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
-                align-items: center !important;
-                overflow: hidden !important;
-            }
-            
-            .photo-upload-area.has-image .photo-icon,
-            .photo-upload-area.has-image p {
-                display: none !important;
-            }
-            
-            .photo-preview {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                background: #f8fafc !important;
-                z-index: 5 !important;
-            }
-            
-            .photo-preview img {
-                width: 100% !important;
-                height: 100% !important;
-                object-fit: cover !important;
-                border-radius: 8px !important;
-            }
-            
-            .photo-preview .remove-photo {
-                position: absolute !important;
-                top: 5px !important;
-                right: 5px !important;
-                z-index: 10 !important;
-                background: #dc3545 !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 50% !important;
-                width: 30px !important;
-                height: 30px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                cursor: pointer !important;
-            }
-            
-            /* Hide the default file input */
-            input[type="file"] {
-                position: absolute !important;
-                opacity: 0 !important;
-                width: 0 !important;
-                height: 0 !important;
-                z-index: -1 !important;
-            }
-        `;
-        document.head.appendChild(style);
+        console.log('✅ Submit handler overridden with fixed validation');
     }
 })();
-
-// ==================== SECONDARY FIX: Direct DOM Manipulation ====================
-// This runs after page load to ensure everything is working
-setTimeout(function() {
-    if (!window.location.pathname.includes('submit.html')) return;
-    
-    console.log('🔄 Running secondary photo fix...');
-    
-    // Force check each upload area
-    ['idFront', 'idBack', 'agentPhoto'].forEach(type => {
-        const preview = document.getElementById(`${type}Preview`);
-        const uploadArea = document.getElementById(`${type}Upload`);
-        const img = document.getElementById(`${type}Image`);
-        
-        if (preview && !preview.classList.contains('hidden') && img && img.src) {
-            // Ensure preview is shown correctly
-            preview.style.position = 'absolute';
-            preview.style.top = '0';
-            preview.style.left = '0';
-            preview.style.width = '100%';
-            preview.style.height = '100%';
-            preview.style.margin = '0';
-            preview.style.padding = '0';
-            preview.style.zIndex = '5';
-            
-            if (uploadArea) {
-                uploadArea.classList.add('has-image');
-                
-                // Hide upload content
-                const icons = uploadArea.querySelectorAll('.photo-icon, p');
-                icons.forEach(el => el.style.display = 'none');
-            }
-        }
-    });
-    
-    // Also fix any click handlers on remove buttons
-    document.querySelectorAll('.remove-photo').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const target = this.dataset.target;
-            
-            if (target) {
-                const uploadArea = document.getElementById(`${target}Upload`);
-                const preview = document.getElementById(`${target}Preview`);
-                const fileInput = document.getElementById(`${target}Input`);
-                
-                if (uploadArea) {
-                    uploadArea.classList.remove('has-image');
-                    
-                    // Show upload content again
-                    const icons = uploadArea.querySelectorAll('.photo-icon, p');
-                    icons.forEach(el => el.style.display = 'flex');
-                }
-                
-                if (preview) preview.classList.add('hidden');
-                if (fileInput) fileInput.value = '';
-                
-                // Clear from global storage
-                if (window.photoFiles) {
-                    window.photoFiles[target] = null;
-                }
-            }
-        });
-    });
-    
-}, 500);
