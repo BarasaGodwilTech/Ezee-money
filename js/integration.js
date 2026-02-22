@@ -1259,3 +1259,130 @@ if (typeof module !== 'undefined' && module.exports) {
         PhotoUploadHandler
     };
 }
+
+// ==================== Gallery Toggle Feature for Admin ====================
+// Add this at the VERY BOTTOM of integration.js
+
+(function() {
+    // Create toggle button and add to admin dashboard
+    function addGalleryToggle() {
+        // Check if we're on admin dashboard
+        if (!window.location.pathname.includes('dashboard.html')) return;
+        
+        // Create toggle button container
+        const toggleContainer = document.createElement('div');
+        toggleContainer.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border: 2px solid #2a5298;
+        `;
+        
+        // Get current setting from localStorage
+        const galleryEnabled = localStorage.getItem('galleryUploadEnabled') !== 'false';
+        
+        // Create toggle HTML
+        toggleContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: 600; color: #1e3c72;">📸 Gallery Upload</span>
+                    <span style="color: ${galleryEnabled ? '#28a745' : '#dc3545'}; font-size: 12px;">
+                        ${galleryEnabled ? '● ENABLED' : '○ DISABLED'}
+                    </span>
+                </div>
+                <button id="toggleGalleryBtn" style="
+                    padding: 8px 15px;
+                    background: ${galleryEnabled ? '#dc3545' : '#28a745'};
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                ">
+                    ${galleryEnabled ? '🔴 Disable Gallery' : '🟢 Enable Gallery'}
+                </button>
+                <small style="color: #666; font-size: 11px; text-align: center;">
+                    Click to ${galleryEnabled ? 'disable' : 'enable'} gallery upload for field agents
+                </small>
+            </div>
+        `;
+        
+        document.body.appendChild(toggleContainer);
+        
+        // Add toggle functionality
+        document.getElementById('toggleGalleryBtn').addEventListener('click', function() {
+            const current = localStorage.getItem('galleryUploadEnabled') !== 'false';
+            const newValue = !current;
+            localStorage.setItem('galleryUploadEnabled', newValue);
+            
+            // Update button appearance
+            this.style.background = newValue ? '#dc3545' : '#28a745';
+            this.innerHTML = newValue ? '🔴 Disable Gallery' : '🟢 Enable Gallery';
+            
+            // Update status text
+            const statusSpan = this.parentElement.querySelector('span:last-child');
+            if (statusSpan) {
+                statusSpan.style.color = newValue ? '#28a745' : '#dc3545';
+                statusSpan.textContent = newValue ? '● ENABLED' : '○ DISABLED';
+            }
+            
+            // Show confirmation
+            const msg = document.createElement('div');
+            msg.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                right: 20px;
+                background: ${newValue ? '#28a745' : '#dc3545'};
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 1001;
+                font-size: 14px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            msg.textContent = `Gallery upload ${newValue ? 'enabled' : 'disabled'} for field agents`;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        });
+    }
+    
+    // Override photo upload setup to respect admin toggle
+    const originalSetupPhotoArea = PhotoUploadHandler?.prototype?.setupPhotoArea;
+    
+    if (PhotoUploadHandler && originalSetupPhotoArea) {
+        PhotoUploadHandler.prototype.setupPhotoArea = function(photoType, label) {
+            // Call original first to maintain existing functionality
+            originalSetupPhotoArea.call(this, photoType, label);
+            
+            // Then modify based on admin toggle
+            setTimeout(() => {
+                const uploadArea = document.getElementById(`${photoType}Upload`);
+                if (!uploadArea) return;
+                
+                // Check if gallery should be hidden
+                const galleryEnabled = localStorage.getItem('galleryUploadEnabled') !== 'false';
+                
+                // Find gallery button
+                const buttons = uploadArea.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerHTML.includes('Choose from Gallery')) {
+                        btn.style.display = galleryEnabled ? 'flex' : 'none';
+                    }
+                });
+            }, 100);
+        };
+    }
+    
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addGalleryToggle);
+    } else {
+        addGalleryToggle();
+    }
+})();
