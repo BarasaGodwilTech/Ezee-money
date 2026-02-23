@@ -32,6 +32,80 @@ class GitHubService {
     }
 
     /**
+     * Load gitconfig.json from GitHub (source of truth across devices)
+     * Expected format:
+     * {
+     *   "github": { "repoOwner": "...", "repoName": "...", "branch": "main", "token": "..." }
+     * }
+     */
+    async loadGitConfigFromGitHub() {
+        try {
+            // For gitconfig.json we must call GitHub with token (if already known) or anonymously.
+            const owner = this.config.repoOwner || 'BarasaGodwilTech';
+            const repo = this.config.repoName || 'Ezee-money';
+
+            const response = await fetch(`${this.baseURL}/repos/${owner}/${repo}/contents/gitconfig.json`, {
+                headers: {
+                    'Authorization': this.config.token ? `token ${this.config.token}` : undefined,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    return null; // Not yet configured in repo
+                }
+                throw new Error(`Failed to load gitconfig.json: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (!data.content) return null;
+
+            const parsed = JSON.parse(atob(data.content));
+            if (parsed && parsed.github) {
+                const gitCfg = parsed.github;
+                // Normalize keys to what the app expects
+                this.config = {
+                    repoOwner: gitCfg.repoOwner,
+                    repoName: gitCfg.repoName,
+                    branchName: gitCfg.branch || gitCfg.branchName || 'main',
+                    token: gitCfg.token
+                };
+
+                // Persist to localStorage using existing schema
+                this.saveConfig(this.config);
+                return this.config;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error loading gitconfig.json from GitHub:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save gitconfig.json to repository root in the required format.
+     */
+    async saveGitConfigToGitHub() {
+        if (!this.config.token || !this.config.repoOwner || !this.config.repoName) {
+            throw new Error('GitHub configuration is incomplete');
+        }
+
+        const payload = {
+            github: {
+                repoOwner: this.config.repoOwner,
+                repoName: this.config.repoName,
+                branch: this.config.branchName || 'main',
+                token: this.config.token
+            }
+        };
+
+        const content = btoa(JSON.stringify(payload, null, 2));
+        return this.uploadFile('gitconfig.json', content, 'Update git configuration');
+    }
+
+    /**
      * Test GitHub connection
      */
     async testConnection() {
@@ -95,7 +169,8 @@ class GitHubService {
                 body: JSON.stringify({
                     message: message,
                     content: content,
-                    sha: sha
+                    sha: sha,
+                    branch: this.config.branchName || this.config.branch || 'main'
                 })
             });
 
@@ -215,6 +290,48 @@ class GitHubService {
      */
     async saveSubmission(submissionData) {
         try {
+            // Normalize incoming data into the required structure
+            const id = submissionData.id || Date.now().toString();
+
+            const agentInfo = submissionData.agentInfo || {};
+
+            const submittedBy = {
+                agentName: agentInfo.fullName || submissionData.agentName || 'Unknown Agent',
+                agentScCode: agentInfo.scCode || submissionData.scCode || 'N/A',
+                agentId: agentInfo.id || submissionData.agentId || id
+            };
+
+            const clientInfo = {
+                fullName: submissionData.fullName || submissionData.clientName || '',
+                phoneNumber: submissionData.personalNumber || submissionData.phoneNumber || '',
+                email: submissionData.email || '',
+                nationalId: submissionData.nationalId || '',
+                dob: submissionData.dob || '',
+                gender: submissionData.gender || '',
+                businessAddress: submissionData.businessAddress || '',
+                residentialAddress: submissionData.residentialAddress || '',
+                nextOfKinName: submissionData.nextOfKinName || '',
+                nextOfKinRelationship: submissionData.nextOfKinRelationship || '',
+                nextOfKinPhone: submissionData.nextOfKinPhone || ''
+            };
+
+            // If images are provided as URLs already, map them, otherwise caller should
+            // have used uploadSubmissionImages first.
+            const images = {
+                idFrontUrl: submissionData.images?.idFrontUrl || submissionData.images?.idFront || '',
+                idBackUrl: submissionData.images?.idBackUrl || submissionData.images?.idBack || '',
+                agentPhotoUrl: submissionData.images?.agentPhotoUrl || submissionData.images?.agentPhoto || ''
+            };
+
+            const normalizedSubmission = {
+                id,
+                submittedBy,
+                clientInfo,
+                images,
+                submissionDate: submissionData.submissionDate || new Date().toISOString(),
+                status: submissionData.status || 'pending'
+            };
+
             // Read existing submissions
             let submissions = [];
             try {
@@ -226,14 +343,7 @@ class GitHubService {
                 console.log('No existing submissions file, creating new one');
             }
 
-            // Add new submission
-            const newSubmission = {
-                id: Date.now().toString(),
-                ...submissionData,
-                createdAt: new Date().toISOString()
-            };
-
-            submissions.push(newSubmission);
+            submissions.push(normalizedSubmission);
 
             // Save updated submissions
             const dataToSave = {
@@ -245,12 +355,12 @@ class GitHubService {
             const result = await this.uploadFile(
                 'submissions.json', 
                 btoa(JSON.stringify(dataToSave, null, 2)),
-                `New submission from ${submissionData.agentInfo.fullName}`
+                `New submission from ${submittedBy.agentName}`
             );
 
             return {
                 success: true,
-                submissionId: newSubmission.id,
+                submissionId: normalizedSubmission.id,
                 downloadUrl: result.content.download_url
             };
         } catch (error) {
@@ -323,7 +433,8 @@ class GitHubService {
                     imageData,
                     `Upload ${key} for submission ${submissionId}`
                 );
-                
+
+                // result.content.download_url is a raw GitHub URL suitable for display
                 results[key] = {
                     success: true,
                     filename: filename,

@@ -538,8 +538,9 @@
         // Agent info from login
         let agentInfo = {};
         
-        // Real-time service
+        // Services
         let realTimeService;
+        let githubService;
         
         // Form data and photo storage
         let formData = {
@@ -559,8 +560,23 @@
         const uploadStatus = document.getElementById('uploadStatus');
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadAgentInfo();
+            githubService = new GitHubService();
+
+            // Prefer shared gitconfig.json from GitHub so submissions and images use same credentials
+            try {
+                await githubService.loadGitConfigFromGitHub();
+                if (githubService.config) {
+                    githubConfig.repoOwner = githubService.config.repoOwner || githubConfig.repoOwner;
+                    githubConfig.repoName = githubService.config.repoName || githubConfig.repoName;
+                    githubConfig.accessToken = githubService.config.token || githubConfig.accessToken;
+                    githubConfig.branchName = githubService.config.branchName || githubConfig.branchName;
+                }
+            } catch (e) {
+                console.warn('gitconfig.json not found or failed to load, falling back to local configuration', e);
+            }
+
             setupPhotoUploads();
             setupEventListeners();
             initializeForm();
@@ -681,7 +697,7 @@
         }
         
         function initializeForm() {
-            // Load GitHub config if available
+            // Local fallback for GitHub config if gitconfig.json was not available
             const savedConfig = localStorage.getItem('ezeeAdminConfig');
             if (savedConfig) {
                 const config = JSON.parse(savedConfig);
@@ -726,7 +742,7 @@
                     throw new Error('Agent information not loaded. Please login again.');
                 }
                 
-                // Collect form data
+                // Collect form data for client
                 const clientData = {
                     fullName: document.getElementById('fullName').value.trim(),
                     personalNumber: document.getElementById('personalNumber').value.trim(),
@@ -738,55 +754,66 @@
                     residentialAddress: document.getElementById('residentialAddress').value.trim(),
                     nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
                     nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value,
-                    nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim(),
-                    agentInfo: agentInfo,
-                    submissionDate: new Date().toISOString()
+                    nextOfKinPhone: document.getElementById('nextOfKinPhone').value.trim()
                 };
                 
                 progressFill.style.width = '40%';
                 uploadStatus.textContent = 'Processing images...';
                 
-                // Process images
-                const imageUrls = {};
-                if (formData.idFront) {
-                    imageUrls.idFront = await processImage(formData.idFront);
-                }
-                if (formData.idBack) {
-                    imageUrls.idBack = await processImage(formData.idBack);
-                }
-                if (formData.agentPhoto) {
-                    imageUrls.agentPhoto = await processImage(formData.agentPhoto);
-                }
-                
-                progressFill.style.width = '70%';
-                uploadStatus.textContent = 'Submitting to database...';
-                
-                // Create submission
-                const submission = {
-                    ...clientData,
-                    images: imageUrls,
-                    id: generateSubmissionId()
+                // Generate submission id and agent tracking info
+                const submissionId = generateSubmissionId();
+                const submittedBy = {
+                    agentName: agentInfo.fullName,
+                    agentScCode: agentInfo.scCode,
+                    agentId: agentInfo.id || agentInfo.scCode
                 };
-                
-                // Submit using real-time service if available, otherwise fallback
-                if (realTimeService && realTimeService.token) {
-                    console.log('Submitting via real-time service to GitHub...');
-                    const result = await realTimeService.submitAgentData(submission);
-                    
-                    if (result.success) {
-                        progressFill.style.width = '100%';
-                        uploadStatus.textContent = 'Submission complete!';
-                        showSuccessMessage(result.submissionId);
-                    } else {
-                        throw new Error('Failed to submit to GitHub');
-                    }
-                } else {
-                    console.log('Using fallback localStorage submission...');
-                    // Fallback to localStorage
-                    await saveSubmissionToJSON(submission);
+
+                // Upload images to GitHub and get URLs
+                progressFill.style.width = '40%';
+                uploadStatus.textContent = 'Uploading images...';
+
+                let images = {};
+                try {
+                    const imagePayload = {};
+                    if (formData.idFront) imagePayload.idFront = await processImage(formData.idFront);
+                    if (formData.idBack) imagePayload.idBack = await processImage(formData.idBack);
+                    if (formData.agentPhoto) imagePayload.agentPhoto = await processImage(formData.agentPhoto);
+
+                    const uploadResults = await githubService.uploadSubmissionImages(submissionId, imagePayload);
+                    images = {
+                        idFrontUrl: uploadResults.idFront?.downloadUrl || '',
+                        idBackUrl: uploadResults.idBack?.downloadUrl || '',
+                        agentPhotoUrl: uploadResults.agentPhoto?.downloadUrl || ''
+                    };
+                } catch (imgErr) {
+                    console.error('Image upload failed:', imgErr);
+                    throw new Error('Image upload failed: ' + imgErr.message);
+                }
+
+                progressFill.style.width = '70%';
+                uploadStatus.textContent = 'Saving submission...';
+
+                const submissionPayload = {
+                    id: submissionId,
+                    agentInfo,
+                    ...clientData,
+                    images,
+                    submissionDate: new Date().toISOString(),
+                    status: 'pending'
+                };
+
+                try {
+                    await githubService.saveSubmission(submissionPayload);
                     progressFill.style.width = '100%';
                     uploadStatus.textContent = 'Submission complete!';
-                    showSuccessMessage(submission.id);
+                    showSuccessMessage(submissionId);
+                } catch (saveErr) {
+                    console.error('GitHub submission failed, falling back to localStorage:', saveErr);
+                    // Fallback to localStorage simulation
+                    await saveSubmissionToJSON(submissionPayload);
+                    progressFill.style.width = '100%';
+                    uploadStatus.textContent = 'Submission saved locally (GitHub unavailable).';
+                    showSuccessMessage(submissionId);
                 }
                 
             } catch (error) {

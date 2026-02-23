@@ -547,7 +547,12 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Field Agent Submissions</h2>
-                        <button class="btn btn-primary" onclick="refreshSubmissions()">Refresh</button>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="agentFilter" class="form-control" style="max-width: 260px;">
+                                <option value="">All agents</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="refreshSubmissions()">Refresh</button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="submissionsTable">
@@ -634,15 +639,26 @@
         };
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
             realTimeService = new RealTimeService();
+
+            // Try to load shared gitconfig.json from GitHub first so config follows admin across devices
+            try {
+                await githubService.loadGitConfigFromGitHub();
+            } catch (e) {
+                console.warn('gitconfig.json not found or failed to load, falling back to local configuration', e);
+            }
+
             loadConfig();
             setupEventListeners();
             initializeRealTimeService();
-            loadDashboardData();
+            await loadDashboardData();
+
+            // Auto-refresh submissions every 3 seconds to show new data in near real-time
+            setInterval(loadSubmissions, 3000);
         });
 
         function checkAuth() {
@@ -812,11 +828,18 @@
 
             config.github = { repoOwner, repoName, branchName, token };
             
-            // Update GitHub service configuration
+            // Update GitHub service configuration and local storage
             githubService.saveConfig(config.github);
             saveConfig();
 
-            showAlert('GitHub configuration saved successfully!', 'success');
+            // Persist shared config to gitconfig.json in repository root
+            try {
+                await githubService.saveGitConfigToGitHub();
+                showAlert('GitHub configuration saved and synced to gitconfig.json!', 'success');
+            } catch (error) {
+                console.error('Failed to save gitconfig.json:', error);
+                showAlert('GitHub configuration saved locally, but gitconfig.json could not be updated: ' + error.message, 'warning');
+            }
             
             // Update config status
             updateConfigStatus();
@@ -849,71 +872,34 @@
             try {
                 console.log('Loading agents...');
                 console.log('GitHub config:', config.github);
-                
-                // Always try GitHub first if token is configured (regardless of device)
+
+                // Always try agents.json on GitHub first when token is configured
                 if (config.github && config.github.token) {
-                    console.log('GitHub token found, loading agents from GitHub...');
-                    
                     try {
-                        // Try real-time service first
-                        if (realTimeService) {
-                            console.log('Loading agents via real-time service...');
-                            config.agents = await realTimeService.getAgents();
-                            console.log(`Loaded ${config.agents.length} agents from GitHub via real-time service`);
-                        } else {
-                            // Fallback to GitHub service
-                            console.log('Loading agents via GitHub service...');
-                            config.agents = await githubService.getAgents();
-                            console.log(`Loaded ${config.agents.length} agents from GitHub via GitHub service`);
-                        }
-                        
-                        // Also save to localStorage as backup
+                        config.agents = await githubService.getAgents();
+                        console.log(`Loaded ${config.agents.length} agents from agents.json on GitHub`);
+
+                        // Cache to localStorage as backup
                         localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
-                        console.log('Agents cached to localStorage as backup');
-                        
                     } catch (githubError) {
-                        console.error('GitHub loading failed:', githubError);
-                        showAlert('GitHub loading failed, using local cache: ' + githubError.message, 'warning');
-                        
-                        // Fallback to localStorage cache
+                        console.error('GitHub loading of agents failed:', githubError);
+                        showAlert('GitHub loading of agents failed, using local cache: ' + githubError.message, 'warning');
+
                         const savedAgents = localStorage.getItem('ezeeAgents');
-                        if (savedAgents) {
-                            config.agents = JSON.parse(savedAgents);
-                            console.log(`Loaded ${config.agents.length} agents from localStorage cache`);
-                        } else {
-                            config.agents = [];
-                            console.log('No agents found in cache');
-                        }
+                        config.agents = savedAgents ? JSON.parse(savedAgents) : [];
                     }
-                    
                 } else {
-                    // No GitHub token configured, use localStorage only
-                    console.log('No GitHub token configured, using localStorage...');
+                    // No GitHub token configured, fall back to local cache only
+                    console.log('No GitHub token configured, using local agent cache...');
                     const savedAgents = localStorage.getItem('ezeeAgents');
-                    if (savedAgents) {
-                        config.agents = JSON.parse(savedAgents);
-                        console.log(`Loaded ${config.agents.length} agents from localStorage`);
-                    } else {
-                        config.agents = [];
-                        console.log('No agents found in localStorage');
-                    }
+                    config.agents = savedAgents ? JSON.parse(savedAgents) : [];
                 }
-                
+
                 renderAgents();
                 console.log('Agents loaded and rendered successfully');
-                
-                // Show status to user
-                if (config.github && config.github.token) {
-                    showAlert(`Loaded ${config.agents.length} agents from GitHub`, 'success');
-                } else {
-                    showAlert(`Loaded ${config.agents.length} agents from local cache`, 'info');
-                }
-                
             } catch (error) {
                 console.error('Failed to load agents:', error);
                 showAlert('Error loading agents: ' + error.message, 'error');
-                
-                // Final fallback
                 config.agents = [];
                 renderAgents();
             }
@@ -1021,43 +1007,22 @@
         async function saveAgents() {
             try {
                 console.log('Saving agents...');
-                
-                // Always try to save to GitHub first if token is configured (regardless of device)
+
+                // Always try to save to agents.json on GitHub first when token is configured
                 if (config.github && config.github.token) {
-                    console.log('GitHub token found, saving agents to GitHub...');
-                    
                     try {
-                        // Try real-time service first
-                        if (realTimeService) {
-                            console.log('Saving agents via real-time service...');
-                            await realTimeService.saveAgents(config.agents);
-                            console.log('Agents saved to GitHub via real-time service');
-                        } else {
-                            // Fallback to GitHub service
-                            console.log('Saving agents via GitHub service...');
-                            await githubService.saveAgents(config.agents);
-                            console.log('Agents saved to GitHub via GitHub service');
-                        }
-                        
-                        showAlert('Agents saved to GitHub successfully!', 'success');
-                        
+                        await githubService.saveAgents(config.agents);
+                        console.log('Agents saved to agents.json on GitHub');
                     } catch (githubError) {
-                        console.error('GitHub saving failed:', githubError);
-                        showAlert('GitHub saving failed, using local cache: ' + githubError.message, 'warning');
-                        
-                        // Fallback to localStorage
+                        console.error('GitHub saving of agents failed:', githubError);
+                        showAlert('GitHub saving of agents failed, using local cache: ' + githubError.message, 'warning');
                         localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
-                        console.log('Agents saved to localStorage as fallback');
                     }
-                    
                 } else {
-                    // No GitHub token configured, save to localStorage only
-                    console.log('No GitHub token configured, saving to localStorage...');
+                    // No GitHub token configured, save only to local cache
+                    console.log('No GitHub token configured, saving agents to localStorage only');
                     localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
-                    console.log('Agents saved to localStorage');
-                    showAlert('Agents saved to local cache', 'info');
                 }
-                
             } catch (error) {
                 console.error('Error saving agents:', error);
                 showAlert('Error saving agents: ' + error.message, 'error');
@@ -1068,45 +1033,27 @@
             try {
                 console.log('Loading submissions...');
                 console.log('GitHub config:', config.github);
-                
-                // Always try GitHub first if token is configured (regardless of device)
+
+                // Always try submissions.json on GitHub first when token is configured
                 if (config.github && config.github.token) {
-                    console.log('GitHub token found, loading submissions from GitHub...');
-                    
                     try {
-                        // Try real-time service first
-                        if (realTimeService) {
-                            console.log('Loading submissions via real-time service...');
-                            const submissions = await realTimeService.getSubmissions();
-                            config.submissions = submissions;
-                            console.log(`Loaded ${config.submissions.length} submissions from GitHub via real-time service`);
-                        } else {
-                            // Fallback to GitHub service
-                            console.log('Loading submissions via GitHub service...');
-                            config.submissions = await githubService.getSubmissions();
-                            console.log(`Loaded ${config.submissions.length} submissions from GitHub via GitHub service`);
-                        }
-                        
-                        // Also save to localStorage as backup
+                        config.submissions = await githubService.getSubmissions();
+                        console.log(`Loaded ${config.submissions.length} submissions from submissions.json on GitHub`);
+
+                        // Cache to localStorage as backup
                         localStorage.setItem('adminSubmissions', JSON.stringify({ submissions: config.submissions }));
-                        console.log('Submissions cached to localStorage as backup');
-                        
                     } catch (githubError) {
-                        console.error('GitHub loading failed:', githubError);
-                        showAlert('GitHub loading failed, using local cache: ' + githubError.message, 'warning');
-                        
-                        // Fallback to localStorage cache
+                        console.error('GitHub loading of submissions failed:', githubError);
+                        showAlert('GitHub loading of submissions failed, using local cache: ' + githubError.message, 'warning');
+
                         const savedSubmissions = localStorage.getItem('adminSubmissions');
                         if (savedSubmissions) {
                             const data = JSON.parse(savedSubmissions);
                             config.submissions = data.submissions || data || [];
-                            console.log(`Loaded ${config.submissions.length} submissions from localStorage cache`);
                         } else {
                             config.submissions = [];
-                            console.log('No submissions found in cache');
                         }
                     }
-                    
                 } else {
                     // No GitHub token configured, use localStorage only
                     console.log('No GitHub token configured, loading submissions from localStorage...');
@@ -1114,21 +1061,17 @@
                     if (savedSubmissions) {
                         const data = JSON.parse(savedSubmissions);
                         config.submissions = data.submissions || data || [];
-                        console.log(`Loaded ${config.submissions.length} submissions from localStorage`);
                     } else {
                         config.submissions = [];
-                        console.log('No submissions found in localStorage');
                     }
                 }
-                
+
                 renderSubmissions();
                 updateStats();
-                
+                buildAgentFilter();
             } catch (error) {
                 console.error('Failed to load submissions:', error);
                 showAlert('Error loading submissions: ' + error.message, 'error');
-                
-                // Fallback to empty submissions
                 config.submissions = [];
                 renderSubmissions();
                 updateStats();
@@ -1140,25 +1083,63 @@
             showAlert('Submissions refreshed!', 'success');
         }
 
+        function buildAgentFilter() {
+            const filterSelect = document.getElementById('agentFilter');
+            if (!filterSelect || !config.submissions) return;
+
+            const map = new Map();
+            for (const s of config.submissions) {
+                const submittedBy = s.submittedBy || {};
+                const key = submittedBy.agentId || submittedBy.agentScCode;
+                if (!key) continue;
+
+                if (!map.has(key)) {
+                    map.set(key, {
+                        id: key,
+                        name: submittedBy.agentName || 'Unknown Agent',
+                        scCode: submittedBy.agentScCode || 'N/A',
+                        count: 0
+                    });
+                }
+                map.get(key).count++;
+            }
+
+            const options = ['<option value="">All agents</option>'];
+            for (const agent of map.values()) {
+                options.push(`<option value="${agent.id}">${agent.name} (${agent.scCode}) - ${agent.count}</option>`);
+            }
+            filterSelect.innerHTML = options.join('');
+        }
+
         function renderSubmissions() {
             const tbody = document.querySelector('#submissionsTable tbody');
-            
-            if (config.submissions.length === 0) {
+
+            if (!config.submissions || config.submissions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">No submissions found</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = config.submissions.map(submission => {
-                // Handle different submission formats
-                const agentCode = submission.agentInfo?.scCode || submission.scCode || 'N/A';
-                const agentName = submission.agentInfo?.fullName || submission.agentName || submission.fullName || 'N/A';
-                const submissionDate = submission.submissionDate || submission.date || new Date().toISOString();
-                const status = submission.status || 'submitted';
-                
+            const filterSelect = document.getElementById('agentFilter');
+            const filterValue = filterSelect ? filterSelect.value : '';
+
+            const filtered = filterValue
+                ? config.submissions.filter(s => 
+                    s.submittedBy?.agentId === filterValue ||
+                    s.submittedBy?.agentScCode === filterValue)
+                : config.submissions;
+
+            tbody.innerHTML = filtered.map(submission => {
+                const phone = submission.clientInfo?.phoneNumber || submission.personalNumber || 'N/A';
+                const submittedBy = submission.submittedBy || {};
+                const agentName = submittedBy.agentName || submission.agentInfo?.fullName || 'N/A';
+                const agentScCode = submittedBy.agentScCode || submission.agentInfo?.scCode || 'N/A';
+                const submissionDate = submission.submissionDate || submission.createdAt || new Date().toISOString();
+                const status = submission.status || 'pending';
+
                 return `
                     <tr>
-                        <td>${agentCode}</td>
-                        <td>${agentName}</td>
+                        <td>${phone}</td>
+                        <td>${agentName} (${agentScCode})</td>
                         <td>${new Date(submissionDate).toLocaleDateString()}</td>
                         <td><span class="status-badge status-${status}">${status}</span></td>
                         <td>
