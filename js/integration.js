@@ -811,3 +811,642 @@ document.addEventListener('DOMContentLoaded', async () => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = EzeeIntegration;
 }
+// ==================== ADD THIS AT THE VERY END OF integration.js ====================
+// FIXES: Agent saving to agents.json, Agent name on submissions, Filter by agent, SC Code display
+
+// Extend the EzeeIntegration class with additional methods
+EzeeIntegration.prototype.fixAgentSaving = async function() {
+    console.log('🔧 Applying agent saving fix...');
+    
+    // Override the saveAgents method to ensure it saves to GitHub
+    const originalSaveAgents = this.saveAgents;
+    this.saveAgents = async function(agents) {
+        try {
+            console.log('📝 Saving agents to agents.json...');
+            
+            const data = {
+                agents: agents,
+                lastUpdated: new Date().toISOString(),
+                totalAgents: agents.length
+            };
+            
+            // Save to GitHub if token exists
+            if (this.token) {
+                // Get current file SHA if exists
+                let sha = null;
+                try {
+                    const response = await fetch(
+                        `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/contents/agents.json`,
+                        {
+                            headers: { 'Authorization': `token ${this.token}` }
+                        }
+                    );
+                    if (response.ok) {
+                        const fileData = await response.json();
+                        sha = fileData.sha;
+                    }
+                } catch (error) {
+                    console.log('agents.json may not exist yet');
+                }
+
+                // Save to GitHub
+                const body = {
+                    message: `Update agents list (${agents.length} agents)`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+                    branch: this.branch
+                };
+
+                if (sha) {
+                    body.sha = sha;
+                }
+
+                const saveResponse = await fetch(
+                    `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/contents/agents.json`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    }
+                );
+
+                if (!saveResponse.ok) {
+                    const error = await saveResponse.json();
+                    throw new Error(error.message || 'Failed to save agents.json');
+                }
+
+                console.log('✅ Agents saved to GitHub successfully');
+            }
+            
+            // Always save to localStorage
+            localStorage.setItem('ezeeAgents', JSON.stringify(agents));
+            
+            // Update the UI
+            if (typeof this.updateAgentsList === 'function') {
+                this.updateAgentsList(agents);
+            }
+            
+            return { success: true };
+            
+        } catch (error) {
+            console.error('❌ Error saving agents:', error);
+            // Fallback to localStorage
+            localStorage.setItem('ezeeAgents', JSON.stringify(agents));
+            throw error;
+        }
+    };
+    
+    console.log('✅ Agent saving fix applied');
+};
+
+// Fix submission to include agent info and save properly
+EzeeIntegration.prototype.fixSubmissionSaving = async function() {
+    console.log('🔧 Applying submission saving fix...');
+    
+    // Override submitAgentData to ensure agent info is included
+    const originalSubmit = this.submitAgentData;
+    this.submitAgentData = async function(submission) {
+        try {
+            console.log('📝 Processing submission with agent info...');
+            
+            // Get current agent info from localStorage
+            let agentInfo = { fullName: 'Unknown', scCode: 'N/A' };
+            try {
+                const savedAgent = localStorage.getItem('agentInfo');
+                if (savedAgent) {
+                    agentInfo = JSON.parse(savedAgent);
+                }
+            } catch (error) {
+                console.warn('Could not load agent info from localStorage');
+            }
+
+            // Generate submission ID
+            const submissionId = submission.id || `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            
+            // Upload images if token exists
+            const imageUrls = {};
+            if (this.token && submission.images) {
+                console.log('📸 Uploading images...');
+                const timestamp = Date.now();
+                
+                if (submission.images.idFront) {
+                    const result = await this.uploadImage(
+                        submission.images.idFront,
+                        `${submissionId}_idFront_${timestamp}.jpg`
+                    );
+                    imageUrls.idFrontUrl = result.url;
+                }
+                
+                if (submission.images.idBack) {
+                    const result = await this.uploadImage(
+                        submission.images.idBack,
+                        `${submissionId}_idBack_${timestamp}.jpg`
+                    );
+                    imageUrls.idBackUrl = result.url;
+                }
+                
+                if (submission.images.agentPhoto) {
+                    const result = await this.uploadImage(
+                        submission.images.agentPhoto,
+                        `${submissionId}_agentPhoto_${timestamp}.jpg`
+                    );
+                    imageUrls.agentPhotoUrl = result.url;
+                }
+            }
+
+            // Prepare submission data with agent info
+            const submissionData = {
+                id: submissionId,
+                // Client info
+                fullName: submission.fullName || '',
+                personalNumber: submission.personalNumber || '', // This is the phone number
+                email: submission.email || '',
+                nationalId: submission.nationalId || '',
+                dob: submission.dob || '',
+                gender: submission.gender || '',
+                businessAddress: submission.businessAddress || '',
+                residentialAddress: submission.residentialAddress || '',
+                
+                // Next of kin
+                nextOfKinName: submission.nextOfKinName || '',
+                nextOfKinRelationship: submission.nextOfKinRelationship || '',
+                nextOfKinPhone: submission.nextOfKinPhone || '',
+                
+                // Agent info - CRITICAL for identification
+                agentName: agentInfo.fullName || submission.agentName || 'Unknown',
+                agentScCode: agentInfo.scCode || submission.agentScCode || 'N/A',
+                agentId: agentInfo.id || submission.agentId || '',
+                
+                // Submission metadata
+                submissionDate: submission.submissionDate || new Date().toISOString(),
+                status: 'pending',
+                
+                // Image URLs
+                ...imageUrls
+            };
+
+            // Load existing submissions
+            let submissions = [];
+            try {
+                const existing = await this.getFileContent('data.json');
+                submissions = existing?.agents || [];
+            } catch (error) {
+                console.log('Creating new data.json');
+            }
+
+            // Add new submission
+            submissions.push(submissionData);
+
+            // Save to data.json
+            const dataToSave = {
+                agents: submissions,
+                lastUpdated: new Date().toISOString()
+            };
+
+            if (this.token) {
+                // Get current file SHA
+                let sha = null;
+                try {
+                    const response = await fetch(
+                        `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/contents/data.json`,
+                        {
+                            headers: { 'Authorization': `token ${this.token}` }
+                        }
+                    );
+                    if (response.ok) {
+                        const fileData = await response.json();
+                        sha = fileData.sha;
+                    }
+                } catch (error) {
+                    console.log('data.json may not exist yet');
+                }
+
+                // Save to GitHub
+                const body = {
+                    message: `New submission from ${submissionData.agentName} (SC: ${submissionData.agentScCode})`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(dataToSave, null, 2)))),
+                    branch: this.branch
+                };
+
+                if (sha) {
+                    body.sha = sha;
+                }
+
+                const saveResponse = await fetch(
+                    `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/contents/data.json`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    }
+                );
+
+                if (!saveResponse.ok) {
+                    const error = await saveResponse.json();
+                    throw new Error(error.message || 'Failed to save data.json');
+                }
+
+                console.log('✅ Submission saved to GitHub');
+            }
+
+            // Cache to localStorage
+            localStorage.setItem('adminSubmissions', JSON.stringify(dataToSave));
+
+            return {
+                success: true,
+                submissionId: submissionId,
+                imageUrls: imageUrls,
+                agentInfo: {
+                    name: submissionData.agentName,
+                    scCode: submissionData.agentScCode
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error in submission:', error);
+            throw error;
+        }
+    };
+    
+    console.log('✅ Submission saving fix applied');
+};
+
+// Add agent filter functionality
+EzeeIntegration.prototype.addAgentFilter = function() {
+    console.log('🔧 Adding agent filter...');
+    
+    // Create filter section HTML
+    const filterSection = `
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <h3 class="card-title">Filter Submissions by Agent</h3>
+            </div>
+            <div style="padding: 20px;">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div style="flex: 1;">
+                        <select id="agentFilterSelect" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                            <option value="all">All Agents</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="window.ezeeIntegration.applyAgentFilter()">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="window.ezeeIntegration.clearAgentFilter()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div id="agentSubmissionStats" style="margin-top: 15px; font-size: 14px; color: #666;">
+                    Loading stats...
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Insert filter before submissions table
+    const submissionsCard = document.querySelector('#submissions .card');
+    if (submissionsCard) {
+        // Check if filter already exists
+        if (!document.getElementById('agentFilterSelect')) {
+            submissionsCard.insertAdjacentHTML('beforebegin', filterSection);
+        }
+    }
+
+    // Populate filter dropdown
+    this.populateAgentFilter();
+};
+
+// Populate agent filter dropdown
+EzeeIntegration.prototype.populateAgentFilter = async function() {
+    const filterSelect = document.getElementById('agentFilterSelect');
+    if (!filterSelect) return;
+
+    try {
+        const agents = await this.getAgents();
+        const submissions = await this.getSubmissions();
+
+        // Get unique agents from submissions
+        const agentStats = {};
+        submissions.forEach(sub => {
+            const agentName = sub.agentName || 'Unknown';
+            const agentScCode = sub.agentScCode || 'N/A';
+            const key = `${agentName} (${agentScCode})`;
+            
+            if (!agentStats[key]) {
+                agentStats[key] = {
+                    name: agentName,
+                    scCode: agentScCode,
+                    count: 0
+                };
+            }
+            agentStats[key].count++;
+        });
+
+        // Update filter dropdown
+        filterSelect.innerHTML = '<option value="all">All Agents</option>';
+        
+        Object.entries(agentStats).forEach(([key, stats]) => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${stats.name} (${stats.scCode}) - ${stats.count} submissions`;
+            filterSelect.appendChild(option);
+        });
+
+        // Update stats display
+        const statsEl = document.getElementById('agentSubmissionStats');
+        if (statsEl) {
+            const totalSubmissions = submissions.length;
+            const uniqueAgents = Object.keys(agentStats).length;
+            statsEl.innerHTML = `
+                <strong>${totalSubmissions}</strong> total submissions from 
+                <strong>${uniqueAgents}</strong> unique agents
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error populating agent filter:', error);
+    }
+};
+
+// Apply agent filter
+EzeeIntegration.prototype.applyAgentFilter = async function() {
+    const filterSelect = document.getElementById('agentFilterSelect');
+    if (!filterSelect) return;
+
+    const selectedValue = filterSelect.value;
+    const submissions = await this.getSubmissions();
+
+    let filteredSubmissions = submissions;
+    if (selectedValue !== 'all') {
+        // Extract agent name and SC code from selected value
+        const match = selectedValue.match(/(.+) \((.+)\)/);
+        if (match) {
+            const agentName = match[1];
+            const agentScCode = match[2];
+            
+            filteredSubmissions = submissions.filter(sub => 
+                sub.agentName === agentName && sub.agentScCode === agentScCode
+            );
+        }
+    }
+
+    // Update submissions table with filtered data
+    this.updateSubmissionsTableWithFix(filteredSubmissions);
+    
+    // Show filter indicator
+    const statsEl = document.getElementById('agentSubmissionStats');
+    if (statsEl) {
+        if (selectedValue === 'all') {
+            statsEl.innerHTML = `Showing all <strong>${filteredSubmissions.length}</strong> submissions`;
+        } else {
+            statsEl.innerHTML = `Showing <strong>${filteredSubmissions.length}</strong> submissions for <strong>${selectedValue}</strong>`;
+        }
+    }
+};
+
+// Clear agent filter
+EzeeIntegration.prototype.clearAgentFilter = async function() {
+    const filterSelect = document.getElementById('agentFilterSelect');
+    if (filterSelect) {
+        filterSelect.value = 'all';
+    }
+    
+    const submissions = await this.getSubmissions();
+    this.updateSubmissionsTableWithFix(submissions);
+    
+    const statsEl = document.getElementById('agentSubmissionStats');
+    if (statsEl) {
+        statsEl.innerHTML = `Showing all <strong>${submissions.length}</strong> submissions`;
+    }
+};
+
+// Fixed submissions table update with proper SC Code display
+EzeeIntegration.prototype.updateSubmissionsTableWithFix = function(submissions) {
+    const tbody = document.querySelector('#submissionsTable tbody');
+    if (!tbody) return;
+
+    if (!submissions || submissions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: #6b7280;">No submissions found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = submissions.map(sub => {
+        // Use personalNumber for SC Code (this is the phone number)
+        const scCode = sub.personalNumber || sub.phoneNumber || sub.scCode || 'N/A';
+        // Show agent name with SC code in parentheses
+        const agentDisplay = sub.agentName 
+            ? `${sub.agentName} ${sub.agentScCode ? `(${sub.agentScCode})` : ''}`
+            : 'N/A';
+        
+        const submissionDate = sub.submissionDate || sub.date || new Date().toISOString();
+        const status = sub.status || 'pending';
+        
+        return `
+            <tr>
+                <td>${scCode}</td>
+                <td>${agentDisplay}</td>
+                <td>${new Date(submissionDate).toLocaleDateString()}</td>
+                <td><span class="status-badge status-${status}">${status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="window.ezeeIntegration.viewSubmission('${sub.id}')">View</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+};
+
+// Override the dashboard initialization to include all fixes
+EzeeIntegration.prototype.applyAllFixes = async function() {
+    console.log('🔧 Applying all fixes...');
+    
+    // Apply agent saving fix
+    await this.fixAgentSaving();
+    
+    // Apply submission saving fix
+    await this.fixSubmissionSaving();
+    
+    // Add agent filter to dashboard
+    if (window.location.pathname.includes('dashboard.html')) {
+        this.addAgentFilter();
+        
+        // Override the getSubmissions method to use our fixed version
+        const originalGetSubmissions = this.getSubmissions;
+        this.getSubmissions = async function() {
+            try {
+                if (this.token) {
+                    const response = await fetch(
+                        `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/contents/data.json?ref=${this.branch}`,
+                        {
+                            headers: { 'Authorization': `token ${this.token}` }
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.content) {
+                            const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+                            const submissions = content.agents || [];
+                            localStorage.setItem('adminSubmissions', JSON.stringify({ agents: submissions }));
+                            
+                            // Update table with fixed display
+                            this.updateSubmissionsTableWithFix(submissions);
+                            
+                            return submissions;
+                        }
+                    }
+                }
+                
+                const cached = localStorage.getItem('adminSubmissions');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    const submissions = parsed.agents || [];
+                    this.updateSubmissionsTableWithFix(submissions);
+                    return submissions;
+                }
+                
+                return [];
+            } catch (error) {
+                console.error('Error getting submissions:', error);
+                const cached = localStorage.getItem('adminSubmissions');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    return parsed.agents || [];
+                }
+                return [];
+            }
+        };
+        
+        // Refresh data to apply fixes
+        setTimeout(async () => {
+            await this.loadDashboardData();
+            await this.populateAgentFilter();
+        }, 1000);
+    }
+    
+    console.log('✅ All fixes applied successfully');
+};
+
+// Override the showAddAgentModal function to ensure it uses our fixed save method
+window.showAddAgentModal = async function() {
+    const fullName = prompt('Enter agent full name:');
+    if (!fullName) return;
+
+    const scCode = prompt('Enter agent SC code:');
+    if (!scCode) return;
+
+    const password = prompt('Enter agent password:');
+    if (!password) return;
+
+    const integration = window.ezeeIntegration;
+    if (!integration) {
+        alert('Integration not initialized');
+        return;
+    }
+
+    try {
+        const agents = await integration.getAgents();
+        
+        const newAgent = {
+            id: Date.now().toString(),
+            fullName,
+            scCode,
+            password,
+            status: 'active',
+            createdAt: new Date().toISOString()
+        };
+
+        agents.push(newAgent);
+        
+        // Use our fixed save method
+        await integration.saveAgents(agents);
+        
+        // Update UI
+        integration.updateAgentsList(agents);
+        
+        // Show success message
+        if (typeof integration.showAlert === 'function') {
+            integration.showAlert('Agent added successfully!', 'success');
+        } else {
+            alert('Agent added successfully!');
+        }
+        
+    } catch (error) {
+        console.error('Error adding agent:', error);
+        alert('Error adding agent: ' + error.message);
+    }
+};
+
+// Override the handleSubmit function to ensure agent info is included
+if (window.location.pathname.includes('submit.html')) {
+    const originalHandleSubmit = window.handleSubmit;
+    window.handleSubmit = async function() {
+        const integration = window.ezeeIntegration;
+        if (!integration) {
+            alert('Integration not initialized');
+            return;
+        }
+
+        try {
+            // Get agent info from localStorage
+            const agentInfo = JSON.parse(localStorage.getItem('agentInfo') || '{}');
+            
+            // Collect form data
+            const submission = {
+                fullName: document.getElementById('fullName')?.value,
+                personalNumber: document.getElementById('personalNumber')?.value,
+                email: document.getElementById('email')?.value,
+                nationalId: document.getElementById('nationalId')?.value,
+                dob: document.getElementById('dob')?.value,
+                gender: document.getElementById('gender')?.value,
+                businessAddress: document.getElementById('businessAddress')?.value,
+                residentialAddress: document.getElementById('residentialAddress')?.value,
+                nextOfKinName: document.getElementById('nextOfKinName')?.value,
+                nextOfKinRelationship: document.getElementById('nextOfKinRelationship')?.value,
+                nextOfKinPhone: document.getElementById('nextOfKinPhone')?.value,
+                images: window.formData || {},
+                // Add agent info
+                agentName: agentInfo.fullName,
+                agentScCode: agentInfo.scCode,
+                agentId: agentInfo.id
+            };
+            
+            const result = await integration.submitAgentData(submission);
+            
+            if (result.success) {
+                // Show success message
+                document.querySelector('.form-container')?.classList.add('hidden');
+                const successMsg = document.getElementById('successMessage');
+                const submissionId = document.getElementById('submissionId');
+                
+                if (successMsg) successMsg.classList.remove('hidden');
+                if (submissionId) submissionId.textContent = result.submissionId;
+                
+                // Show agent info in success message
+                const imagesLocation = document.getElementById('imagesLocation');
+                if (imagesLocation) {
+                    imagesLocation.innerHTML = `Submitted by: ${result.agentInfo.name} (${result.agentInfo.scCode})`;
+                    imagesLocation.style.color = '#28a745';
+                }
+            }
+            
+        } catch (error) {
+            alert('❌ Submission failed: ' + error.message);
+        }
+    };
+}
+
+// Apply all fixes after initialization
+setTimeout(() => {
+    if (window.ezeeIntegration) {
+        window.ezeeIntegration.applyAllFixes();
+    }
+}, 500);
+// ==================== END OF ADDITIONS ====================
