@@ -697,19 +697,26 @@
             submissionService = new SubmissionService();
             realTimeService = new RealTimeService();
 
-            // Try to load shared GitHub config from Firebase first so config follows admin across devices
+            // 1) Load any existing local configuration first (so we keep other settings)
+            loadConfig();
+
+            // 2) Overlay shared GitHub config from Firebase, this is the source of truth
             const fbCfg = await loadGitConfigFromFirebase();
-            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName) {
-                config.github = {
-                    repoOwner: fbCfg.repoOwner,
-                    repoName: fbCfg.repoName,
-                    branchName: fbCfg.branch || 'main',
-                    token: fbCfg.token || ''
-                };
+            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                console.log('Firebase GitHub config loaded:', fbCfg);
+                config.github.repoOwner   = fbCfg.repoOwner;
+                config.github.repoName    = fbCfg.repoName;
+                config.github.branchName  = fbCfg.branch || config.github.branchName || 'main';
+                config.github.token       = fbCfg.token;
+
+                // Persist merged config and update GitHubService
+                githubService.saveConfig(config.github);
+                saveConfig();
+            } else {
+                console.warn('Firebase GitHub config missing or incomplete, using local configuration:', config.github);
                 githubService.saveConfig(config.github);
             }
 
-            loadConfig();
             setupEventListeners();
             initializeRealTimeService();
             await loadDashboardData();
@@ -927,13 +934,13 @@
         async function loadAgents() {
             try {
                 console.log('Loading agents...');
-                console.log('GitHub config:', config.github);
+                console.log('GitHub config used for agents:', config.github);
 
                 // Always try agents.json on GitHub first when token is configured
                 if (config.github && config.github.token) {
                     try {
                         config.agents = await githubService.getAgents();
-                        console.log(`Loaded ${config.agents.length} agents from agents.json on GitHub`);
+                        console.log('Agents loaded from GitHub:', config.agents);
 
                         // Cache to localStorage as backup
                         localStorage.setItem('ezeeAgents', JSON.stringify(config.agents));
