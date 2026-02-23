@@ -1499,12 +1499,6 @@
             updateStats();
         }
 
-        function viewSubmission(submissionId) {
-            const submission = config.submissions.find(s => s.id === submissionId);
-            if (submission) {
-                alert(`Submission Details:\n\nAgent: ${submission.agentName}\nSC Code: ${submission.scCode}\nDate: ${new Date(submission.submissionDate).toLocaleString()}\n\nFull data would be displayed here in a modal.`);
-            }
-        }
     </script>
 </body>
 </html>
