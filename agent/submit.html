@@ -974,6 +974,131 @@
         }
     </script>
     <!-- Fix for photo display and gallery toggle -->
+    <script>
+// Force image preview fix - This will override any existing image preview functionality
+(function() {
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Image preview fix applied');
+        
+        // Fix all photo upload areas
+        const photoUploads = [
+            { uploadId: 'idFrontUpload', inputId: 'idFrontInput', previewId: 'idFrontPreview', imageId: 'idFrontImage', target: 'idFront' },
+            { uploadId: 'idBackUpload', inputId: 'idBackInput', previewId: 'idBackPreview', imageId: 'idBackImage', target: 'idBack' },
+            { uploadId: 'agentPhotoUpload', inputId: 'agentPhotoInput', previewId: 'agentPhotoPreview', imageId: 'agentPhotoImage', target: 'agentPhoto' }
+        ];
+        
+        // Form data object to store images
+        window.formData = window.formData || {
+            idFront: null,
+            idBack: null,
+            agentPhoto: null
+        };
+        
+        photoUploads.forEach(function(item) {
+            const uploadArea = document.getElementById(item.uploadId);
+            const fileInput = document.getElementById(item.inputId);
+            const previewDiv = document.getElementById(item.previewId);
+            const previewImage = document.getElementById(item.imageId);
+            
+            if (!uploadArea || !fileInput || !previewDiv || !previewImage) {
+                console.log('Missing element for', item.target);
+                return;
+            }
+            
+            // Remove all existing event listeners by cloning and replacing
+            const newUploadArea = uploadArea.cloneNode(false);
+            uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
+            
+            const newFileInput = fileInput.cloneNode(false);
+            fileInput.parentNode.replaceChild(newFileInput, fileInput);
+            
+            // Update references
+            if (item.uploadId === 'idFrontUpload') document.getElementById('idFrontUpload') = newUploadArea;
+            if (item.uploadId === 'idBackUpload') document.getElementById('idBackUpload') = newUploadArea;
+            if (item.uploadId === 'agentPhotoUpload') document.getElementById('agentPhotoUpload') = newUploadArea;
+            
+            if (item.inputId === 'idFrontInput') document.getElementById('idFrontInput') = newFileInput;
+            if (item.inputId === 'idBackInput') document.getElementById('idBackInput') = newFileInput;
+            if (item.inputId === 'agentPhotoInput') document.getElementById('agentPhotoInput') = newFileInput;
+            
+            // Add click handler to upload area
+            newUploadArea.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                newFileInput.click();
+            });
+            
+            // Add change handler to file input
+            newFileInput.addEventListener('change', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const file = this.files[0];
+                if (!file) return;
+                
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file');
+                    this.value = '';
+                    return;
+                }
+                
+                // Read and display image
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previewImage.src = event.target.result;
+                    previewDiv.classList.remove('hidden');
+                    newUploadArea.classList.add('has-image');
+                    
+                    // Store in formData
+                    window.formData[item.target] = file;
+                    
+                    console.log('Image loaded for', item.target);
+                };
+                
+                reader.onerror = function() {
+                    alert('Error reading file');
+                    window.formData[item.target] = null;
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            // Fix remove photo buttons
+            const removeBtn = document.querySelector(`.remove-photo[data-target="${item.target}"]`);
+            if (removeBtn) {
+                const newRemoveBtn = removeBtn.cloneNode(true);
+                removeBtn.parentNode.replaceChild(newRemoveBtn, removeBtn);
+                
+                newRemoveBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Clear file input
+                    newFileInput.value = '';
+                    
+                    // Hide preview
+                    previewDiv.classList.add('hidden');
+                    
+                    // Remove has-image class
+                    newUploadArea.classList.remove('has-image');
+                    
+                    // Clear from formData
+                    window.formData[item.target] = null;
+                    
+                    // Clear image src
+                    previewImage.src = '';
+                    
+                    console.log('Image removed for', item.target);
+                });
+            }
+        });
+        
+        console.log('Image preview fix complete');
+    });
+})();
+            </script>
 
 </body>
 </html>
