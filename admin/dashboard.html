@@ -636,6 +636,22 @@
           measurementId: "G-YJGQLTWJ8J"
         };
 
+        // Safe initializer for real-time service (used for status only; dashboard must still work without it)
+        function initializeRealTimeService() {
+            try {
+                if (!realTimeService) {
+                    console.warn('RealTimeService not available, skipping real-time initialization');
+                    return;
+                }
+                if (config.github && config.github.token) {
+                    const ok = realTimeService.init(config.github);
+                    console.log('RealTimeService initialization result:', ok);
+                }
+            } catch (e) {
+                console.error('Error initializing RealTimeService (continuing without it):', e);
+            }
+        }
+
         firebase.initializeApp(firebaseConfig);
         const firestore = firebase.firestore();
 
