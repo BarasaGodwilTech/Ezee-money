@@ -7,16 +7,8 @@
       "password": "Barasa256",
       "status": "active",
       "createdAt": "2026-02-20T14:33:05.946Z"
-    },
-    {
-      "id": "1771871090424",
-      "fullName": "Mwenyi Joan",
-      "scCode": "SC002",
-      "password": "Barasa2026",
-      "status": "active",
-      "createdAt": "2026-02-23T18:24:50.424Z"
     }
   ],
-  "lastUpdated": "2026-02-23T18:24:50.425Z",
-  "totalAgents": 2
+  "lastUpdated": "2026-02-23T18:37:31.786Z",
+  "totalAgents": 1
 }
