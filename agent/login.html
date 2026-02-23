@@ -265,8 +265,23 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
     <script src="../js/github-service.js"></script>
     <script>
+        // Firebase for shared GitHub config
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
         // Global variables
         let agents = [];
         let config = {};
@@ -275,12 +290,6 @@
         document.addEventListener('DOMContentLoaded', async function() {
             checkConnection();
             githubService = new GitHubService();
-
-            try {
-                await githubService.loadGitConfigFromGitHub();
-            } catch (e) {
-                console.warn('gitconfig.json not found or failed to load, falling back to static config', e);
-            }
 
             await loadConfig();
             await loadAgents();
@@ -305,16 +314,22 @@
 
         async function loadConfig() {
             try {
-                // Prefer config coming from gitconfig.json via GitHubService
-                const ghCfg = githubService.config || {};
-                if (ghCfg.repoOwner && ghCfg.repoName) {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (snap.exists && snap.data().github) {
+                    const gh = snap.data().github;
                     config.github = {
-                        repoOwner: ghCfg.repoOwner,
-                        repoName: ghCfg.repoName,
-                        branchName: ghCfg.branchName || 'main'
+                        repoOwner: gh.repoOwner || 'BarasaGodwilTech',
+                        repoName: gh.repoName || 'Ezee-money',
+                        branchName: gh.branch || 'main'
                     };
+                    githubService.saveConfig({
+                        repoOwner: config.github.repoOwner,
+                        repoName: config.github.repoName,
+                        branchName: config.github.branchName,
+                        token: gh.token || ''
+                    });
                 } else {
-                    // Fallback static config
                     config.github = {
                         repoOwner: 'BarasaGodwilTech',
                         repoName: 'Ezee-money',
@@ -322,7 +337,7 @@
                     };
                 }
             } catch (error) {
-                console.error('Failed to load config:', error);
+                console.error('Failed to load config from Firebase:', error);
                 config.github = {
                     repoOwner: 'BarasaGodwilTech',
                     repoName: 'Ezee-money',

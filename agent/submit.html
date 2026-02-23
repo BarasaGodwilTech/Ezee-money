@@ -522,10 +522,25 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
     <script src="../js/github-service.js"></script>
     <script src="../js/submission-service.js"></script>
     <script src="../js/real-time-service.js"></script>
     <script>
+        // Firebase for shared GitHub config
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
         // Configuration
         let githubConfig = {
             repoOwner: 'BarasaGodwilTech',
@@ -564,17 +579,26 @@
             loadAgentInfo();
             githubService = new GitHubService();
 
-            // Prefer shared gitconfig.json from GitHub so submissions and images use same credentials
+            // Prefer shared GitHub config from Firebase
             try {
-                await githubService.loadGitConfigFromGitHub();
-                if (githubService.config) {
-                    githubConfig.repoOwner = githubService.config.repoOwner || githubConfig.repoOwner;
-                    githubConfig.repoName = githubService.config.repoName || githubConfig.repoName;
-                    githubConfig.accessToken = githubService.config.token || githubConfig.accessToken;
-                    githubConfig.branchName = githubService.config.branchName || githubConfig.branchName;
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (snap.exists && snap.data().github) {
+                    const gh = snap.data().github;
+                    githubConfig.repoOwner = gh.repoOwner || githubConfig.repoOwner;
+                    githubConfig.repoName = gh.repoName || githubConfig.repoName;
+                    githubConfig.accessToken = gh.token || githubConfig.accessToken;
+                    githubConfig.branchName = gh.branch || githubConfig.branchName;
+
+                    githubService.saveConfig({
+                        repoOwner: githubConfig.repoOwner,
+                        repoName: githubConfig.repoName,
+                        branchName: githubConfig.branchName,
+                        token: githubConfig.accessToken
+                    });
                 }
             } catch (e) {
-                console.warn('gitconfig.json not found or failed to load, falling back to local configuration', e);
+                console.warn('Failed to load GitHub config from Firebase, falling back to local configuration', e);
             }
 
             setupPhotoUploads();

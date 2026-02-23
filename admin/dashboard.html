@@ -619,10 +619,26 @@
         </main>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
     <script src="../js/github-service.js"></script>
     <script src="../js/submission-service.js"></script>
     <script src="../js/real-time-service.js"></script>
     <script>
+        // Firebase configuration for shared GitHub config
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
         // Global state
         let githubService;
         let submissionService;
@@ -638,6 +654,42 @@
             submissions: []
         };
 
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) {
+                    console.warn('No GitHub config document found in Firebase');
+                    return null;
+                }
+                const data = snap.data();
+                if (!data || !data.github) {
+                    console.warn('GitHub config document missing github field');
+                    return null;
+                }
+                return data.github;
+            } catch (error) {
+                console.error('Failed to load GitHub config from Firebase:', error);
+                return null;
+            }
+        }
+
+        async function saveGitConfigToFirebase(githubCfg) {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                await docRef.set({ github: {
+                    repoOwner: githubCfg.repoOwner,
+                    repoName: githubCfg.repoName,
+                    branch: githubCfg.branchName || githubCfg.branch || 'main',
+                    token: githubCfg.token
+                }});
+                return true;
+            } catch (error) {
+                console.error('Failed to save GitHub config to Firebase:', error);
+                throw error;
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
@@ -645,11 +697,16 @@
             submissionService = new SubmissionService();
             realTimeService = new RealTimeService();
 
-            // Try to load shared gitconfig.json from GitHub first so config follows admin across devices
-            try {
-                await githubService.loadGitConfigFromGitHub();
-            } catch (e) {
-                console.warn('gitconfig.json not found or failed to load, falling back to local configuration', e);
+            // Try to load shared GitHub config from Firebase first so config follows admin across devices
+            const fbCfg = await loadGitConfigFromFirebase();
+            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName) {
+                config.github = {
+                    repoOwner: fbCfg.repoOwner,
+                    repoName: fbCfg.repoName,
+                    branchName: fbCfg.branch || 'main',
+                    token: fbCfg.token || ''
+                };
+                githubService.saveConfig(config.github);
             }
 
             loadConfig();
@@ -832,13 +889,12 @@
             githubService.saveConfig(config.github);
             saveConfig();
 
-            // Persist shared config to gitconfig.json in repository root
+            // Persist shared config to Firebase so all devices see same settings
             try {
-                await githubService.saveGitConfigToGitHub();
-                showAlert('GitHub configuration saved and synced to gitconfig.json!', 'success');
+                await saveGitConfigToFirebase(config.github);
+                showAlert('GitHub configuration saved and synced to Firebase!', 'success');
             } catch (error) {
-                console.error('Failed to save gitconfig.json:', error);
-                showAlert('GitHub configuration saved locally, but gitconfig.json could not be updated: ' + error.message, 'warning');
+                showAlert('GitHub configuration saved locally, but Firebase config could not be updated: ' + error.message, 'warning');
             }
             
             // Update config status
