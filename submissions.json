@@ -27,8 +27,36 @@
       },
       "submissionDate": "2026-02-23T18:07:46.178Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1771870323148-uoret2zan",
+      "submittedBy": {
+        "agentName": "Barasa Godwill",
+        "agentScCode": "SC001",
+        "agentId": "1771597985946"
+      },
+      "clientInfo": {
+        "fullName": "Richard Welishe",
+        "phoneNumber": "Seedlings",
+        "email": "ugandaavocados@gmail.com",
+        "nationalId": "4387468",
+        "dob": "2026-02-23",
+        "gender": "male",
+        "businessAddress": "Toma",
+        "residentialAddress": "Toma",
+        "nextOfKinName": "Hass Avocado",
+        "nextOfKinRelationship": "child",
+        "nextOfKinPhone": "0774092470"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/idFront_1771870323153.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/idBack_1771870325453.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/agentPhoto_1771870327107.jpg"
+      },
+      "submissionDate": "2026-02-23T18:12:08.936Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-02-23T18:07:46.581Z",
-  "totalSubmissions": 1
+  "lastUpdated": "2026-02-23T18:12:09.568Z",
+  "totalSubmissions": 2
 }
