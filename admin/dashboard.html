@@ -1220,9 +1220,14 @@
                 alert('Submission not found');
                 return;
             }
-            
-            // Create modal to show submission details
+
+            const clientInfo = submission.clientInfo || {};
+            const submittedBy = submission.submittedBy || {};
+            const images = submission.images || {};
+
+            // Create modal overlay
             const modal = document.createElement('div');
+            modal.className = 'submission-modal';
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -1239,95 +1244,111 @@
             const content = document.createElement('div');
             content.style.cssText = `
                 background: white;
-                padding: 30px;
-                border-radius: 15px;
-                max-width: 800px;
+                border-radius: 12px;
+                width: 95%;
+                max-width: 1000px;
                 max-height: 90vh;
                 overflow-y: auto;
+                padding: 24px;
+                box-shadow: 0 20px 40px rgba(15,23,42,0.25);
                 position: relative;
             `;
 
-            const agentInfo = submission.agentInfo || {};
-            const images = submission.images || {};
-            
+            const submissionDate = submission.submissionDate || submission.createdAt || '';
+
             content.innerHTML = `
-                <button onclick="this.parentElement.parentElement.remove()" style="
+                <button onclick="this.closest('.submission-modal').remove()" style="
                     position: absolute;
-                    top: 15px;
-                    right: 15px;
+                    top: 12px;
+                    right: 12px;
                     background: #dc3545;
                     color: white;
                     border: none;
-                    border-radius: 50%;
-                    width: 30px;
-                    height: 30px;
+                    border-radius: 999px;
+                    width: 32px;
+                    height: 32px;
                     cursor: pointer;
-                    font-size: 16px;
+                    font-size: 18px;
                 ">×</button>
-                
-                <h2 style="color: #1e3c72; margin-bottom: 20px;">
-                    <i class="fas fa-file-alt"></i> Submission Details
-                </h2>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+
+                <h2 style="font-size:20px;font-weight:600;margin-bottom:16px;">Agent Details</h2>
+
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px;">
                     <div>
-                        <h3 style="color: #2a5298; margin-bottom: 10px;">Client Information</h3>
-                        <p><strong>Name:</strong> ${submission.fullName || 'N/A'}</p>
-                        <p><strong>Personal Number:</strong> ${submission.personalNumber || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${submission.email || 'N/A'}</p>
-                        <p><strong>National ID:</strong> ${submission.nationalId || 'N/A'}</p>
-                        <p><strong>Date of Birth:</strong> ${submission.dob || 'N/A'}</p>
-                        <p><strong>Gender:</strong> ${submission.gender || 'N/A'}</p>
-                        <p><strong>Business Address:</strong> ${submission.businessAddress || 'N/A'}</p>
-                        <p><strong>Residential Address:</strong> ${submission.residentialAddress || 'N/A'}</p>
+                        <label>Full Name</label>
+                        <input type="text" class="form-control" value="${clientInfo.fullName || ''}" readonly>
                     </div>
-                    
                     <div>
-                        <h3 style="color: #2a5298; margin-bottom: 10px;">Next of Kin Information</h3>
-                        <p><strong>Name:</strong> ${submission.nextOfKinName || 'N/A'}</p>
-                        <p><strong>Relationship:</strong> ${submission.nextOfKinRelationship || 'N/A'}</p>
-                        <p><strong>Phone:</strong> ${submission.nextOfKinPhone || 'N/A'}</p>
-                        
-                        <h3 style="color: #2a5298; margin-bottom: 10px; margin-top: 20px;">Agent Information</h3>
-                        <p><strong>Agent Name:</strong> ${agentInfo.fullName || 'N/A'}</p>
-                        <p><strong>Agent SC Code:</strong> ${agentInfo.scCode || 'N/A'}</p>
-                        <p><strong>Submission Date:</strong> ${new Date(submission.submissionDate).toLocaleString()}</p>
-                        <p><strong>Status:</strong> <span class="status-badge status-${submission.status}">${submission.status}</span></p>
+                        <label>SC Code</label>
+                        <input type="text" class="form-control" value="${submittedBy.agentScCode || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Email</label>
+                        <input type="text" class="form-control" value="${clientInfo.email || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>National ID</label>
+                        <input type="text" class="form-control" value="${clientInfo.nationalId || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Date of Birth</label>
+                        <input type="text" class="form-control" value="${clientInfo.dob || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Gender</label>
+                        <input type="text" class="form-control" value="${clientInfo.gender || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Business Address</label>
+                        <input type="text" class="form-control" value="${clientInfo.businessAddress || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Residential Address</label>
+                        <input type="text" class="form-control" value="${clientInfo.residentialAddress || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Next of Kin Name</label>
+                        <input type="text" class="form-control" value="${clientInfo.nextOfKinName || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Next of Kin Relationship</label>
+                        <input type="text" class="form-control" value="${clientInfo.nextOfKinRelationship || ''}" readonly>
+                    </div>
+                    <div>
+                        <label>Next of Kin Phone</label>
+                        <input type="text" class="form-control" value="${clientInfo.nextOfKinPhone || ''}" readonly>
                     </div>
                 </div>
-                
-                <div>
-                    <h3 style="color: #2a5298; margin-bottom: 10px;">Uploaded Images</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        ${images.idFront ? `
-                            <div>
-                                <p><strong>ID Front:</strong></p>
-                                <img src="${images.idFront}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
-                            </div>
-                        ` : ''}
-                        ${images.idBack ? `
-                            <div>
-                                <p><strong>ID Back:</strong></p>
-                                <img src="${images.idBack}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
-                            </div>
-                        ` : ''}
-                        ${images.agentPhoto ? `
-                            <div>
-                                <p><strong>Agent Photo:</strong></p>
-                                <img src="${images.agentPhoto}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
-                            </div>
-                        ` : ''}
+
+                <div style="display:flex;gap:16px;margin-bottom:20px;">
+                    <div style="flex:1;text-align:center;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Front</div>
+                        ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
+                    </div>
+                    <div style="flex:1;text-align:center;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Back</div>
+                        ${images.idBackUrl ? `<img src="${images.idBackUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
+                    </div>
+                    <div style="flex:1;text-align:center;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Agent Photo</div>
+                        ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
                     </div>
                 </div>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-primary">
-                        <i class="fas fa-times"></i> Close
-                    </button>
+
+                <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:8px;">
+                    <div style="margin-bottom:8px;font-size:14px;">Verification Status</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>Current Status: <span class="status-badge status-${submission.status || 'pending'}">${submission.status || 'pending'}</span></div>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
+                            <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;font-size:12px;color:#6b7280;">Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</div>
                 </div>
             `;
-            
-            modal.appendChild(modalContent);
+
+            modal.appendChild(content);
             document.body.appendChild(modal);
         }
 
