@@ -1,0 +1,34 @@
+{
+  "submissions": [
+    {
+      "id": "SUB-1771870059282-g44u4nqpu",
+      "submittedBy": {
+        "agentName": "Barasa Godwill",
+        "agentScCode": "SC001",
+        "agentId": "1771597985946"
+      },
+      "clientInfo": {
+        "fullName": "Barasa Godwill",
+        "phoneNumber": "75795709",
+        "email": "barasagodwil@gmail.com",
+        "nationalId": "883939",
+        "dob": "2026-02-15",
+        "gender": "male",
+        "businessAddress": "Mbale,Uganda",
+        "residentialAddress": "fkijkhv",
+        "nextOfKinName": "Barasa Godwil",
+        "nextOfKinRelationship": "child",
+        "nextOfKinPhone": "468597"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/idFront_1771870059290.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/idBack_1771870062997.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/agentPhoto_1771870064644.jpg"
+      },
+      "submissionDate": "2026-02-23T18:07:46.178Z",
+      "status": "pending"
+    }
+  ],
+  "lastUpdated": "2026-02-23T18:07:46.581Z",
+  "totalSubmissions": 1
+}
