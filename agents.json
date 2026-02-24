@@ -7,8 +7,16 @@
       "password": "Barasa256",
       "status": "active",
       "createdAt": "2026-02-20T14:33:05.946Z"
+    },
+    {
+      "id": "1771963554075",
+      "fullName": "OCHIENG PAUL ",
+      "scCode": "SC002",
+      "password": "Ezeemoney2026",
+      "status": "active",
+      "createdAt": "2026-02-24T20:05:54.109Z"
     }
   ],
-  "lastUpdated": "2026-02-23T18:37:31.786Z",
-  "totalAgents": 1
+  "lastUpdated": "2026-02-24T20:05:54.383Z",
+  "totalAgents": 2
 }
