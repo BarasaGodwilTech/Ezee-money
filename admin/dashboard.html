@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Ezee Money</title>
     <style>
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -30,6 +34,280 @@
             line-height: 1.6;
         }
 
+        .mobile-topbar {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+        }
+
+        .mobile-topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .mobile-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mobile-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            height: 40px;
+            min-width: 40px;
+            padding: 0 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.98);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 150;
+        }
+
+        .submission-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .submission-modal-content {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 960px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 24px 48px rgba(15,23,42,0.28);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .submission-modal-header {
+            position: sticky;
+            top: 0;
+            background: #ffffff;
+            z-index: 5;
+            padding: 18px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .submission-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            color: #111827;
+        }
+
+        .submission-modal-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .submission-modal-close {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .submission-modal-body {
+            padding: 16px 18px 18px;
+            overflow-y: auto;
+        }
+
+        .submission-sections {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .submission-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .submission-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .field {
+            min-width: 0;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        .field label {
+            font-size: 12px;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .field input {
+            width: 100%;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #111827;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .image-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px;
+            background: #f9fafb;
+            min-width: 0;
+        }
+
+        .image-card-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #fff;
+            display: block;
+        }
+
+        .image-placeholder {
+            font-size: 12px;
+            color: #9ca3af;
+            text-align: center;
+            padding: 28px 12px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px dashed #e5e7eb;
+        }
+
+        .submission-footer {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 14px;
+            margin-top: 4px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .submission-footer-meta {
+            font-size: 14px;
+        }
+
+        .submission-footer-meta small {
+            display: block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .submission-footer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 1024px) {
+            .image-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .submission-modal {
+                padding: 10px;
+            }
+
+            .submission-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .submission-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .submission-footer {
+                grid-template-columns: 1fr;
+            }
+
+            .submission-footer-actions .btn {
+                width: 100%;
+            }
+        }
+
         .dashboard-container {
             display: flex;
             min-height: 100vh;
@@ -44,6 +322,7 @@
             height: 100vh;
             overflow-y: auto;
             z-index: 100;
+            transition: transform 0.25s ease;
         }
 
         .sidebar-header {
@@ -108,6 +387,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
         }
 
         .header h1 {
@@ -124,6 +404,7 @@
             cursor: pointer;
             font-weight: 500;
             transition: background 0.3s;
+            min-height: 40px;
         }
 
         .logout-btn:hover {
@@ -202,6 +483,8 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            min-height: 40px;
+            justify-content: center;
         }
 
         .btn-primary {
@@ -274,6 +557,87 @@
 
         .table-container {
             overflow-x: auto;
+        }
+
+        .table-container::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 999px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        .submissions-mobile {
+            display: none;
+        }
+
+        .submission-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        }
+
+        .submission-card + .submission-card {
+            margin-top: 0.75rem;
+        }
+
+        .submission-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .submission-name {
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1.25;
+        }
+
+        .submission-meta {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            word-break: break-word;
+        }
+
+        .submission-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .kv .k {
+            color: #6b7280;
+        }
+
+        .kv .v {
+            color: var(--dark);
+            word-break: break-word;
+        }
+
+        .submission-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-top: 0.75rem;
         }
 
         table {
@@ -385,38 +749,50 @@
             gap: 0.5rem;
         }
 
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
         @media (max-width: 1024px) {
+            .mobile-topbar {
+                display: block;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
+                z-index: 180;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.open {
+                display: block;
             }
 
             .main-content {
+                padding: 1rem;
                 margin-left: 0;
+            }
+
+            .header {
+                display: none;
             }
 
             .stats-grid {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            }
-        }
-
-        @media (max-width: 640px) {
-            .main-content {
-                padding: 1rem;
-            }
-
-            .header {
-                flex-direction: column;
                 gap: 1rem;
-                text-align: center;
             }
 
             .card {
                 padding: 1.5rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .card-header .btn {
+                width: 100%;
             }
 
             .agent-item {
@@ -429,10 +805,44 @@
                 width: 100%;
                 justify-content: flex-end;
             }
+
+            #submissions .table-container {
+                display: none;
+            }
+
+            .submissions-mobile {
+                display: block;
+            }
+
+            .kv {
+                grid-template-columns: 90px 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-topbar">
+        <div class="mobile-topbar-inner">
+            <button class="icon-btn" id="sidebarToggle" aria-label="Open menu" type="button">☰</button>
+            <div class="mobile-title">
+                <span>🏦</span>
+                <span>Admin Dashboard</span>
+            </div>
+            <div class="mobile-actions">
+                <div id="realTimeStatusMobile" style="font-size: 12px; color: #6b7280; white-space: nowrap;">
+                    <span style="color: #6c757d;">● Checking...</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" type="button">Logout</button>
+            </div>
+        </div>
+    </div>
     <div class="dashboard-container">
         <nav class="sidebar">
             <div class="sidebar-header">
@@ -550,7 +960,7 @@
                             <h2 class="card-title">Recent Agent Activity</h2>
                             <div style="font-size:12px;color:#6b7280;">Latest submissions from all field agents</div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                             <select id="agentFilter" class="form-control" style="max-width: 220px;">
                                 <option value="">All agents</option>
                             </select>
@@ -576,6 +986,9 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="submissions-mobile" id="submissionsMobile">
+                        <div style="text-align:center;color:#6b7280;">No submissions found</div>
                     </div>
                 </div>
             </section>
@@ -626,6 +1039,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="../js/github-service.js"></script>
     <script src="../js/submission-service.js"></script>
     <script src="../js/real-time-service.js"></script>
@@ -857,6 +1272,34 @@
                 });
             });
 
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            function closeSidebar() {
+                sidebar?.classList.remove('open');
+                overlay?.classList.remove('open');
+            }
+
+            function openSidebar() {
+                sidebar?.classList.add('open');
+                overlay?.classList.add('open');
+            }
+
+            sidebarToggle?.addEventListener('click', function() {
+                const isOpen = sidebar?.classList.contains('open');
+                if (isOpen) closeSidebar();
+                else openSidebar();
+            });
+
+            overlay?.addEventListener('click', closeSidebar);
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    closeSidebar();
+                });
+            });
+
             // GitHub Config Form
             document.getElementById('githubConfigForm').addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -875,6 +1318,18 @@
                 section.classList.remove('active');
             });
             document.getElementById(sectionName).classList.add('active');
+        }
+
+        function setRealTimeStatus(html) {
+            const desktop = document.getElementById('realTimeStatus');
+            const mobile = document.getElementById('realTimeStatusMobile');
+            if (desktop) desktop.innerHTML = html;
+            if (mobile) mobile.innerHTML = html;
+        }
+
+        // Keep backward compatibility if other code calls updateRealTimeStatus
+        function updateRealTimeStatus(html) {
+            setRealTimeStatus(html);
         }
 
         function populateConfigForm() {
@@ -1172,9 +1627,13 @@
 
         function renderSubmissions() {
             const tbody = document.querySelector('#submissionsTable tbody');
+            const mobileContainer = document.getElementById('submissionsMobile');
 
             if (!config.submissions || config.submissions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6b7280;">No submissions found</td></tr>';
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = '<div style="text-align:center;color:#6b7280;">No submissions found</div>';
+                }
                 return;
             }
 
@@ -1186,6 +1645,41 @@
                     s.submittedBy?.agentId === filterValue ||
                     s.submittedBy?.agentScCode === filterValue)
                 : config.submissions;
+
+            if (mobileContainer) {
+                mobileContainer.innerHTML = filtered.map(submission => {
+                    const phone = submission.clientInfo?.phoneNumber || submission.personalNumber || '';
+                    const submittedBy = submission.submittedBy || {};
+                    const agentName = submittedBy.agentName || submission.agentInfo?.fullName || 'N/A';
+                    const email = submission.clientInfo?.email || submission.email || '';
+                    const status = (submission.status || 'pending').toLowerCase();
+                    const submittedAt = submission.submissionDate || submission.createdAt || '';
+
+                    const statusClass = status === 'submitted' ? 'status-submitted' : 'status-pending';
+
+                    return `
+                        <div class="submission-card">
+                            <div class="submission-top">
+                                <div>
+                                    <div class="submission-name">${submission.clientInfo?.name || submission.fullName || 'Client'}</div>
+                                    <div class="submission-meta">Agent: ${agentName}</div>
+                                </div>
+                                <span class="status-badge ${statusClass}">${status}</span>
+                            </div>
+
+                            <div class="submission-row">
+                                <div class="kv"><div class="k">Phone</div><div class="v">${phone || '—'}</div></div>
+                                <div class="kv"><div class="k">Email</div><div class="v">${email || '—'}</div></div>
+                                <div class="kv"><div class="k">Submitted</div><div class="v">${submittedAt || '—'}</div></div>
+                            </div>
+
+                            <div class="submission-actions">
+                                <button class="btn btn-primary btn-sm" onclick="viewSubmission('${submission.id || ''}')">View</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             tbody.innerHTML = filtered.map(submission => {
                 const phone = submission.clientInfo?.phoneNumber || submission.personalNumber || '';
@@ -1228,151 +1722,119 @@
             // Create modal overlay
             const modal = document.createElement('div');
             modal.className = 'submission-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            `;
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
 
             const content = document.createElement('div');
-            content.style.cssText = `
-                background: #ffffff;
-                border-radius: 16px;
-                width: 94%;
-                max-width: 960px;
-                max-height: 90vh;
-                overflow-y: auto;
-                padding: 24px 24px 20px;
-                box-shadow: 0 24px 48px rgba(15,23,42,0.28);
-                position: relative;
-            `;
+            content.className = 'submission-modal-content';
 
             const submissionDate = submission.submissionDate || submission.createdAt || '';
 
             content.innerHTML = `
-                <button onclick="this.closest('.submission-modal').remove()" style="
-                    position: absolute;
-                    top: 12px;
-                    right: 12px;
-                    background: #ef4444;
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 999px;
-                    width: 32px;
-                    height: 32px;
-                    cursor: pointer;
-                    font-size: 18px;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                ">×</button>
-
-                <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;color:#111827;">Submission Details</h2>
-                <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Review the client details, images and verification status.</div>
-
-                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px;">
-                    <div>
-                        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:#111827;">Client Information</h3>
-                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
-                            <div style="grid-column:1/3;">
-                                <label style="font-size:12px;color:#6b7280;">Full Name</label>
-                                <input type="text" value="${clientInfo.fullName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Email</label>
-                                <input type="text" value="${clientInfo.email || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Phone Number</label>
-                                <input type="text" value="${clientInfo.phoneNumber || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">National ID</label>
-                                <input type="text" value="${clientInfo.nationalId || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Date of Birth</label>
-                                <input type="text" value="${clientInfo.dob || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Gender</label>
-                                <input type="text" value="${clientInfo.gender || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div style="grid-column:1/3;">
-                                <label style="font-size:12px;color:#6b7280;">Business Address</label>
-                                <input type="text" value="${clientInfo.businessAddress || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div style="grid-column:1/3;">
-                                <label style="font-size:12px;color:#6b7280;">Residential Address</label>
-                                <input type="text" value="${clientInfo.residentialAddress || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                        </div>
+                <div class="submission-modal-header">
+                    <div style="min-width:0;">
+                        <h2 class="submission-modal-title">Submission Details</h2>
+                        <div class="submission-modal-subtitle">Review the client details, images and verification status.</div>
                     </div>
-
-                    <div>
-                        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:#111827;">Next of Kin & Agent</h3>
-                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
-                            <div style="grid-column:1/3;">
-                                <label style="font-size:12px;color:#6b7280;">Next of Kin Name</label>
-                                <input type="text" value="${clientInfo.nextOfKinName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Relationship</label>
-                                <input type="text" value="${clientInfo.nextOfKinRelationship || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Next of Kin Phone</label>
-                                <input type="text" value="${clientInfo.nextOfKinPhone || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">Agent Name</label>
-                                <input type="text" value="${submittedBy.agentName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px;color:#6b7280;">SC Code</label>
-                                <input type="text" value="${submittedBy.agentScCode || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
-                            </div>
-                        </div>
-                    </div>
+                    <button class="submission-modal-close" aria-label="Close" onclick="this.closest('.submission-modal').remove()" type="button">×</button>
                 </div>
 
-                <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;">
-                    <div style="flex:1 1 200px;min-width:0;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Front</div>
-                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
-                            ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
+                <div class="submission-modal-body">
+                    <div class="submission-sections">
+                        <div>
+                            <h3 class="submission-section-title">Client Information</h3>
+                            <div class="submission-fields">
+                                <div class="field full">
+                                    <label>Full Name</label>
+                                    <input type="text" value="${clientInfo.fullName || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Email</label>
+                                    <input type="text" value="${clientInfo.email || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Phone Number</label>
+                                    <input type="text" value="${clientInfo.phoneNumber || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>National ID</label>
+                                    <input type="text" value="${clientInfo.nationalId || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Date of Birth</label>
+                                    <input type="text" value="${clientInfo.dob || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Gender</label>
+                                    <input type="text" value="${clientInfo.gender || ''}" readonly>
+                                </div>
+                                <div class="field full">
+                                    <label>Business Address</label>
+                                    <input type="text" value="${clientInfo.businessAddress || ''}" readonly>
+                                </div>
+                                <div class="field full">
+                                    <label>Residential Address</label>
+                                    <input type="text" value="${clientInfo.residentialAddress || ''}" readonly>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div style="flex:1 1 200px;min-width:0;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Back</div>
-                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
-                            ${images.idBackUrl ? `<img src="${images.idBackUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
-                        </div>
-                    </div>
-                    <div style="flex:1 1 200px;min-width:0;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Agent Photo</div>
-                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
-                            ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
-                        </div>
-                    </div>
-                </div>
 
-                <div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
-                    <div style="font-size:14px;">
-                        <div style="margin-bottom:4px;">Verification Status</div>
-                        <div>Current Status: <span class="status-badge status-${submission.status || 'pending'}">${submission.status || 'pending'}</span></div>
-                        <div style="margin-top:4px;font-size:12px;color:#6b7280;">Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</div>
+                        <div>
+                            <h3 class="submission-section-title">Next of Kin & Agent</h3>
+                            <div class="submission-fields">
+                                <div class="field full">
+                                    <label>Next of Kin Name</label>
+                                    <input type="text" value="${clientInfo.nextOfKinName || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Relationship</label>
+                                    <input type="text" value="${clientInfo.nextOfKinRelationship || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Next of Kin Phone</label>
+                                    <input type="text" value="${clientInfo.nextOfKinPhone || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>Agent Name</label>
+                                    <input type="text" value="${submittedBy.agentName || ''}" readonly>
+                                </div>
+                                <div class="field">
+                                    <label>SC Code</label>
+                                    <input type="text" value="${submittedBy.agentScCode || ''}" readonly>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;">
-                        <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
-                        <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
+
+                    <div class="image-grid">
+                        <div class="image-card">
+                            <div class="image-card-title">ID Front</div>
+                            ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" alt="ID Front">` : '<div class="image-placeholder">No image</div>'}
+                        </div>
+                        <div class="image-card">
+                            <div class="image-card-title">ID Back</div>
+                            ${images.idBackUrl ? `<img src="${images.idBackUrl}" alt="ID Back">` : '<div class="image-placeholder">No image</div>'}
+                        </div>
+                        <div class="image-card">
+                            <div class="image-card-title">Agent Photo</div>
+                            ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" alt="Agent Photo">` : '<div class="image-placeholder">No image</div>'}
+                        </div>
+                    </div>
+
+                    <div class="submission-footer">
+                        <div class="submission-footer-meta">
+                            <div style="font-weight:700;margin-bottom:6px;">Verification Status</div>
+                            <div>Current Status: <span class="status-badge status-${submission.status || 'pending'}">${submission.status || 'pending'}</span></div>
+                            <small>Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</small>
+                        </div>
+                        <div class="submission-footer-actions">
+                            <button class="btn btn-primary" onclick="exportSingleSubmissionToExcel('${submission.id}')">Download Excel</button>
+                            <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
+                            <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1447,32 +1909,255 @@
                 alert('No submissions to export');
                 return;
             }
-            // Simple CSV export which can be opened in Excel
-            const headers = ['Client Phone','Client Name','Email','Agent Name','Agent SC Code','Status','Submitted'];
-            const rows = config.submissions.map(s => {
+            exportSubmissionsToXlsx(config.submissions, 'submissions.xlsx');
+        }
+
+        function exportSingleSubmissionToExcel(submissionId) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (!submission) {
+                alert('Submission not found');
+                return;
+            }
+            const clientName = submission.clientInfo?.fullName || submission.fullName || 'client';
+            const safeName = String(clientName).replace(/[^a-z0-9\-\_ ]/gi, '').trim().replace(/\s+/g, '_').slice(0, 50) || 'client';
+            exportSubmissionsToXlsx([submission], `submission_${safeName}.xlsx`);
+        }
+
+        async function exportSubmissionsToXlsx(submissions, filename) {
+            try {
+                if (!window.ExcelJS || !window.saveAs) {
+                    showAlert('Excel export libraries not loaded. Please check your internet connection and refresh the page.', 'error');
+                    console.error('Excel export libs missing', { ExcelJS: !!window.ExcelJS, saveAs: !!window.saveAs });
+                    return;
+                }
+
+                showAlert('Preparing Excel file...', 'success');
+
+            const pad2 = (n) => String(n).padStart(2, '0');
+            function formatLocalDateTime(value) {
+                if (!value) return '';
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return String(value);
+                const yyyy = d.getFullYear();
+                const mm = pad2(d.getMonth() + 1);
+                const dd = pad2(d.getDate());
+                const hh = pad2(d.getHours());
+                const mi = pad2(d.getMinutes());
+                const ss = pad2(d.getSeconds());
+                return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+            }
+
+            function statusText(s) {
+                return (s && String(s).trim()) ? String(s).trim() : 'pending';
+            }
+
+            const headers = [
+                'Client Full Name',
+                'Client Phone',
+                'Client Email',
+                'National ID',
+                'Date of Birth',
+                'Gender',
+                'Business Address',
+                'Residential Address',
+                'Next of Kin Name',
+                'Next of Kin Relationship',
+                'Next of Kin Phone',
+                'Agent Name',
+                'Agent SC Code',
+                'Agent Color',
+                'Agent Color Hex',
+                'Status',
+                'Submitted (Local)'
+            ];
+
+            const agentFillPalette = [
+                { name: 'Rose', hex: '#FFE4E6', argb: 'FFFFE4E6' },
+                { name: 'Orange', hex: '#FFEDD5', argb: 'FFFFEDD5' },
+                { name: 'Yellow', hex: '#FEF9C3', argb: 'FFFEF9C3' },
+                { name: 'Green', hex: '#DCFCE7', argb: 'FFDCFCE7' },
+                { name: 'Blue', hex: '#DBEAFE', argb: 'FFDBEAFE' },
+                { name: 'Violet', hex: '#EDE9FE', argb: 'FFEDE9FE' },
+                { name: 'Pink', hex: '#FCE7F3', argb: 'FFFCE7F3' },
+                { name: 'Slate', hex: '#E2E8F0', argb: 'FFE2E8F0' }
+            ];
+
+            const agentColorCache = new Map();
+            function hashString(str) {
+                let h = 0;
+                for (let i = 0; i < str.length; i++) {
+                    h = ((h << 5) - h) + str.charCodeAt(i);
+                    h |= 0;
+                }
+                return Math.abs(h);
+            }
+
+            function agentColor(sc) {
+                const key = String(sc || '').trim() || 'unknown';
+                if (agentColorCache.has(key)) return agentColorCache.get(key);
+                const idx = hashString(key) % agentFillPalette.length;
+                const chosen = agentFillPalette[idx];
+                agentColorCache.set(key, chosen);
+                return chosen;
+            }
+
+            const agentColorMap = new Map();
+
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'Ezee Money Admin';
+            workbook.created = new Date();
+
+            const ws = workbook.addWorksheet('Submissions', {
+                views: [{ state: 'frozen', ySplit: 1 }]
+            });
+
+            ws.columns = [
+                { header: headers[0], key: 'clientFullName', width: 22 },
+                { header: headers[1], key: 'clientPhone', width: 16 },
+                { header: headers[2], key: 'clientEmail', width: 26 },
+                { header: headers[3], key: 'nationalId', width: 14 },
+                { header: headers[4], key: 'dob', width: 14 },
+                { header: headers[5], key: 'gender', width: 10 },
+                { header: headers[6], key: 'businessAddress', width: 24 },
+                { header: headers[7], key: 'residentialAddress', width: 24 },
+                { header: headers[8], key: 'nokName', width: 20 },
+                { header: headers[9], key: 'nokRelationship', width: 18 },
+                { header: headers[10], key: 'nokPhone', width: 16 },
+                { header: headers[11], key: 'agentName', width: 18 },
+                { header: headers[12], key: 'agentSc', width: 12 },
+                { header: headers[13], key: 'agentColor', width: 14 },
+                { header: headers[14], key: 'agentColorHex', width: 16 },
+                { header: headers[15], key: 'status', width: 12 },
+                { header: headers[16], key: 'submittedLocal', width: 20 }
+            ];
+
+            // Header formatting
+            ws.getRow(1).height = 22;
+            ws.getRow(1).eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FF111827' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+                };
+            });
+
+            // Autofilter on header row
+            ws.autoFilter = {
+                from: { row: 1, column: 1 },
+                to: { row: 1, column: ws.columns.length }
+            };
+
+            // Add rows + styles
+            for (const s of submissions) {
                 const client = s.clientInfo || {};
                 const submittedBy = s.submittedBy || {};
-                const phone = client.phoneNumber || s.personalNumber || '';
-                const date = s.submissionDate || s.createdAt || '';
-                return [
-                    phone,
-                    client.fullName || '',
-                    client.email || '',
-                    submittedBy.agentName || '',
-                    submittedBy.agentScCode || '',
-                    s.status || 'pending',
-                    date
-                ].map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',');
+                const submittedAt = s.submissionDate || s.createdAt || '';
+                const scCode = submittedBy.agentScCode || '';
+                const c = agentColor(scCode);
+                if (scCode) {
+                    agentColorMap.set(scCode, c);
+                }
+
+                const row = ws.addRow({
+                    clientFullName: client.fullName || s.fullName || '',
+                    clientPhone: client.phoneNumber || s.personalNumber || '',
+                    clientEmail: client.email || s.email || '',
+                    nationalId: client.nationalId || '',
+                    dob: client.dob || '',
+                    gender: client.gender || '',
+                    businessAddress: client.businessAddress || '',
+                    residentialAddress: client.residentialAddress || '',
+                    nokName: client.nextOfKinName || '',
+                    nokRelationship: client.nextOfKinRelationship || '',
+                    nokPhone: client.nextOfKinPhone || '',
+                    agentName: submittedBy.agentName || '',
+                    agentSc: scCode,
+                    agentColor: c.name,
+                    agentColorHex: c.hex,
+                    status: statusText(s.status),
+                    submittedLocal: formatLocalDateTime(submittedAt)
+                });
+
+                row.eachCell((cell) => {
+                    cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        left: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        bottom: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        right: { style: 'thin', color: { argb: 'FFF3F4F6' } }
+                    };
+                });
+
+                // Pastel fill for agent columns (Agent Name/SC/Color/Hex)
+                const agentCols = [12, 13, 14, 15];
+                for (const col of agentCols) {
+                    const cell = row.getCell(col);
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c.argb } };
+                }
+
+                // Pastel fill for status column
+                const statusCell = row.getCell(16);
+                const v = String(statusCell.value || '').toLowerCase();
+                const statusArgb = v === 'verified'
+                    ? 'FFDCFCE7'
+                    : v === 'rejected'
+                        ? 'FFFEE2E2'
+                        : v === 'submitted'
+                            ? 'FFDBEAFE'
+                            : 'FFFEF9C3';
+                statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusArgb } };
+            }
+
+            // Agent Colors mapping worksheet
+            const wsAgents = workbook.addWorksheet('Agent Colors', {
+                views: [{ state: 'frozen', ySplit: 1 }]
             });
-            const csv = [headers.join(','), ...rows].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'submissions.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            wsAgents.columns = [
+                { header: 'Agent SC Code', key: 'sc', width: 16 },
+                { header: 'Agent Color', key: 'color', width: 16 },
+                { header: 'Agent Color Hex', key: 'hex', width: 18 }
+            ];
+            wsAgents.getRow(1).height = 20;
+            wsAgents.getRow(1).eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FF111827' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                    right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+                };
+            });
+            wsAgents.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 3 } };
+
+            for (const [sc, c] of agentColorMap.entries()) {
+                const row = wsAgents.addRow({ sc, color: c.name, hex: c.hex });
+                row.eachCell((cell) => {
+                    cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        left: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        bottom: { style: 'thin', color: { argb: 'FFF3F4F6' } },
+                        right: { style: 'thin', color: { argb: 'FFF3F4F6' } }
+                    };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c.argb } };
+                });
+            }
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                saveAs(blob, filename);
+            } catch (err) {
+                console.error('Failed to generate Excel file:', err);
+                showAlert('Failed to generate Excel file: ' + (err?.message || String(err)), 'error');
+            }
         }
 
         function updateStats() {
