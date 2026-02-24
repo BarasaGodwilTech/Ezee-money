@@ -1243,14 +1243,14 @@
 
             const content = document.createElement('div');
             content.style.cssText = `
-                background: white;
-                border-radius: 12px;
-                width: 95%;
-                max-width: 1000px;
+                background: #ffffff;
+                border-radius: 16px;
+                width: 94%;
+                max-width: 960px;
                 max-height: 90vh;
                 overflow-y: auto;
-                padding: 24px;
-                box-shadow: 0 20px 40px rgba(15,23,42,0.25);
+                padding: 24px 24px 20px;
+                box-shadow: 0 24px 48px rgba(15,23,42,0.28);
                 position: relative;
             `;
 
@@ -1261,90 +1261,119 @@
                     position: absolute;
                     top: 12px;
                     right: 12px;
-                    background: #dc3545;
-                    color: white;
+                    background: #ef4444;
+                    color: #ffffff;
                     border: none;
                     border-radius: 999px;
                     width: 32px;
                     height: 32px;
                     cursor: pointer;
                     font-size: 18px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
                 ">×</button>
 
-                <h2 style="font-size:20px;font-weight:600;margin-bottom:16px;">Agent Details</h2>
+                <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;color:#111827;">Submission Details</h2>
+                <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Review the client details, images and verification status.</div>
 
-                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px;">
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px;">
                     <div>
-                        <label>Full Name</label>
-                        <input type="text" class="form-control" value="${clientInfo.fullName || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>SC Code</label>
-                        <input type="text" class="form-control" value="${submittedBy.agentScCode || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Email</label>
-                        <input type="text" class="form-control" value="${clientInfo.email || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>National ID</label>
-                        <input type="text" class="form-control" value="${clientInfo.nationalId || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Date of Birth</label>
-                        <input type="text" class="form-control" value="${clientInfo.dob || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Gender</label>
-                        <input type="text" class="form-control" value="${clientInfo.gender || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Business Address</label>
-                        <input type="text" class="form-control" value="${clientInfo.businessAddress || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Residential Address</label>
-                        <input type="text" class="form-control" value="${clientInfo.residentialAddress || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Next of Kin Name</label>
-                        <input type="text" class="form-control" value="${clientInfo.nextOfKinName || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Next of Kin Relationship</label>
-                        <input type="text" class="form-control" value="${clientInfo.nextOfKinRelationship || ''}" readonly>
-                    </div>
-                    <div>
-                        <label>Next of Kin Phone</label>
-                        <input type="text" class="form-control" value="${clientInfo.nextOfKinPhone || ''}" readonly>
-                    </div>
-                </div>
-
-                <div style="display:flex;gap:16px;margin-bottom:20px;">
-                    <div style="flex:1;text-align:center;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Front</div>
-                        ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
-                    </div>
-                    <div style="flex:1;text-align:center;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Back</div>
-                        ${images.idBackUrl ? `<img src="${images.idBackUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
-                    </div>
-                    <div style="flex:1;text-align:center;">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Agent Photo</div>
-                        ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">` : '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;min-height:120px;">No image</div>'}
-                    </div>
-                </div>
-
-                <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:8px;">
-                    <div style="margin-bottom:8px;font-size:14px;">Verification Status</div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                        <div>Current Status: <span class="status-badge status-${submission.status || 'pending'}">${submission.status || 'pending'}</span></div>
-                        <div style="display:flex;gap:8px;">
-                            <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
-                            <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
+                        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:#111827;">Client Information</h3>
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                            <div style="grid-column:1/3;">
+                                <label style="font-size:12px;color:#6b7280;">Full Name</label>
+                                <input type="text" value="${clientInfo.fullName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Email</label>
+                                <input type="text" value="${clientInfo.email || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Phone Number</label>
+                                <input type="text" value="${clientInfo.phoneNumber || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">National ID</label>
+                                <input type="text" value="${clientInfo.nationalId || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Date of Birth</label>
+                                <input type="text" value="${clientInfo.dob || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Gender</label>
+                                <input type="text" value="${clientInfo.gender || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div style="grid-column:1/3;">
+                                <label style="font-size:12px;color:#6b7280;">Business Address</label>
+                                <input type="text" value="${clientInfo.businessAddress || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div style="grid-column:1/3;">
+                                <label style="font-size:12px;color:#6b7280;">Residential Address</label>
+                                <input type="text" value="${clientInfo.residentialAddress || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
                         </div>
                     </div>
-                    <div style="margin-top:8px;font-size:12px;color:#6b7280;">Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</div>
+
+                    <div>
+                        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:#111827;">Next of Kin & Agent</h3>
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                            <div style="grid-column:1/3;">
+                                <label style="font-size:12px;color:#6b7280;">Next of Kin Name</label>
+                                <input type="text" value="${clientInfo.nextOfKinName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Relationship</label>
+                                <input type="text" value="${clientInfo.nextOfKinRelationship || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Next of Kin Phone</label>
+                                <input type="text" value="${clientInfo.nextOfKinPhone || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">Agent Name</label>
+                                <input type="text" value="${submittedBy.agentName || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#6b7280;">SC Code</label>
+                                <input type="text" value="${submittedBy.agentScCode || ''}" readonly style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;font-size:13px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;">
+                    <div style="flex:1 1 200px;min-width:0;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Front</div>
+                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
+                            ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
+                        </div>
+                    </div>
+                    <div style="flex:1 1 200px;min-width:0;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ID Back</div>
+                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
+                            ${images.idBackUrl ? `<img src="${images.idBackUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
+                        </div>
+                    </div>
+                    <div style="flex:1 1 200px;min-width:0;">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Agent Photo</div>
+                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
+                            ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:6px;">` : '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:16px;">No image</div>'}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+                    <div style="font-size:14px;">
+                        <div style="margin-bottom:4px;">Verification Status</div>
+                        <div>Current Status: <span class="status-badge status-${submission.status || 'pending'}">${submission.status || 'pending'}</span></div>
+                        <div style="margin-top:4px;font-size:12px;color:#6b7280;">Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</div>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;">
+                        <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
+                        <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
+                    </div>
                 </div>
             `;
 
