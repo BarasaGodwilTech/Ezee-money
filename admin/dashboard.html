@@ -562,7 +562,7 @@
                         <table id="submissionsTable">
                             <thead>
                                 <tr>
-                                    <th>SC Code</th>
+                                    <th>Phone Number</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Status</th>
@@ -1448,7 +1448,7 @@
                 return;
             }
             // Simple CSV export which can be opened in Excel
-            const headers = ['SC Code','Client Name','Email','Agent Name','Agent SC Code','Status','Submitted'];
+            const headers = ['Client Phone','Client Name','Email','Agent Name','Agent SC Code','Status','Submitted'];
             const rows = config.submissions.map(s => {
                 const client = s.clientInfo || {};
                 const submittedBy = s.submittedBy || {};
