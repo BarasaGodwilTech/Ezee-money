@@ -55,8 +55,36 @@
       },
       "submissionDate": "2026-02-23T18:12:08.936Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1772002377537-u15ip6sv9",
+      "submittedBy": {
+        "agentName": "OCHIENG PAUL ",
+        "agentScCode": "SC002",
+        "agentId": "1771963554075"
+      },
+      "clientInfo": {
+        "fullName": "Barasa Godwill tech",
+        "phoneNumber": "0740165356",
+        "email": "oceanzpaul@gmail.com",
+        "nationalId": "CM03026109LVFA",
+        "dob": "2003-07-29",
+        "gender": "male",
+        "businessAddress": "Musoto",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Paul Oceanz",
+        "nextOfKinRelationship": "sibling",
+        "nextOfKinPhone": "0760542056"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772002377537-u15ip6sv9/idFront_1772002377710.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772002377537-u15ip6sv9/idBack_1772002383600.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772002377537-u15ip6sv9/agentPhoto_1772002387693.jpg"
+      },
+      "submissionDate": "2026-02-25T06:53:14.595Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-02-24T12:00:16.997Z",
-  "totalSubmissions": 2
+  "lastUpdated": "2026-02-25T06:53:15.381Z",
+  "totalSubmissions": 3
 }
