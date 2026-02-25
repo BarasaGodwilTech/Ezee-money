@@ -15,8 +15,16 @@
       "password": "Ezeemoney2026",
       "status": "active",
       "createdAt": "2026-02-24T20:05:54.109Z"
+    },
+    {
+      "id": "1772033414438",
+      "fullName": "TIMOTHY KIBUKUNA",
+      "scCode": "05544657",
+      "password": "12345678",
+      "status": "active",
+      "createdAt": "2026-02-25T15:30:14.452Z"
     }
   ],
-  "lastUpdated": "2026-02-24T20:05:54.383Z",
-  "totalAgents": 2
+  "lastUpdated": "2026-02-25T15:30:14.624Z",
+  "totalAgents": 3
 }
