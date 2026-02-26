@@ -1,0 +1,34 @@
+{
+  "submissions": [
+    {
+      "id": "SUB-1772122026725-dk4p2zlt5",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "WETAKA MARGARET",
+        "phoneNumber": "0776598436",
+        "email": "m28012282@gmail.com",
+        "nationalId": "CF80051104G49G",
+        "dob": "1980-10-12",
+        "gender": "female",
+        "businessAddress": "North road",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Kanyerere maria",
+        "nextOfKinRelationship": "business_partner",
+        "nextOfKinPhone": "0793138031"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/idFront_1772122026769.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/idBack_1772122049641.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/agentPhoto_1772122069178.jpg"
+      },
+      "submissionDate": "2026-02-26T16:08:07.054Z",
+      "status": "pending"
+    }
+  ],
+  "lastUpdated": "2026-02-26T16:08:07.870Z",
+  "totalSubmissions": 1
+}
