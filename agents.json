@@ -15,8 +15,16 @@
       "password": "12345678",
       "status": "active",
       "createdAt": "2026-02-25T15:30:14.452Z"
+    },
+    {
+      "id": "1772101078671",
+      "fullName": "Wafula Emma",
+      "scCode": "00044168",
+      "password": "Ezeemoney2026",
+      "status": "active",
+      "createdAt": "2026-02-26T10:17:58.693Z"
     }
   ],
-  "lastUpdated": "2026-02-26T04:18:10.179Z",
-  "totalAgents": 2
+  "lastUpdated": "2026-02-26T10:17:58.867Z",
+  "totalAgents": 3
 }
