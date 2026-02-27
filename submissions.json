@@ -1,62 +1,34 @@
 {
   "submissions": [
     {
-      "id": "SUB-1771870059282-g44u4nqpu",
+      "id": "SUB-1772122026725-dk4p2zlt5",
       "submittedBy": {
-        "agentName": "Barasa Godwill",
-        "agentScCode": "SC001",
-        "agentId": "1771597985946"
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
       },
       "clientInfo": {
-        "fullName": "Barasa Godwill",
-        "phoneNumber": "75795709",
-        "email": "barasagodwil@gmail.com",
-        "nationalId": "883939",
-        "dob": "2026-02-15",
-        "gender": "male",
-        "businessAddress": "Mbale,Uganda",
-        "residentialAddress": "fkijkhv",
-        "nextOfKinName": "Barasa Godwil",
-        "nextOfKinRelationship": "child",
-        "nextOfKinPhone": "468597"
+        "fullName": "WETAKA MARGARET",
+        "phoneNumber": "0776598436",
+        "email": "m28012282@gmail.com",
+        "nationalId": "CF80051104G49G",
+        "dob": "1980-10-12",
+        "gender": "female",
+        "businessAddress": "North road",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Kanyerere maria",
+        "nextOfKinRelationship": "business_partner",
+        "nextOfKinPhone": "0793138031"
       },
       "images": {
-        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/idFront_1771870059290.jpg",
-        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/idBack_1771870062997.jpg",
-        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870059282-g44u4nqpu/agentPhoto_1771870064644.jpg"
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/idFront_1772122026769.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/idBack_1772122049641.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772122026725-dk4p2zlt5/agentPhoto_1772122069178.jpg"
       },
-      "submissionDate": "2026-02-23T18:07:46.178Z",
-      "status": "verified"
-    },
-    {
-      "id": "SUB-1771870323148-uoret2zan",
-      "submittedBy": {
-        "agentName": "Barasa Godwill",
-        "agentScCode": "SC001",
-        "agentId": "1771597985946"
-      },
-      "clientInfo": {
-        "fullName": "Richard Welishe",
-        "phoneNumber": "Seedlings",
-        "email": "ugandaavocados@gmail.com",
-        "nationalId": "4387468",
-        "dob": "2026-02-23",
-        "gender": "male",
-        "businessAddress": "Toma",
-        "residentialAddress": "Toma",
-        "nextOfKinName": "Hass Avocado",
-        "nextOfKinRelationship": "child",
-        "nextOfKinPhone": "0774092470"
-      },
-      "images": {
-        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/idFront_1771870323153.jpg",
-        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/idBack_1771870325453.jpg",
-        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1771870323148-uoret2zan/agentPhoto_1771870327107.jpg"
-      },
-      "submissionDate": "2026-02-23T18:12:08.936Z",
+      "submissionDate": "2026-02-26T16:08:07.054Z",
       "status": "pending"
     }
   ],
-  "lastUpdated": "2026-02-24T12:00:16.997Z",
-  "totalSubmissions": 2
+  "lastUpdated": "2026-02-26T16:08:07.870Z",
+  "totalSubmissions": 1
 }
