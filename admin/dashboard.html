@@ -229,6 +229,28 @@
             margin-bottom: 8px;
         }
 
+        .image-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .image-download-btn {
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #111827;
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .image-download-btn:hover {
+            background: #f9fafb;
+        }
+
         .image-card img {
             width: 100%;
             height: 220px;
@@ -1811,15 +1833,24 @@
 
                     <div class="image-grid">
                         <div class="image-card">
-                            <div class="image-card-title">ID Front</div>
+                            <div class="image-card-head">
+                                <div class="image-card-title">ID Front</div>
+                                ${images.idFrontUrl ? `<button class="image-download-btn" type="button" onclick="downloadSubmissionImage('${submission.id}','idFrontUrl')">Download</button>` : ''}
+                            </div>
                             ${images.idFrontUrl ? `<img src="${images.idFrontUrl}" alt="ID Front">` : '<div class="image-placeholder">No image</div>'}
                         </div>
                         <div class="image-card">
-                            <div class="image-card-title">ID Back</div>
+                            <div class="image-card-head">
+                                <div class="image-card-title">ID Back</div>
+                                ${images.idBackUrl ? `<button class="image-download-btn" type="button" onclick="downloadSubmissionImage('${submission.id}','idBackUrl')">Download</button>` : ''}
+                            </div>
                             ${images.idBackUrl ? `<img src="${images.idBackUrl}" alt="ID Back">` : '<div class="image-placeholder">No image</div>'}
                         </div>
                         <div class="image-card">
-                            <div class="image-card-title">Agent Photo</div>
+                            <div class="image-card-head">
+                                <div class="image-card-title">Agent Photo</div>
+                                ${images.agentPhotoUrl ? `<button class="image-download-btn" type="button" onclick="downloadSubmissionImage('${submission.id}','agentPhotoUrl')">Download</button>` : ''}
+                            </div>
                             ${images.agentPhotoUrl ? `<img src="${images.agentPhotoUrl}" alt="Agent Photo">` : '<div class="image-placeholder">No image</div>'}
                         </div>
                     </div>
@@ -1831,6 +1862,20 @@
                             <small>Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</small>
                         </div>
                         <div class="submission-footer-actions">
+                            <button class="btn" onclick="copySubmissionForBluestacks('${submission.id}')">Copy All (BlueStacks)</button>
+                            <button class="btn" onclick="copySubmissionAppOrder('${submission.id}')">Copy App Order</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','fullName')">Copy Name</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','phone')">Copy Phone</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','email')">Copy Email</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','nin')">Copy NIN</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','dob')">Copy DOB</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','businessAddress')">Copy Business Address</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','residentialAddress')">Copy Residential Address</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','nokName')">Copy NOK Name</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','nokRelationship')">Copy NOK Relationship</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','nokPhone')">Copy NOK Phone</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','gender')">Copy Gender</button>
+                            <button class="btn" onclick="copySubmissionField('${submission.id}','tradingName')">Copy Trading Name</button>
                             <button class="btn btn-primary" onclick="exportSingleSubmissionToExcel('${submission.id}')">Download Excel</button>
                             <button class="btn btn-success" onclick="verifySubmission('${submission.id}', true)">Verify Agent</button>
                             <button class="btn btn-danger" onclick="rejectSubmission('${submission.id}', true)">Reject Agent</button>
@@ -1841,6 +1886,219 @@
 
             modal.appendChild(content);
             document.body.appendChild(modal);
+        }
+
+        async function writeToClipboard(text) {
+            const value = (text === undefined || text === null) ? '' : String(text);
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                }
+            } catch (e) {
+                console.warn('navigator.clipboard.writeText failed, falling back:', e);
+            }
+
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = value;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                ta.style.left = '-1000px';
+                document.body.appendChild(ta);
+                ta.select();
+                const ok = document.execCommand('copy');
+                ta.remove();
+                return ok;
+            } catch (e) {
+                console.error('Clipboard fallback failed:', e);
+                return false;
+            }
+        }
+
+        function normalizeText(v) {
+            return (v === undefined || v === null) ? '' : String(v).trim();
+        }
+
+        async function copySubmissionForBluestacks(submissionId) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (!submission) {
+                showAlert('Submission not found', 'error');
+                return;
+            }
+
+            const c = submission.clientInfo || {};
+            const submittedBy = submission.submittedBy || {};
+
+            const fullName = normalizeText(c.fullName || submission.fullName);
+            const phone = normalizeText(c.phoneNumber || submission.personalNumber);
+            const email = normalizeText(c.email || submission.email);
+            const nin = normalizeText(c.nationalId);
+            const dob = normalizeText(c.dob);
+            const businessAddress = normalizeText(c.businessAddress);
+            const residentialAddress = normalizeText(c.residentialAddress);
+            const nokName = normalizeText(c.nextOfKinName);
+            const nokRelationship = normalizeText(c.nextOfKinRelationship);
+            const nokPhone = normalizeText(c.nextOfKinPhone);
+            const gender = normalizeText(c.gender);
+            const tradingName = normalizeText(c.tradingName || c.companyName || fullName);
+            const agentName = normalizeText(submittedBy.agentName);
+            const agentSc = normalizeText(submittedBy.agentScCode);
+
+            const lines = [
+                `Full Name\t${fullName}`,
+                `Phone\t${phone}`,
+                `Email\t${email}`,
+                `National ID\t${nin}`,
+                `DOB\t${dob}`,
+                `Business Address\t${businessAddress}`,
+                `Residential Address\t${residentialAddress}`,
+                `Next of Kin Name\t${nokName}`,
+                `Next of Kin Relationship\t${nokRelationship}`,
+                `Next of Kin Phone\t${nokPhone}`,
+                `Trading Name\t${tradingName}`,
+                `Gender\t${gender}`,
+                `Agent Name\t${agentName}`,
+                `Agent SC Code\t${agentSc}`
+            ].join('\n');
+
+            const ok = await writeToClipboard(lines);
+            if (ok) showAlert('Copied (BlueStacks format). Paste one field at a time.', 'success');
+            else showAlert('Copy failed. Your browser may block clipboard access.', 'error');
+        }
+
+        async function downloadSubmissionImage(submissionId, imageKey) {
+            try {
+                const submission = config.submissions.find(s => s.id === submissionId);
+                if (!submission) {
+                    showAlert('Submission not found', 'error');
+                    return;
+                }
+
+                const images = submission.images || {};
+                const url = images[imageKey];
+                if (!url) {
+                    showAlert('Image not available', 'warning');
+                    return;
+                }
+
+                const safeClient = String(submission.clientInfo?.fullName || submission.fullName || 'client')
+                    .replace(/[^a-z0-9\-\_ ]/gi, '')
+                    .trim()
+                    .replace(/\s+/g, '_')
+                    .slice(0, 50) || 'client';
+
+                const fileStem = imageKey === 'idFrontUrl'
+                    ? 'id_front'
+                    : imageKey === 'idBackUrl'
+                        ? 'id_back'
+                        : 'agent_photo';
+
+                const filename = `submission_${safeClient}_${fileStem}.jpg`;
+
+                let res;
+                try {
+                    res = await fetch(url, { mode: 'cors' });
+                } catch (e) {
+                    console.warn('Image fetch failed (network/CORS), falling back to new tab:', e);
+                    window.open(url, '_blank');
+                    return;
+                }
+
+                if (!res.ok) {
+                    console.warn('Image fetch not ok, falling back to new tab:', res.status);
+                    window.open(url, '_blank');
+                    return;
+                }
+
+                const blob = await res.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(blobUrl);
+                showAlert('Downloading image...', 'success');
+            } catch (err) {
+                console.error('Failed to download image:', err);
+                showAlert('Failed to download image: ' + (err?.message || String(err)), 'error');
+            }
+        }
+
+        async function copySubmissionField(submissionId, field) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (!submission) {
+                showAlert('Submission not found', 'error');
+                return;
+            }
+
+            const c = submission.clientInfo || {};
+            const fullName = normalizeText(c.fullName || submission.fullName || '');
+
+            const map = {
+                fullName: c.fullName || submission.fullName || '',
+                phone: c.phoneNumber || submission.personalNumber || '',
+                email: c.email || submission.email || '',
+                nin: c.nationalId || '',
+                dob: c.dob || '',
+                businessAddress: c.businessAddress || '',
+                residentialAddress: c.residentialAddress || '',
+                nokName: c.nextOfKinName || '',
+                nokRelationship: c.nextOfKinRelationship || '',
+                nokPhone: c.nextOfKinPhone || '',
+                gender: c.gender || '',
+                tradingName: c.tradingName || c.companyName || fullName
+            };
+
+            const value = normalizeText(map[field]);
+            const ok = await writeToClipboard(value);
+            if (ok) showAlert('Copied: ' + field, 'success');
+            else showAlert('Copy failed. Your browser may block clipboard access.', 'error');
+        }
+
+        async function copySubmissionAppOrder(submissionId) {
+            const submission = config.submissions.find(s => s.id === submissionId);
+            if (!submission) {
+                showAlert('Submission not found', 'error');
+                return;
+            }
+
+            const c = submission.clientInfo || {};
+
+            const fullName = normalizeText(c.fullName || submission.fullName);
+            const phone = normalizeText(c.phoneNumber || submission.personalNumber);
+            const email = normalizeText(c.email || submission.email);
+            const nin = normalizeText(c.nationalId);
+            const dob = normalizeText(c.dob);
+            const businessAddress = normalizeText(c.businessAddress);
+            const residentialAddress = normalizeText(c.residentialAddress);
+            const nokName = normalizeText(c.nextOfKinName);
+            const nokRelationship = normalizeText(c.nextOfKinRelationship);
+            const nokPhone = normalizeText(c.nextOfKinPhone);
+            const tradingName = normalizeText(c.tradingName || c.companyName || fullName);
+            const gender = normalizeText(c.gender);
+
+            const ordered = [
+                fullName,
+                phone,
+                email,
+                nin,
+                dob,
+                businessAddress,
+                residentialAddress,
+                nokName,
+                nokRelationship,
+                nokPhone,
+                tradingName,
+                gender
+            ].join('\n');
+
+            const ok = await writeToClipboard(ordered);
+            if (ok) showAlert('Copied in app field order. Paste sequentially.', 'success');
+            else showAlert('Copy failed. Your browser may block clipboard access.', 'error');
         }
 
         async function verifySubmission(submissionId, fromModal = false) {
