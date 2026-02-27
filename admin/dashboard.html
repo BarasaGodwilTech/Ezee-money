@@ -999,12 +999,13 @@
                                     <th>Email</th>
                                     <th>Status</th>
                                     <th>Submitted</th>
+                                    <th>Work</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colspan="6" style="text-align: center; color: #6b7280;">No submissions found</td>
+                                    <td colspan="7" style="text-align: center; color: #6b7280;">No submissions found</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1112,6 +1113,196 @@
             submissions: []
         };
 
+        // Collaboration/locking state (Firestore)
+        const LOCKS_COLLECTION = 'submissionLocks';
+        const LOCK_TTL_MS = 15 * 60 * 1000;
+        let adminDeviceId = null;
+        let submissionLocks = new Map();
+
+        function getAdminDeviceId() {
+            const key = 'ezeeAdminDeviceId';
+            let v = localStorage.getItem(key);
+            if (!v) {
+                v = 'adm_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+                localStorage.setItem(key, v);
+            }
+            return v;
+        }
+
+        function lockIsExpired(lock) {
+            const last = lock?.lastHeartbeatAt || lock?.claimedAt;
+            const t = last?.toDate ? last.toDate().getTime() : (last ? new Date(last).getTime() : 0);
+            if (!t) return true;
+            return (Date.now() - t) > LOCK_TTL_MS;
+        }
+
+        function lockStatusFor(submissionId) {
+            const lock = submissionLocks.get(submissionId);
+            if (!lock) return { state: 'unclaimed', lock: null };
+            if (lock.status === 'completed') return { state: 'completed', lock };
+            if (lockIsExpired(lock)) return { state: 'unclaimed', lock: null };
+            return { state: 'claimed', lock };
+        }
+
+        async function refreshLocksForCurrentSubmissions() {
+            try {
+                if (!firestore || !config?.submissions) return;
+                const ids = (config.submissions || []).map(s => s.id).filter(Boolean);
+                if (ids.length === 0) {
+                    submissionLocks = new Map();
+                    return;
+                }
+
+                const locks = new Map();
+                // Firestore "in" supports max 30 values
+                for (let i = 0; i < ids.length; i += 30) {
+                    const chunk = ids.slice(i, i + 30);
+                    const snap = await firestore.collection(LOCKS_COLLECTION)
+                        .where('submissionId', 'in', chunk)
+                        .get();
+                    snap.forEach(doc => {
+                        locks.set(doc.id, { id: doc.id, ...doc.data() });
+                    });
+                }
+                submissionLocks = locks;
+            } catch (e) {
+                console.error('Failed to refresh locks:', e);
+            }
+        }
+
+        async function claimSubmission(submissionId) {
+            try {
+                const lockRef = firestore.collection(LOCKS_COLLECTION).doc(submissionId);
+                await firestore.runTransaction(async (tx) => {
+                    const snap = await tx.get(lockRef);
+                    const now = firebase.firestore.Timestamp.now();
+
+                    if (!snap.exists) {
+                        tx.set(lockRef, {
+                            submissionId,
+                            status: 'claimed',
+                            claimedBy: adminDeviceId,
+                            claimedAt: now,
+                            lastHeartbeatAt: now
+                        });
+                        return;
+                    }
+
+                    const data = snap.data();
+                    if (data.status === 'completed') {
+                        throw new Error('This submission is already completed.');
+                    }
+
+                    if (lockIsExpired(data) || data.claimedBy === adminDeviceId) {
+                        tx.set(lockRef, {
+                            submissionId,
+                            status: 'claimed',
+                            claimedBy: adminDeviceId,
+                            claimedAt: data.claimedAt || now,
+                            lastHeartbeatAt: now
+                        }, { merge: true });
+                        return;
+                    }
+
+                    throw new Error('Already claimed by another admin device.');
+                });
+
+                showAlert('Claimed submission.', 'success');
+                await refreshLocksForCurrentSubmissions();
+                renderSubmissions();
+            } catch (e) {
+                console.error('Claim failed:', e);
+                showAlert(e?.message || 'Claim failed', 'error');
+            }
+        }
+
+        async function releaseSubmission(submissionId) {
+            try {
+                const lockRef = firestore.collection(LOCKS_COLLECTION).doc(submissionId);
+                await firestore.runTransaction(async (tx) => {
+                    const snap = await tx.get(lockRef);
+                    if (!snap.exists) return;
+                    const data = snap.data();
+                    if (data.status === 'completed') return;
+                    if (data.claimedBy !== adminDeviceId) {
+                        throw new Error('You cannot release a submission claimed by another admin device.');
+                    }
+                    tx.delete(lockRef);
+                });
+
+                showAlert('Released submission.', 'success');
+                await refreshLocksForCurrentSubmissions();
+                renderSubmissions();
+            } catch (e) {
+                console.error('Release failed:', e);
+                showAlert(e?.message || 'Release failed', 'error');
+            }
+        }
+
+        async function completeSubmission(submissionId) {
+            try {
+                const lockRef = firestore.collection(LOCKS_COLLECTION).doc(submissionId);
+                await firestore.runTransaction(async (tx) => {
+                    const snap = await tx.get(lockRef);
+                    const now = firebase.firestore.Timestamp.now();
+                    if (!snap.exists) {
+                        tx.set(lockRef, {
+                            submissionId,
+                            status: 'completed',
+                            completedBy: adminDeviceId,
+                            completedAt: now
+                        });
+                        return;
+                    }
+                    const data = snap.data();
+                    if (data.status === 'completed') return;
+                    if (data.claimedBy && data.claimedBy !== adminDeviceId && !lockIsExpired(data)) {
+                        throw new Error('This submission is claimed by another admin device.');
+                    }
+                    tx.set(lockRef, {
+                        submissionId,
+                        status: 'completed',
+                        completedBy: adminDeviceId,
+                        completedAt: now
+                    }, { merge: true });
+                });
+
+                showAlert('Marked completed.', 'success');
+                await refreshLocksForCurrentSubmissions();
+                renderSubmissions();
+                document.querySelectorAll('.submission-modal').forEach(m => m.remove());
+            } catch (e) {
+                console.error('Complete failed:', e);
+                showAlert(e?.message || 'Complete failed', 'error');
+            }
+        }
+
+        function startClaimHeartbeat() {
+            setInterval(async () => {
+                try {
+                    if (!config?.submissions || config.submissions.length === 0) return;
+                    const claimedIds = [];
+                    for (const s of config.submissions) {
+                        const st = lockStatusFor(s.id);
+                        if (st.state === 'claimed' && st.lock?.claimedBy === adminDeviceId) {
+                            claimedIds.push(s.id);
+                        }
+                    }
+                    if (claimedIds.length === 0) return;
+
+                    const now = firebase.firestore.Timestamp.now();
+                    const batch = firestore.batch();
+                    for (const id of claimedIds) {
+                        const ref = firestore.collection(LOCKS_COLLECTION).doc(id);
+                        batch.set(ref, { lastHeartbeatAt: now }, { merge: true });
+                    }
+                    await batch.commit();
+                } catch (e) {
+                    console.warn('Heartbeat failed (non-fatal):', e);
+                }
+            }, 60 * 1000);
+        }
+
         async function loadGitConfigFromFirebase() {
             try {
                 const docRef = firestore.collection('ezeeConfig').doc('github');
@@ -1151,6 +1342,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
+            adminDeviceId = getAdminDeviceId();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
             realTimeService = new RealTimeService();
@@ -1178,6 +1370,8 @@
             setupEventListeners();
             initializeRealTimeService();
             await loadDashboardData();
+
+            startClaimHeartbeat();
 
             // Auto-refresh submissions every 3 seconds to show new data in near real-time
             setInterval(loadSubmissions, 3000);
@@ -1668,6 +1862,21 @@
                     s.submittedBy?.agentScCode === filterValue)
                 : config.submissions;
 
+            // Best effort refresh of locks (non-blocking)
+            refreshLocksForCurrentSubmissions().then(() => {
+                // Re-render once lock data arrives, but avoid infinite loops by checking DOM still exists
+                if (document.getElementById('submissionsTable')) {
+                    renderSubmissionsWithLocks(filtered);
+                }
+            }).catch(() => {});
+
+            renderSubmissionsWithLocks(filtered);
+        }
+
+        function renderSubmissionsWithLocks(filtered) {
+            const tbody = document.querySelector('#submissionsTable tbody');
+            const mobileContainer = document.getElementById('submissionsMobile');
+
             if (mobileContainer) {
                 mobileContainer.innerHTML = filtered.map(submission => {
                     const phone = submission.clientInfo?.phoneNumber || submission.personalNumber || '';
@@ -1676,6 +1885,29 @@
                     const email = submission.clientInfo?.email || submission.email || '';
                     const status = (submission.status || 'pending').toLowerCase();
                     const submittedAt = submission.submissionDate || submission.createdAt || '';
+
+                    const lockStatus = lockStatusFor(submission.id);
+                    const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+                    const workText = lockStatus.state === 'completed'
+                        ? `Completed` 
+                        : lockStatus.state === 'claimed'
+                            ? `Claimed (${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'other')})`
+                            : 'Unclaimed';
+
+                    const workActions = lockStatus.state === 'completed'
+                        ? ''
+                        : lockStatus.state === 'claimed'
+                            ? (isMine
+                                ? `
+                                    <button class="btn btn-warning btn-sm" onclick="releaseSubmission('${submission.id}')">Release</button>
+                                    <button class="btn btn-success btn-sm" onclick="completeSubmission('${submission.id}')">Completed</button>
+                                `
+                                : `
+                                    <button class="btn btn-secondary btn-sm" disabled>Claimed</button>
+                                `)
+                            : `
+                                <button class="btn btn-warning btn-sm" onclick="claimSubmission('${submission.id}')">Claim</button>
+                            `;
 
                     const statusClass = status === 'submitted' ? 'status-submitted' : 'status-pending';
 
@@ -1697,6 +1929,10 @@
 
                             <div class="submission-actions">
                                 <button class="btn btn-primary btn-sm" onclick="viewSubmission('${submission.id || ''}')">View</button>
+                                <span style="font-size:12px;color:#6b7280;margin-left:auto;">${workText}</span>
+                            </div>
+                            <div class="submission-actions" style="margin-top:8px;gap:8px;flex-wrap:wrap;">
+                                ${workActions}
                             </div>
                         </div>
                     `;
@@ -1713,6 +1949,25 @@
                 const submissionDate = submission.submissionDate || submission.createdAt || new Date().toISOString();
                 const status = submission.status || 'pending';
 
+                const lockStatus = lockStatusFor(submission.id);
+                const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+                const workCell = lockStatus.state === 'completed'
+                    ? `<span class="status-badge" style="background:#DCFCE7;color:#14532D;">completed</span>`
+                    : lockStatus.state === 'claimed'
+                        ? `<span class="status-badge" style="background:#FEF9C3;color:#713F12;">claimed</span> <small style="color:#6b7280;">${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'other')}</small>`
+                        : `<span class="status-badge" style="background:#E2E8F0;color:#0F172A;">unclaimed</span>`;
+
+                const workButtons = lockStatus.state === 'completed'
+                    ? ''
+                    : lockStatus.state === 'claimed'
+                        ? (isMine
+                            ? `
+                                <button class="btn btn-sm btn-warning" onclick="releaseSubmission('${submission.id}')">Release</button>
+                                <button class="btn btn-sm btn-success" onclick="completeSubmission('${submission.id}')">Completed</button>
+                            `
+                            : `<button class="btn btn-sm" disabled>Claimed</button>`)
+                        : `<button class="btn btn-sm btn-warning" onclick="claimSubmission('${submission.id}')">Claim</button>`;
+
                 return `
                     <tr>
                         <td>${phone}</td>
@@ -1720,8 +1975,10 @@
                         <td>${email}</td>
                         <td><span class="status-badge status-${status}">${status}</span></td>
                         <td>${new Date(submissionDate).toLocaleDateString()}</td>
+                        <td>${workCell}</td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="viewSubmission('${submission.id}')">View</button>
+                            ${workButtons}
                             <button class="btn btn-sm btn-success" onclick="verifySubmission('${submission.id}')">Verify</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteSubmission('${submission.id}')">Delete</button>
                         </td>
@@ -1754,6 +2011,24 @@
             content.className = 'submission-modal-content';
 
             const submissionDate = submission.submissionDate || submission.createdAt || '';
+            const lockStatus = lockStatusFor(submission.id);
+            const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+            const lockBanner = lockStatus.state === 'completed'
+                ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;color:#14532d;font-weight:600;">Completed</div>`
+                : lockStatus.state === 'claimed'
+                    ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;color:#713f12;font-weight:600;">Claimed by ${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'another admin')}</div>`
+                    : `<div style="margin:10px 0;padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;color:#111827;font-weight:600;">Unclaimed</div>`;
+
+            const claimActions = lockStatus.state === 'completed'
+                ? ''
+                : lockStatus.state === 'claimed'
+                    ? (isMine
+                        ? `
+                            <button class="btn btn-warning" onclick="releaseSubmission('${submission.id}')">Release</button>
+                            <button class="btn btn-success" onclick="completeSubmission('${submission.id}')">Mark Completed</button>
+                        `
+                        : `<button class="btn" disabled>Claimed</button>`)
+                    : `<button class="btn btn-warning" onclick="claimSubmission('${submission.id}')">Claim</button>`;
 
             content.innerHTML = `
                 <div class="submission-modal-header">
@@ -1765,6 +2040,7 @@
                 </div>
 
                 <div class="submission-modal-body">
+                    ${lockBanner}
                     <div class="submission-sections">
                         <div>
                             <h3 class="submission-section-title">Client Information</h3>
@@ -1862,6 +2138,7 @@
                             <small>Submitted on: ${submissionDate ? new Date(submissionDate).toLocaleString() : 'N/A'}</small>
                         </div>
                         <div class="submission-footer-actions">
+                            ${claimActions}
                             <button class="btn" onclick="copySubmissionForBluestacks('${submission.id}')">Copy All (BlueStacks)</button>
                             <button class="btn" onclick="copySubmissionAppOrder('${submission.id}')">Copy App Order</button>
                             <button class="btn" onclick="copySubmissionField('${submission.id}','fullName')">Copy Name</button>
