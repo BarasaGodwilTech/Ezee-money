@@ -541,11 +541,11 @@
 
         firebase.initializeApp(firebaseConfig);
         const firestore = firebase.firestore();
+        let notifySenderBaseUrl = '';
         // Configuration
         let githubConfig = {
             repoOwner: 'BarasaGodwilTech',
             repoName: 'Ezee-money',
-            accessToken: '',
             branchName: 'main',
             imagesSubfolder: 'images'
         };
@@ -601,11 +601,26 @@
                 console.warn('Failed to load GitHub config from Firebase, falling back to local configuration', e);
             }
 
+            // Prefer notification sender config from Firebase so existing agents don't need device updates
+            try {
+                const notifRef = firestore.collection('ezeeConfig').doc('notifications');
+                const notifSnap = await notifRef.get();
+                if (notifSnap.exists) {
+                    const data = notifSnap.data() || {};
+                    if (data.senderBaseUrl) {
+                        notifySenderBaseUrl = String(data.senderBaseUrl || '').trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load notification sender config from Firebase (continuing):', e);
+            }
+
             setupPhotoUploads();
-            setupEventListeners();
             initializeForm();
+            setupFormSubmission();
             initializeRealTimeService();
         });
+
         
         function loadAgentInfo() {
             try {
@@ -830,6 +845,11 @@
                     await githubService.saveSubmission(submissionPayload);
                     progressFill.style.width = '100%';
                     uploadStatus.textContent = 'Submission complete!';
+                    try {
+                        await notifyAdminsNewSubmission(submissionPayload);
+                    } catch (notifyErr) {
+                        console.warn('Admin notification failed (non-fatal):', notifyErr);
+                    }
                     showSuccessMessage(submissionId);
                 } catch (saveErr) {
                     console.error('GitHub submission failed, falling back to localStorage:', saveErr);
@@ -859,6 +879,38 @@
                 reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(file);
             });
+        }
+
+        async function notifyAdminsNewSubmission(submissionPayload) {
+            const clientName = submissionPayload?.clientInfo?.fullName || submissionPayload?.fullName || '';
+            const agentScCode = submissionPayload?.submittedBy?.agentScCode || submissionPayload?.agentInfo?.scCode || '';
+
+            // External sender URL (Render). Example:
+            // localStorage.setItem('ezeeNotifySenderBaseUrl', 'https://your-service.onrender.com')
+            const baseUrl = (notifySenderBaseUrl || (localStorage.getItem('ezeeNotifySenderBaseUrl') || '')).trim();
+            if (!baseUrl) {
+                throw new Error('Notify sender URL not configured (set localStorage ezeeNotifySenderBaseUrl)');
+            }
+
+            const url = baseUrl.replace(/\/+$/, '') + '/notifyNewSubmission';
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    submissionId: submissionPayload.id,
+                    clientName,
+                    agentScCode
+                })
+            });
+
+            if (!res.ok) {
+                const txt = await res.text().catch(() => '');
+                throw new Error(`Notify failed: ${res.status} ${res.statusText} ${txt}`);
+            }
         }
         
         function validateForm() {

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Ezee Money</title>
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#2563eb">
     <style>
         html {
             -webkit-text-size-adjust: 100%;
@@ -890,6 +892,14 @@
                     <div id="realTimeStatus" style="font-size: 14px; color: #666;">
                         <span style="color: #6c757d;">● Checking...</span>
                     </div>
+                    <div id="pushControls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+                        <button class="btn" type="button" onclick="enableAdminNotifications()" id="enableNotifBtn">Enable Notifications</button>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111827;">
+                            <input type="checkbox" id="onDutyToggle" onchange="setOnDuty(this.checked)" disabled>
+                            On duty
+                        </label>
+                        <button class="btn" type="button" onclick="disableAdminNotifications()" id="disableNotifBtn" disabled>Disable</button>
+                    </div>
                     <button class="logout-btn" onclick="logout()">Logout</button>
                 </div>
             </header>
@@ -1062,6 +1072,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="../js/github-service.js"></script>
@@ -1097,6 +1108,144 @@
 
         firebase.initializeApp(firebaseConfig);
         const firestore = firebase.firestore();
+
+        const VAPID_KEY = 'BPT0tSlYOOEDW5h3cfzAs6fzZZQ81ZAh94cIQ15AxbfXLQ05eDLJv1cF8_3vEeotLGJW-AHUDqx6vP2mjNj6WAI';
+        const ADMIN_DEVICES_COLLECTION = 'adminDevices';
+        let messaging = null;
+        let fcmToken = null;
+
+        async function registerServiceWorkers() {
+            try {
+                if (!('serviceWorker' in navigator)) return;
+                // Generic SW for offline fallback
+                try { await navigator.serviceWorker.register('../service-worker.js'); } catch (e) {}
+                // FCM background SW must be at origin root scope
+                await navigator.serviceWorker.register('../firebase-messaging-sw.js');
+            } catch (e) {
+                console.warn('Service worker registration failed:', e);
+            }
+        }
+
+        async function ensureMessaging() {
+            if (messaging) return messaging;
+            if (!firebase.messaging) {
+                throw new Error('Firebase Messaging not available');
+            }
+            messaging = firebase.messaging();
+            return messaging;
+        }
+
+        async function loadExistingTokenState() {
+            try {
+                const saved = localStorage.getItem('ezeeAdminFcmToken');
+                if (saved) {
+                    fcmToken = saved;
+                    document.getElementById('disableNotifBtn').disabled = false;
+                    document.getElementById('onDutyToggle').disabled = false;
+                    const snap = await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(saved).get();
+                    if (snap.exists) {
+                        const onDuty = !!snap.data().onDuty;
+                        document.getElementById('onDutyToggle').checked = onDuty;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load token state:', e);
+            }
+        }
+
+        async function enableAdminNotifications() {
+            try {
+                await registerServiceWorkers();
+
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') {
+                    showAlert('Notifications permission not granted.', 'warning');
+                    return;
+                }
+
+                const msg = await ensureMessaging();
+                const token = await msg.getToken({ vapidKey: VAPID_KEY });
+                if (!token) {
+                    showAlert('Failed to get notification token.', 'error');
+                    return;
+                }
+
+                fcmToken = token;
+                localStorage.setItem('ezeeAdminFcmToken', token);
+
+                await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).set({
+                    token,
+                    deviceId: adminDeviceId,
+                    onDuty: true,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent
+                }, { merge: true });
+
+                document.getElementById('disableNotifBtn').disabled = false;
+                document.getElementById('onDutyToggle').disabled = false;
+                document.getElementById('onDutyToggle').checked = true;
+                showAlert('Notifications enabled. You are now on duty.', 'success');
+            } catch (e) {
+                console.error('Enable notifications failed:', e);
+                showAlert('Enable notifications failed: ' + (e?.message || String(e)), 'error');
+            }
+        }
+
+        async function setOnDuty(onDuty) {
+            try {
+                if (!fcmToken) {
+                    const saved = localStorage.getItem('ezeeAdminFcmToken');
+                    if (saved) fcmToken = saved;
+                }
+                if (!fcmToken) {
+                    showAlert('Enable notifications first.', 'warning');
+                    document.getElementById('onDutyToggle').checked = false;
+                    return;
+                }
+
+                await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(fcmToken).set({
+                    token: fcmToken,
+                    deviceId: adminDeviceId,
+                    onDuty: !!onDuty,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent
+                }, { merge: true });
+
+                showAlert(onDuty ? 'On duty enabled.' : 'You are now off duty.', 'success');
+            } catch (e) {
+                console.error('Failed to set on duty:', e);
+                showAlert('Failed to update on duty: ' + (e?.message || String(e)), 'error');
+            }
+        }
+
+        async function disableAdminNotifications() {
+            try {
+                const token = fcmToken || localStorage.getItem('ezeeAdminFcmToken');
+                if (!token) {
+                    showAlert('No notification token found on this device.', 'warning');
+                    return;
+                }
+
+                try {
+                    const msg = await ensureMessaging();
+                    await msg.deleteToken(token);
+                } catch (e) {
+                    console.warn('deleteToken failed (continuing):', e);
+                }
+
+                await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).delete();
+                localStorage.removeItem('ezeeAdminFcmToken');
+                fcmToken = null;
+
+                document.getElementById('disableNotifBtn').disabled = true;
+                document.getElementById('onDutyToggle').disabled = true;
+                document.getElementById('onDutyToggle').checked = false;
+                showAlert('Notifications disabled for this device.', 'success');
+            } catch (e) {
+                console.error('Disable notifications failed:', e);
+                showAlert('Disable notifications failed: ' + (e?.message || String(e)), 'error');
+            }
+        }
 
         // Global state
         let githubService;
@@ -1343,6 +1492,7 @@
         document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
             adminDeviceId = getAdminDeviceId();
+            await registerServiceWorkers();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
             realTimeService = new RealTimeService();
@@ -1369,6 +1519,7 @@
 
             setupEventListeners();
             initializeRealTimeService();
+            await loadExistingTokenState();
             await loadDashboardData();
 
             startClaimHeartbeat();

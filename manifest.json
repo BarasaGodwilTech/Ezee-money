@@ -1,0 +1,15 @@
+{
+  "name": "Ezee Money Admin",
+  "short_name": "Ezee Admin",
+  "start_url": "/admin/dashboard.html",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
