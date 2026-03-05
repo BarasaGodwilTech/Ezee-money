@@ -27,8 +27,36 @@
       },
       "submissionDate": "2026-02-26T16:08:07.054Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1772355923448-r3y6h7dpk",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Mukaaya Moses Tenywa",
+        "phoneNumber": "0708258404",
+        "email": "mosesmukaaya134@gmail.com",
+        "nationalId": "CM95083103103C",
+        "dob": "1995-10-05",
+        "gender": "male",
+        "businessAddress": "Napoli",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Musubi cathy",
+        "nextOfKinRelationship": "spouse",
+        "nextOfKinPhone": "0757458404"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772355923448-r3y6h7dpk/idFront_1772355923501.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772355923448-r3y6h7dpk/idBack_1772355964594.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772355923448-r3y6h7dpk/agentPhoto_1772355995588.jpg"
+      },
+      "submissionDate": "2026-03-01T09:06:57.909Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-02-26T16:08:07.870Z",
-  "totalSubmissions": 1
+  "lastUpdated": "2026-03-01T09:06:58.792Z",
+  "totalSubmissions": 2
 }
