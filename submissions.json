@@ -55,8 +55,36 @@
       },
       "submissionDate": "2026-03-01T09:06:57.909Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1772723407964-bhbll4zf5",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "OWORI INNOCENT",
+        "phoneNumber": "0702207363",
+        "email": "oworiinnocent2018@gmail.com",
+        "nationalId": "CM9903910DCACD",
+        "dob": "1999-06-05",
+        "gender": "male",
+        "businessAddress": "North road",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Oketcho Andrew",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0706018025"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772723407964-bhbll4zf5/idFront_1772723408014.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772723407964-bhbll4zf5/idBack_1772723427737.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1772723407964-bhbll4zf5/agentPhoto_1772723446717.jpg"
+      },
+      "submissionDate": "2026-03-05T15:10:59.362Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-01T09:06:58.792Z",
-  "totalSubmissions": 2
+  "lastUpdated": "2026-03-05T15:11:00.267Z",
+  "totalSubmissions": 3
 }
