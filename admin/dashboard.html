@@ -893,6 +893,7 @@
                         <span style="color: #6c757d;">● Checking...</span>
                     </div>
                     <div id="pushControls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+                        <input id="adminNameInput" class="form-control" style="max-width:170px;" placeholder="Your name" onblur="saveAdminNameFromInput()">
                         <button class="btn" type="button" onclick="enableAdminNotifications()" id="enableNotifBtn">Enable Notifications</button>
                         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111827;">
                             <input type="checkbox" id="onDutyToggle" onchange="setOnDuty(this.checked)" disabled>
@@ -1114,6 +1115,7 @@
         let messaging = null;
         let fcmToken = null;
         let fcmSwRegistration = null;
+        let adminName = '';
 
         async function registerServiceWorkers() {
             try {
@@ -1156,6 +1158,40 @@
             }
         }
 
+        function loadAdminName() {
+            try {
+                adminName = (localStorage.getItem('ezeeAdminName') || '').trim();
+                const input = document.getElementById('adminNameInput');
+                if (input && adminName && !input.value) {
+                    input.value = adminName;
+                }
+            } catch (e) {
+                adminName = '';
+            }
+        }
+
+        async function saveAdminNameFromInput() {
+            try {
+                const input = document.getElementById('adminNameInput');
+                const name = String(input?.value || '').trim();
+                adminName = name;
+                localStorage.setItem('ezeeAdminName', name);
+
+                const token = fcmToken || localStorage.getItem('ezeeAdminFcmToken');
+                if (token) {
+                    await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).set({
+                        token,
+                        deviceId: adminDeviceId,
+                        adminName: name,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        userAgent: navigator.userAgent
+                    }, { merge: true });
+                }
+            } catch (e) {
+                console.warn('Failed to save admin name:', e);
+            }
+        }
+
         async function enableAdminNotifications() {
             try {
                 await registerServiceWorkers();
@@ -1182,6 +1218,7 @@
                 await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).set({
                     token,
                     deviceId: adminDeviceId,
+                    adminName: adminName || '',
                     onDuty: true,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     userAgent: navigator.userAgent
@@ -1212,6 +1249,7 @@
                 await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(fcmToken).set({
                     token: fcmToken,
                     deviceId: adminDeviceId,
+                    adminName: adminName || '',
                     onDuty: !!onDuty,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     userAgent: navigator.userAgent
@@ -1337,6 +1375,7 @@
                             submissionId,
                             status: 'claimed',
                             claimedBy: adminDeviceId,
+                            claimedByName: adminName || '',
                             claimedAt: now,
                             lastHeartbeatAt: now
                         });
@@ -1353,6 +1392,7 @@
                             submissionId,
                             status: 'claimed',
                             claimedBy: adminDeviceId,
+                            claimedByName: adminName || '',
                             claimedAt: data.claimedAt || now,
                             lastHeartbeatAt: now
                         }, { merge: true });
@@ -1405,6 +1445,7 @@
                             submissionId,
                             status: 'completed',
                             completedBy: adminDeviceId,
+                            completedByName: adminName || '',
                             completedAt: now
                         });
                         return;
@@ -1418,6 +1459,7 @@
                         submissionId,
                         status: 'completed',
                         completedBy: adminDeviceId,
+                        completedByName: adminName || '',
                         completedAt: now
                     }, { merge: true });
                 });
@@ -1498,6 +1540,7 @@
         document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
             adminDeviceId = getAdminDeviceId();
+            loadAdminName();
             await registerServiceWorkers();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
@@ -2045,10 +2088,11 @@
 
                     const lockStatus = lockStatusFor(submission.id);
                     const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+                    const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'other');
                     const workText = lockStatus.state === 'completed'
                         ? `Completed` 
                         : lockStatus.state === 'claimed'
-                            ? `Claimed (${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'other')})`
+                            ? `Claimed (${isMine ? 'you' : claimedName})`
                             : 'Unclaimed';
 
                     const workActions = lockStatus.state === 'completed'
@@ -2108,10 +2152,11 @@
 
                 const lockStatus = lockStatusFor(submission.id);
                 const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+                const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'other');
                 const workCell = lockStatus.state === 'completed'
                     ? `<span class="status-badge" style="background:#DCFCE7;color:#14532D;">completed</span>`
                     : lockStatus.state === 'claimed'
-                        ? `<span class="status-badge" style="background:#FEF9C3;color:#713F12;">claimed</span> <small style="color:#6b7280;">${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'other')}</small>`
+                        ? `<span class="status-badge" style="background:#FEF9C3;color:#713F12;">claimed</span> <small style="color:#6b7280;">${isMine ? 'you' : claimedName}</small>`
                         : `<span class="status-badge" style="background:#E2E8F0;color:#0F172A;">unclaimed</span>`;
 
                 const workButtons = lockStatus.state === 'completed'
@@ -2170,10 +2215,11 @@
             const submissionDate = submission.submissionDate || submission.createdAt || '';
             const lockStatus = lockStatusFor(submission.id);
             const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
+            const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'another admin');
             const lockBanner = lockStatus.state === 'completed'
                 ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;color:#14532d;font-weight:600;">Completed</div>`
                 : lockStatus.state === 'claimed'
-                    ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;color:#713f12;font-weight:600;">Claimed by ${isMine ? 'you' : (lockStatus.lock?.claimedBy || 'another admin')}</div>`
+                    ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;color:#713f12;font-weight:600;">Claimed by ${isMine ? 'you' : claimedName}</div>`
                     : `<div style="margin:10px 0;padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;color:#111827;font-weight:600;">Unclaimed</div>`;
 
             const claimActions = lockStatus.state === 'completed'
