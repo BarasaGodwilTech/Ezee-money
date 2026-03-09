@@ -2070,62 +2070,6 @@
             updateStats();
         }
 
-        function getSubmissionISODate(submission) {
-            const raw = submission?.submissionDate || submission?.createdAt || submission?.date || '';
-            const d = new Date(raw);
-            return isNaN(d.getTime()) ? null : d;
-        }
-
-        function isToday(dateObj) {
-            if (!dateObj) return false;
-            const now = new Date();
-            return (
-                dateObj.getFullYear() === now.getFullYear() &&
-                dateObj.getMonth() === now.getMonth() &&
-                dateObj.getDate() === now.getDate()
-            );
-        }
-
-        function renderRecentActivity() {
-            const container = document.getElementById('recentActivity');
-            if (!container) return;
-
-            const todays = (config.submissions || [])
-                .map(s => ({ s, d: getSubmissionISODate(s) }))
-                .filter(x => isToday(x.d))
-                .sort((a, b) => b.d - a.d)
-                .slice(0, 8);
-
-            if (todays.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center;">No submissions today</p>';
-                return;
-            }
-
-            container.innerHTML = todays.map(({ s, d }) => {
-                const client = s.clientInfo || {};
-                const submittedBy = s.submittedBy || {};
-                const status = s.status || 'pending';
-                const clientName = client.fullName || 'N/A';
-                const clientPhone = client.phoneNumber || s.personalNumber || 'N/A';
-                const agentName = submittedBy.agentName || s.agentInfo?.fullName || 'N/A';
-                const agentSc = submittedBy.agentScCode || s.agentInfo?.scCode || '';
-                const when = d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-
-                return `
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;background:#fff;">
-                        <div style="min-width:0;">
-                            <div style="font-weight:600;color:#111827;">${clientName}</div>
-                            <div style="font-size:12px;color:#6b7280;">${clientPhone} • Submitted by ${agentName}${agentSc ? ` (${agentSc})` : ''}</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-                            <span class="status-badge status-${status}">${status}</span>
-                            <div style="font-size:12px;color:#6b7280;white-space:nowrap;">${when}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
         async function loadAgents() {
             try {
                 console.log('Loading agents...');
@@ -2302,14 +2246,12 @@
                 renderSubmissions();
                 updateStats();
                 buildAgentFilter();
-                renderRecentActivity();
             } catch (error) {
                 console.error('Failed to load submissions:', error);
                 showAlert('Error loading submissions: ' + error.message, 'error');
                 config.submissions = [];
                 renderSubmissions();
                 updateStats();
-                renderRecentActivity();
             }
         }
 
@@ -3207,15 +3149,90 @@
             document.getElementById('totalAgents').textContent = config.agents.length;
             document.getElementById('totalSubmissions').textContent = config.submissions.length;
             
-            const todaySubmissions = (config.submissions || [])
-                .map(s => getSubmissionISODate(s))
-                .filter(d => isToday(d)).length;
+            const today = new Date().toDateString();
+            const todaySubmissions = config.submissions.filter(s => 
+                new Date(s.submissionDate).toDateString() === today
+            ).length;
             document.getElementById('todaySubmissions').textContent = todaySubmissions;
             
             const activeAgents = config.agents.filter(a => a.status === 'active').length;
             document.getElementById('activeAgents').textContent = activeAgents;
 
-            renderRecentActivity();
+            renderOverviewRecentActivity();
+        }
+
+        function renderOverviewRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            if (!container) return;
+
+            const todayKey = new Date().toDateString();
+
+            const todays = (config.submissions || []).filter(s => {
+                const raw = s.submissionDate || s.createdAt;
+                if (!raw) return false;
+                const d = new Date(raw);
+                if (Number.isNaN(d.getTime())) return false;
+                return d.toDateString() === todayKey;
+            }).sort((a, b) => {
+                const da = new Date(a.submissionDate || a.createdAt || 0).getTime();
+                const db = new Date(b.submissionDate || b.createdAt || 0).getTime();
+                return db - da;
+            });
+
+            if (todays.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center;">No submissions today</p>';
+                return;
+            }
+
+            const rows = todays.slice(0, 8).map(s => {
+                const client = s.clientInfo || {};
+                const submittedBy = s.submittedBy || {};
+                const phone = client.phoneNumber || s.personalNumber || '';
+                const name = client.fullName || s.fullName || 'N/A';
+                const agentName = submittedBy.agentName || s.agentInfo?.fullName || 'N/A';
+                const agentSc = submittedBy.agentScCode || s.agentInfo?.scCode || 'N/A';
+                const status = s.status || 'pending';
+                const date = s.submissionDate || s.createdAt || '';
+
+                return `
+                    <tr>
+                        <td>${phone}</td>
+                        <td>${name}</td>
+                        <td>${agentName} (${agentSc})</td>
+                        <td><span class="status-badge status-${status}">${status}</span></td>
+                        <td>${date ? new Date(date).toLocaleTimeString() : ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="viewSubmission('${s.id}')">View</button>
+                            <button class="btn btn-sm btn-success" onclick="verifySubmission('${s.id}')">Verify</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSubmission('${s.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+                    <div style="font-weight:600;color:#111827;">Today's Submissions</div>
+                    <div style="font-size:12px;color:#6b7280;">Showing ${Math.min(8, todays.length)} of ${todays.length}</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Phone</th>
+                                <th>Client</th>
+                                <th>Agent</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function saveSettings() {
