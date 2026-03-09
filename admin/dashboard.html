@@ -773,6 +773,59 @@
             gap: 0.5rem;
         }
 
+        .admin-mgmt-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .admin-mgmt-grid .form-group {
+            margin: 0;
+        }
+
+        .admin-mgmt-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .admin-mgmt-list {
+            margin-top: 14px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .admin-mgmt-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .admin-mgmt-item-title {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .admin-mgmt-item-sub {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 800px) {
+            .admin-mgmt-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 1024px) {
             .mobile-topbar {
                 display: block;
@@ -887,13 +940,12 @@
 
         <main class="main-content">
             <header class="header">
-                <h1>Admin Dashboard</h1>
+                <h1>Admin Dashboard <span id="adminNameDisplay" style="font-size:12px;color:#6b7280;font-weight:600;margin-left:8px;"></span></h1>
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div id="realTimeStatus" style="font-size: 14px; color: #666;">
                         <span style="color: #6c757d;">● Checking...</span>
                     </div>
                     <div id="pushControls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
-                        <input id="adminNameInput" class="form-control" style="max-width:170px;" placeholder="Your name" onblur="saveAdminNameFromInput()">
                         <button class="btn" type="button" onclick="enableAdminNotifications()" id="enableNotifBtn">Enable Notifications</button>
                         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111827;">
                             <input type="checkbox" id="onDutyToggle" onchange="setOnDuty(this.checked)" disabled>
@@ -1049,6 +1101,38 @@
                         <button type="submit" class="btn btn-primary">Save Settings</button>
                     </form>
                 </div>
+
+                <div class="card" id="manageAdminsCard" style="margin-top: 20px; display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Manage Admins</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <form id="adminForm">
+                            <div class="admin-mgmt-grid">
+                                <div class="form-group">
+                                    <label for="adminMgmtUsername">Username</label>
+                                    <input type="text" id="adminMgmtUsername" placeholder="e.g. jane" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="adminMgmtName">Name</label>
+                                    <input type="text" id="adminMgmtName" placeholder="e.g. Jane" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="adminMgmtPassword">Password</label>
+                                    <input type="password" id="adminMgmtPassword" placeholder="Set password" required>
+                                </div>
+                            </div>
+                            <div class="admin-mgmt-actions">
+                                <button type="submit" class="btn btn-success" id="saveAdminBtn">Save Admin</button>
+                                <button type="button" class="btn" id="clearAdminBtn">Clear</button>
+                            </div>
+                        </form>
+
+                        <div class="admin-mgmt-list" id="adminsList">
+                            <div style="text-align:center;color:#6b7280;">Loading admins...</div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="card" style="margin-top: 20px;">
                     <div class="card-header">
@@ -1110,12 +1194,188 @@
         firebase.initializeApp(firebaseConfig);
         const firestore = firebase.firestore();
 
+        const ADMINS_COLLECTION = 'admins';
+
+        function isSuperAdmin() {
+            return (localStorage.getItem('adminRole') || '').trim() === 'super';
+        }
+
+        function initManageAdminsUI() {
+            const card = document.getElementById('manageAdminsCard');
+            if (!card) return;
+
+            if (!isSuperAdmin()) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+
+            const form = document.getElementById('adminForm');
+            const clearBtn = document.getElementById('clearAdminBtn');
+            if (form) {
+                form.addEventListener('submit', saveAdmin);
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', clearAdminForm);
+            }
+        }
+
+        function clearAdminForm() {
+            const u = document.getElementById('adminMgmtUsername');
+            const n = document.getElementById('adminMgmtName');
+            const p = document.getElementById('adminMgmtPassword');
+            if (u) u.value = '';
+            if (n) n.value = '';
+            if (p) p.value = '';
+        }
+
+        async function saveAdmin(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (!isSuperAdmin()) {
+                showAlert('Only Super Admin can manage admins.', 'error');
+                return;
+            }
+
+            const usernameRaw = (document.getElementById('adminMgmtUsername')?.value || '').trim();
+            const name = (document.getElementById('adminMgmtName')?.value || '').trim();
+            const password = (document.getElementById('adminMgmtPassword')?.value || '').trim();
+            const username = usernameRaw.toLowerCase();
+
+            if (!username || !name || !password) {
+                showAlert('Please fill username, name and password.', 'warning');
+                return;
+            }
+
+            try {
+                await firestore.collection(ADMINS_COLLECTION).doc(username).set({
+                    username,
+                    name,
+                    password,
+                    updatedAt: firebase.firestore.Timestamp.now()
+                }, { merge: true });
+
+                showAlert('Admin saved.', 'success');
+                clearAdminForm();
+                await loadAdmins();
+            } catch (err) {
+                console.error('Failed to save admin:', err);
+                showAlert('Failed to save admin: ' + (err?.message || String(err)), 'error');
+            }
+        }
+
+        async function loadAdmins() {
+            if (!isSuperAdmin()) return;
+            const list = document.getElementById('adminsList');
+            if (!list) return;
+
+            try {
+                list.innerHTML = '<div style="text-align:center;color:#6b7280;">Loading admins...</div>';
+                const snap = await firestore.collection(ADMINS_COLLECTION).get();
+                const admins = [];
+                snap.forEach(d => {
+                    const data = d.data() || {};
+                    const username = String(data.username || d.id || '').toLowerCase();
+                    admins.push({
+                        id: d.id,
+                        username,
+                        name: String(data.name || username),
+                        password: String(data.password || '')
+                    });
+                });
+                admins.sort((a, b) => a.username.localeCompare(b.username));
+                renderAdminsList(admins);
+            } catch (err) {
+                console.error('Failed to load admins:', err);
+                list.innerHTML = '<div style="text-align:center;color:#ef4444;">Failed to load admins.</div>';
+            }
+        }
+
+        function renderAdminsList(admins) {
+            const list = document.getElementById('adminsList');
+            if (!list) return;
+
+            if (!admins || admins.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#6b7280;">No admins yet.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            for (const a of admins) {
+                const item = document.createElement('div');
+                item.className = 'admin-mgmt-item';
+                item.innerHTML = `
+                    <div style="min-width:0;">
+                        <div class="admin-mgmt-item-title">${a.name}</div>
+                        <div class="admin-mgmt-item-sub">@${a.username}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                        <button type="button" class="btn btn-primary" data-action="edit" data-username="${a.username}">Edit</button>
+                        <button type="button" class="btn btn-danger" data-action="delete" data-username="${a.username}">Delete</button>
+                    </div>
+                `;
+
+                item.querySelectorAll('button[data-action]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const action = btn.getAttribute('data-action');
+                        const username = btn.getAttribute('data-username');
+                        if (!username) return;
+
+                        if (action === 'edit') {
+                            await editAdmin(username);
+                        }
+                        if (action === 'delete') {
+                            await deleteAdmin(username);
+                        }
+                    });
+                });
+
+                list.appendChild(item);
+            }
+        }
+
+        async function editAdmin(username) {
+            if (!isSuperAdmin()) return;
+            try {
+                const doc = await firestore.collection(ADMINS_COLLECTION).doc(String(username).toLowerCase()).get();
+                if (!doc.exists) {
+                    showAlert('Admin not found.', 'warning');
+                    return;
+                }
+                const data = doc.data() || {};
+                const u = document.getElementById('adminMgmtUsername');
+                const n = document.getElementById('adminMgmtName');
+                const p = document.getElementById('adminMgmtPassword');
+                if (u) u.value = String(data.username || doc.id || username);
+                if (n) n.value = String(data.name || data.username || username);
+                if (p) p.value = String(data.password || '');
+            } catch (err) {
+                console.error('Edit admin failed:', err);
+                showAlert('Edit failed: ' + (err?.message || String(err)), 'error');
+            }
+        }
+
+        async function deleteAdmin(username) {
+            if (!isSuperAdmin()) return;
+            const u = String(username || '').toLowerCase();
+            if (!u) return;
+            if (!confirm(`Delete admin @${u}?`)) return;
+
+            try {
+                await firestore.collection(ADMINS_COLLECTION).doc(u).delete();
+                showAlert('Admin deleted.', 'success');
+                await loadAdmins();
+            } catch (err) {
+                console.error('Delete admin failed:', err);
+                showAlert('Delete failed: ' + (err?.message || String(err)), 'error');
+            }
+        }
+
         const VAPID_KEY = 'BPT0tSlYOOEDW5h3cfzAs6fzZZQ81ZAh94cIQ15AxbfXLQ05eDLJv1cF8_3vEeotLGJW-AHUDqx6vP2mjNj6WAI';
         const ADMIN_DEVICES_COLLECTION = 'adminDevices';
         let messaging = null;
         let fcmToken = null;
         let fcmSwRegistration = null;
-        let adminName = '';
 
         async function registerServiceWorkers() {
             try {
@@ -1158,40 +1418,6 @@
             }
         }
 
-        function loadAdminName() {
-            try {
-                adminName = (localStorage.getItem('ezeeAdminName') || '').trim();
-                const input = document.getElementById('adminNameInput');
-                if (input && adminName && !input.value) {
-                    input.value = adminName;
-                }
-            } catch (e) {
-                adminName = '';
-            }
-        }
-
-        async function saveAdminNameFromInput() {
-            try {
-                const input = document.getElementById('adminNameInput');
-                const name = String(input?.value || '').trim();
-                adminName = name;
-                localStorage.setItem('ezeeAdminName', name);
-
-                const token = fcmToken || localStorage.getItem('ezeeAdminFcmToken');
-                if (token) {
-                    await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).set({
-                        token,
-                        deviceId: adminDeviceId,
-                        adminName: name,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        userAgent: navigator.userAgent
-                    }, { merge: true });
-                }
-            } catch (e) {
-                console.warn('Failed to save admin name:', e);
-            }
-        }
-
         async function enableAdminNotifications() {
             try {
                 await registerServiceWorkers();
@@ -1218,7 +1444,6 @@
                 await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(token).set({
                     token,
                     deviceId: adminDeviceId,
-                    adminName: adminName || '',
                     onDuty: true,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     userAgent: navigator.userAgent
@@ -1249,7 +1474,6 @@
                 await firestore.collection(ADMIN_DEVICES_COLLECTION).doc(fcmToken).set({
                     token: fcmToken,
                     deviceId: adminDeviceId,
-                    adminName: adminName || '',
                     onDuty: !!onDuty,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     userAgent: navigator.userAgent
@@ -1337,6 +1561,13 @@
             return { state: 'claimed', lock };
         }
 
+        function getCurrentAdminIdentity() {
+            const role = (localStorage.getItem('adminRole') || '').trim();
+            const name = (localStorage.getItem('adminName') || '').trim() || (role === 'super' ? 'Super Admin' : 'Admin');
+            const username = (localStorage.getItem('adminUsername') || '').trim();
+            return { role, name, username };
+        }
+
         async function refreshLocksForCurrentSubmissions() {
             try {
                 if (!firestore || !config?.submissions) return;
@@ -1369,13 +1600,15 @@
                 await firestore.runTransaction(async (tx) => {
                     const snap = await tx.get(lockRef);
                     const now = firebase.firestore.Timestamp.now();
+                    const admin = getCurrentAdminIdentity();
 
                     if (!snap.exists) {
                         tx.set(lockRef, {
                             submissionId,
                             status: 'claimed',
                             claimedBy: adminDeviceId,
-                            claimedByName: adminName || '',
+                            claimedByName: admin.name,
+                            claimedByUsername: admin.username,
                             claimedAt: now,
                             lastHeartbeatAt: now
                         });
@@ -1392,7 +1625,8 @@
                             submissionId,
                             status: 'claimed',
                             claimedBy: adminDeviceId,
-                            claimedByName: adminName || '',
+                            claimedByName: admin.name,
+                            claimedByUsername: admin.username,
                             claimedAt: data.claimedAt || now,
                             lastHeartbeatAt: now
                         }, { merge: true });
@@ -1440,12 +1674,14 @@
                 await firestore.runTransaction(async (tx) => {
                     const snap = await tx.get(lockRef);
                     const now = firebase.firestore.Timestamp.now();
+                    const admin = getCurrentAdminIdentity();
                     if (!snap.exists) {
                         tx.set(lockRef, {
                             submissionId,
                             status: 'completed',
                             completedBy: adminDeviceId,
-                            completedByName: adminName || '',
+                            completedByName: admin.name,
+                            completedByUsername: admin.username,
                             completedAt: now
                         });
                         return;
@@ -1459,7 +1695,8 @@
                         submissionId,
                         status: 'completed',
                         completedBy: adminDeviceId,
-                        completedByName: adminName || '',
+                        completedByName: admin.name,
+                        completedByUsername: admin.username,
                         completedAt: now
                     }, { merge: true });
                 });
@@ -1540,7 +1777,6 @@
         document.addEventListener('DOMContentLoaded', async function() {
             checkAuth();
             adminDeviceId = getAdminDeviceId();
-            loadAdminName();
             await registerServiceWorkers();
             githubService = new GitHubService();
             submissionService = new SubmissionService();
@@ -1571,6 +1807,12 @@
             await loadExistingTokenState();
             await loadDashboardData();
 
+            initManageAdminsUI();
+
+            if ((localStorage.getItem('adminRole') || '').trim() === 'super') {
+                loadAdmins().catch(() => {});
+            }
+
             startClaimHeartbeat();
 
             // Auto-refresh submissions every 3 seconds to show new data in near real-time
@@ -1581,6 +1823,11 @@
             if (localStorage.getItem('adminLoggedIn') !== 'true') {
                 window.location.href = 'login.html';
                 return;
+            }
+            const name = (localStorage.getItem('adminName') || '').trim();
+            const el = document.getElementById('adminNameDisplay');
+            if (el) {
+                el.textContent = name ? `(${name})` : '';
             }
         }
 
@@ -2088,11 +2335,11 @@
 
                     const lockStatus = lockStatusFor(submission.id);
                     const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
-                    const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'other');
+                    const claimedLabel = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedByUsername || lockStatus.lock?.claimedBy || 'other');
                     const workText = lockStatus.state === 'completed'
                         ? `Completed` 
                         : lockStatus.state === 'claimed'
-                            ? `Claimed (${isMine ? 'you' : claimedName})`
+                            ? `Claimed (${isMine ? 'you' : claimedLabel})`
                             : 'Unclaimed';
 
                     const workActions = lockStatus.state === 'completed'
@@ -2152,11 +2399,11 @@
 
                 const lockStatus = lockStatusFor(submission.id);
                 const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
-                const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'other');
+                const claimedLabel = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedByUsername || lockStatus.lock?.claimedBy || 'other');
                 const workCell = lockStatus.state === 'completed'
                     ? `<span class="status-badge" style="background:#DCFCE7;color:#14532D;">completed</span>`
                     : lockStatus.state === 'claimed'
-                        ? `<span class="status-badge" style="background:#FEF9C3;color:#713F12;">claimed</span> <small style="color:#6b7280;">${isMine ? 'you' : claimedName}</small>`
+                        ? `<span class="status-badge" style="background:#FEF9C3;color:#713F12;">claimed</span> <small style="color:#6b7280;">${isMine ? 'you' : claimedLabel}</small>`
                         : `<span class="status-badge" style="background:#E2E8F0;color:#0F172A;">unclaimed</span>`;
 
                 const workButtons = lockStatus.state === 'completed'
@@ -2215,11 +2462,11 @@
             const submissionDate = submission.submissionDate || submission.createdAt || '';
             const lockStatus = lockStatusFor(submission.id);
             const isMine = lockStatus.lock?.claimedBy === adminDeviceId;
-            const claimedName = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedBy || 'another admin');
+            const claimedLabel = (lockStatus.lock?.claimedByName || lockStatus.lock?.claimedByUsername || lockStatus.lock?.claimedBy || 'another admin');
             const lockBanner = lockStatus.state === 'completed'
                 ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;color:#14532d;font-weight:600;">Completed</div>`
                 : lockStatus.state === 'claimed'
-                    ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;color:#713f12;font-weight:600;">Claimed by ${isMine ? 'you' : claimedName}</div>`
+                    ? `<div style="margin:10px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;color:#713f12;font-weight:600;">Claimed by ${isMine ? 'you' : claimedLabel}</div>`
                     : `<div style="margin:10px 0;padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;color:#111827;font-weight:600;">Unclaimed</div>`;
 
             const claimActions = lockStatus.state === 'completed'
@@ -2927,6 +3174,9 @@
         function logout() {
             localStorage.removeItem('adminLoggedIn');
             localStorage.removeItem('adminLoginTime');
+            localStorage.removeItem('adminName');
+            localStorage.removeItem('adminRole');
+            localStorage.removeItem('adminUsername');
             window.location.href = 'login.html';
         }
 

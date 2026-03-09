@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ezee-notify-sender
+    env: node
+    rootDir: notify-sender
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /

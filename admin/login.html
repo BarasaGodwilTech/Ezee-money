@@ -192,6 +192,10 @@
 
         <form id="loginForm">
             <div class="form-group">
+                <label for="adminUsername">Admin Username</label>
+                <input type="text" id="adminUsername" placeholder="Enter admin username">
+            </div>
+            <div class="form-group">
                 <label for="adminPassword">Admin Password</label>
                 <input type="password" id="adminPassword" placeholder="Enter admin password" required>
             </div>
@@ -207,9 +211,25 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+
     <script>
         // Default admin password (in production, this should be more secure)
         const ADMIN_PASSWORD = 'admin123';
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', function() {
             // Check if already logged in
@@ -228,6 +248,7 @@
         async function handleLogin(e) {
             e.preventDefault();
 
+            const username = (document.getElementById('adminUsername').value || '').trim();
             const password = document.getElementById('adminPassword').value;
             const loginBtn = document.getElementById('loginBtn');
             const loginText = document.getElementById('loginText');
@@ -246,19 +267,59 @@
                 // Simulate authentication delay
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
+                let ok = false;
+                let adminName = '';
+                let adminRole = '';
+                let adminUsername = username;
+
                 if (password === ADMIN_PASSWORD) {
-                    // Set login state
+                    ok = true;
+                    adminName = 'Super Admin';
+                    adminRole = 'super';
+                    adminUsername = '';
+                } else if (username) {
+                    const usernameLc = username.toLowerCase();
+                    let match = null;
+
+                    try {
+                        const snap = await firestore.collection('admins').doc(usernameLc).get();
+                        if (snap.exists) {
+                            match = snap.data() || null;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load admin from Firestore, falling back to admins.json', e);
+                    }
+
+                    if (!match) {
+                        const resp = await fetch('../admins.json', { cache: 'no-store' });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            const admins = Array.isArray(data.admins) ? data.admins : [];
+                            match = admins.find(a => String(a.username || '').toLowerCase() === usernameLc) || null;
+                        }
+                    }
+
+                    if (match && String(match.password || '') === password) {
+                        ok = true;
+                        adminName = String(match.name || match.username || 'Admin');
+                        adminRole = 'admin';
+                    }
+                }
+
+                if (ok) {
                     localStorage.setItem('adminLoggedIn', 'true');
                     localStorage.setItem('adminLoginTime', new Date().toISOString());
+                    localStorage.setItem('adminName', adminName);
+                    localStorage.setItem('adminRole', adminRole);
+                    localStorage.setItem('adminUsername', adminUsername);
 
                     showAlert('Login successful! Redirecting...', 'success');
 
-                    // Redirect to dashboard
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 1500);
                 } else {
-                    showAlert('Invalid admin password', 'error');
+                    showAlert('Invalid credentials', 'error');
                 }
 
             } catch (error) {

@@ -542,6 +542,7 @@
         firebase.initializeApp(firebaseConfig);
         const firestore = firebase.firestore();
         let notifySenderBaseUrl = '';
+        let notifySenderSecret = '';
         // Configuration
         let githubConfig = {
             repoOwner: 'BarasaGodwilTech',
@@ -575,7 +576,7 @@
         const uploadStatus = document.getElementById('uploadStatus');
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', async function() {
             loadAgentInfo();
             githubService = new GitHubService();
 
@@ -610,6 +611,11 @@
                     if (data.senderBaseUrl) {
                         notifySenderBaseUrl = String(data.senderBaseUrl || '').trim();
                     }
+                    if (data.senderSecret) {
+                        notifySenderSecret = String(data.senderSecret || '').trim();
+                    }
+                } else {
+                    await bootstrapNotificationConfigIfMissing();
                 }
             } catch (e) {
                 console.warn('Failed to load notification sender config from Firebase (continuing):', e);
@@ -620,6 +626,25 @@
             setupFormSubmission();
             initializeRealTimeService();
         });
+
+        async function bootstrapNotificationConfigIfMissing() {
+            try {
+                const baseUrl = String(localStorage.getItem('ezeeNotifySenderBaseUrl') || '').trim();
+                const secret = String(localStorage.getItem('ezeeNotifySenderSecret') || '').trim();
+                if (!baseUrl || !secret) return;
+
+                const ref = firestore.collection('ezeeConfig').doc('notifications');
+                await ref.set({
+                    senderBaseUrl: baseUrl,
+                    senderSecret: secret
+                }, { merge: true });
+
+                notifySenderBaseUrl = baseUrl;
+                notifySenderSecret = secret;
+            } catch (e) {
+                console.warn('Failed to bootstrap notification config (continuing):', e);
+            }
+        }
 
         
         function loadAgentInfo() {
@@ -885,6 +910,10 @@
             const clientName = submissionPayload?.clientInfo?.fullName || submissionPayload?.fullName || '';
             const agentScCode = submissionPayload?.submittedBy?.agentScCode || submissionPayload?.agentInfo?.scCode || '';
 
+            if (!notifySenderBaseUrl || !notifySenderSecret) {
+                await bootstrapNotificationConfigIfMissing();
+            }
+
             // External sender URL (Render). Example:
             // localStorage.setItem('ezeeNotifySenderBaseUrl', 'https://your-service.onrender.com')
             const baseUrl = (notifySenderBaseUrl || (localStorage.getItem('ezeeNotifySenderBaseUrl') || '')).trim();
@@ -896,6 +925,11 @@
             const headers = {
                 'Content-Type': 'application/json'
             };
+
+            const secret = (notifySenderSecret || (localStorage.getItem('ezeeNotifySenderSecret') || '')).trim();
+            if (secret) {
+                headers['X-Ezee-Notify-Secret'] = secret;
+            }
 
             const res = await fetch(url, {
                 method: 'POST',
