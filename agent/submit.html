@@ -623,7 +623,18 @@
 
             setupPhotoUploads();
             initializeForm();
-            setupFormSubmission();
+            const formEl = document.getElementById('agentForm');
+            if (formEl) {
+                formEl.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    handleSubmit();
+                });
+            } else if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleSubmit();
+                });
+            }
             initializeRealTimeService();
         });
 
