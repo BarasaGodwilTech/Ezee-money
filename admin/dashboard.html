@@ -1113,14 +1113,17 @@
         const ADMIN_DEVICES_COLLECTION = 'adminDevices';
         let messaging = null;
         let fcmToken = null;
+        let fcmSwRegistration = null;
 
         async function registerServiceWorkers() {
             try {
                 if (!('serviceWorker' in navigator)) return;
                 // Generic SW for offline fallback
-                try { await navigator.serviceWorker.register('../service-worker.js'); } catch (e) {}
+                try { await navigator.serviceWorker.register('/service-worker.js'); } catch (e) {}
                 // FCM background SW must be at origin root scope
-                await navigator.serviceWorker.register('../firebase-messaging-sw.js');
+                fcmSwRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                // Ensure the SW is active before we request a push subscription
+                await navigator.serviceWorker.ready;
             } catch (e) {
                 console.warn('Service worker registration failed:', e);
             }
@@ -1164,7 +1167,10 @@
                 }
 
                 const msg = await ensureMessaging();
-                const token = await msg.getToken({ vapidKey: VAPID_KEY });
+                const token = await msg.getToken({
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: fcmSwRegistration || undefined
+                });
                 if (!token) {
                     showAlert('Failed to get notification token.', 'error');
                     return;
