@@ -31,8 +31,16 @@
       "password": "Ezeemoney2026",
       "status": "active",
       "createdAt": "2026-03-05T11:43:37.258Z"
+    },
+    {
+      "id": "1772863855905",
+      "fullName": "Kyeswa Shakimu",
+      "scCode": "35845785",
+      "password": "EzeeMoney2026",
+      "status": "active",
+      "createdAt": "2026-03-07T06:10:55.908Z"
     }
   ],
-  "lastUpdated": "2026-03-05T11:43:37.258Z",
-  "totalAgents": 4
+  "lastUpdated": "2026-03-07T06:10:55.973Z",
+  "totalAgents": 5
 }
