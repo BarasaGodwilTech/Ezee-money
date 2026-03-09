@@ -317,10 +317,25 @@
             background: #dc3545;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+        }
+
+        .performance-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .performance-btn:hover {
+            background: #1e40af;
         }
         
         .logout-btn:hover {
@@ -342,7 +357,10 @@
             <div>
                 <strong>Agent:</strong> <span id="agentName">Loading...</span>
             </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <div>
+                <button class="performance-btn" onclick="goToPerformance()">View My Performance</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
         </div>
 
         <div class="form-container">
@@ -1106,6 +1124,10 @@
             localStorage.removeItem('agentInfo');
             localStorage.removeItem('agentLoggedIn');
             window.location.href = 'login.html';
+        }
+
+        function goToPerformance() {
+            window.location.href = 'performance.html';
         }
     </script>
 </body>

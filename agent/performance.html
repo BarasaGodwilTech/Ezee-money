@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Performance - Ezee Money</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 18px;
+        }
+        .header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-dark);
+        }
+        .sub {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-muted { background: #eef2ff; color: #1e40af; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .pill {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: #f9fafb;
+            max-width: 100%;
+        }
+        .pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .pill.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .pill.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .stat .label { font-size: 12px; color: var(--muted); }
+        .stat .value { font-size: 22px; font-weight: 800; color: var(--primary-dark); margin-top: 4px; }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .card-head {
+            display:flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .card-head h2 { margin: 0; font-size: 14px; }
+        .help { font-size: 12px; color: var(--muted); }
+
+        input[type="text"], select {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width:100%; border-collapse: collapse; }
+        th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f9fafb; font-weight: 800; }
+
+        .badge {
+            display:inline-flex;
+            align-items:center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .badge.active { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .badge.inactive { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .badge.activated { border-color:#bfdbfe; background:#eff6ff; color:#1e40af; }
+
+        .muted { color: var(--muted); font-size: 12px; }
+        .right { text-align: right; }
+
+        .alert {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Agent Performance</h1>
+                <div class="sub" id="agentSubtitle">Loading agent...</div>
+            </div>
+            <div class="row">
+                <div class="pill" id="cfgStatus">● Loading config...</div>
+                <button class="btn btn-muted" id="btnRefresh">Refresh</button>
+                <button class="btn btn-danger" id="btnLogout">Logout</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="label">Clients Registered</div>
+                <div class="value" id="statClients">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Active Clients (15+ txns last week)</div>
+                <div class="value" id="statActive">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Activated Clients (min float marked)</div>
+                <div class="value" id="statActivated">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Last Update</div>
+                <div class="value" style="font-size:14px;font-weight:700;color:#111827;" id="statUpdated">—</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <h2>My Clients</h2>
+                    <div class="help">Shows only clients you registered. SC codes & activity update after super admin uploads a report screenshot.</div>
+                </div>
+                <div class="row" style="min-width:260px;">
+                    <input type="text" id="search" placeholder="Search by name, phone, SC code" />
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phone</th>
+                            <th>Client</th>
+                            <th>SC Code</th>
+                            <th class="right">Txns Last Week</th>
+                            <th class="right">Value Last Week</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTbody">
+                        <tr><td colspan="6" class="muted">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="alert" class="alert" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="../js/github-service.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        let githubService;
+        let agentInfo;
+
+        let portfolio = null; // { generatedAt, rows: [...] }
+        let activations = null; // { clients: { [submissionId]: {activated, floatAmount,...}} }
+        let submissions = [];
+
+        function showAlert(message, type) {
+            const el = document.getElementById('alert');
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function hideAlert() {
+            const el = document.getElementById('alert');
+            el.style.display = 'none';
+        }
+
+        function setCfgStatus(text, variant) {
+            const el = document.getElementById('cfgStatus');
+            el.textContent = text;
+            el.className = 'pill ' + (variant || '');
+        }
+
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data() || {};
+                return data.github || null;
+            } catch (e) {
+                console.warn('Failed to load GitHub config from Firebase:', e);
+                return null;
+            }
+        }
+
+        function normalizeName(s) {
+            return String(s || '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+        }
+
+        function normalizeDigits(s) {
+            return String(s || '').replace(/\D/g, '');
+        }
+
+        function formatMoneyUGX(n) {
+            if (n === null || n === undefined || n === '') return '';
+            const num = Number(n);
+            if (!Number.isFinite(num)) return '';
+            return num.toLocaleString() + ' UGX';
+        }
+
+        function buildPortfolioIndex(rows) {
+            // Because screenshot rows are per agent/client line, we try match by:
+            // 1) exact SC code match with client phoneNumber
+            // 2) fallback: client fullName contained in row agentName (OCR often returns names)
+            const bySc = new Map();
+            const byName = new Map();
+
+            for (const r of (rows || [])) {
+                const sc = normalizeDigits(r.scCode);
+                if (sc) bySc.set(sc, r);
+
+                const nm = normalizeName(r.agentName);
+                if (nm) byName.set(nm, r);
+            }
+
+            return { bySc, byName };
+        }
+
+        function getClientPortfolioRow(client, idx) {
+            // Client SC code is expected to be generated later; in screenshot it appears under SC Code.
+            // We don't have a dedicated field in submissions yet. We'll attempt to match:
+            // - if portfolio scCode equals client.phoneNumber digits
+            // - else if portfolio agentName roughly equals client fullName
+            const phoneDigits = normalizeDigits(client.phoneNumber);
+            if (phoneDigits && idx.bySc.has(phoneDigits)) return idx.bySc.get(phoneDigits);
+
+            const nameKey = normalizeName(client.fullName);
+            if (nameKey && idx.byName.has(nameKey)) return idx.byName.get(nameKey);
+
+            // Fuzzy contains
+            if (nameKey) {
+                for (const [k, r] of idx.byName.entries()) {
+                    if (k.includes(nameKey) || nameKey.includes(k)) return r;
+                }
+            }
+
+            return null;
+        }
+
+        function getMyClientSubmissions() {
+            const myId = agentInfo && (agentInfo.id || agentInfo.agentId);
+            if (!myId) return [];
+
+            return (submissions || []).filter(s => {
+                const submittedBy = s.submittedBy || {};
+                return String(submittedBy.agentId || '') === String(myId);
+            });
+        }
+
+        function uniqClientsFromSubmissions(mySubs) {
+            const byPhone = new Map();
+            for (const s of (mySubs || [])) {
+                const c = s.clientInfo || {};
+                const phone = String(c.phoneNumber || s.personalNumber || '').trim();
+                if (!phone) continue;
+                if (!byPhone.has(phone)) {
+                    byPhone.set(phone, { submissionId: s.id, client: c, submission: s });
+                }
+            }
+            return Array.from(byPhone.values());
+        }
+
+        function render() {
+            hideAlert();
+
+            const tbody = document.getElementById('clientsTbody');
+            const search = normalizeName(document.getElementById('search').value);
+
+            const mySubs = getMyClientSubmissions();
+            const clients = uniqClientsFromSubmissions(mySubs);
+
+            const idx = buildPortfolioIndex(portfolio && portfolio.rows ? portfolio.rows : []);
+
+            const rows = [];
+            let activeCount = 0;
+            let activatedCount = 0;
+
+            for (const item of clients) {
+                const client = item.client || {};
+                const phone = client.phoneNumber || '';
+                const name = client.fullName || '';
+
+                const p = getClientPortfolioRow(client, idx);
+                const scCode = p ? (p.scCode || '') : '';
+                const txns = p ? p.txnsLastWeek : null;
+                const value = p ? p.valueLastWeekUGX : null;
+
+                const isActive = (typeof txns === 'number' ? txns : parseInt(txns || '0', 10)) >= 15;
+                if (isActive) activeCount++;
+
+                const act = activations && activations.clients ? activations.clients[item.submissionId] : null;
+                const isActivated = !!(act && act.activated);
+                if (isActivated) activatedCount++;
+
+                const statusBadges = [
+                    `<span class="badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span>`,
+                    isActivated ? `<span class="badge activated">Activated</span>` : ''
+                ].filter(Boolean).join(' ');
+
+                const key = normalizeName(name + ' ' + phone + ' ' + scCode);
+                if (search && !key.includes(search)) continue;
+
+                rows.push(`
+                    <tr>
+                        <td>${phone}</td>
+                        <td>${name}</td>
+                        <td>${scCode}</td>
+                        <td class="right">${txns ?? ''}</td>
+                        <td class="right">${formatMoneyUGX(value)}</td>
+                        <td>${statusBadges}</td>
+                    </tr>
+                `);
+            }
+
+            document.getElementById('statClients').textContent = String(clients.length);
+            document.getElementById('statActive').textContent = String(activeCount);
+            document.getElementById('statActivated').textContent = String(activatedCount);
+            document.getElementById('statUpdated').textContent = (portfolio && portfolio.generatedAt) ? new Date(portfolio.generatedAt).toLocaleString() : '—';
+
+            if (rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="muted">No clients found</td></tr>';
+            } else {
+                tbody.innerHTML = rows.join('');
+            }
+        }
+
+        async function loadJsonFileFromGitHub(filename) {
+            const data = await githubService.readFile(filename);
+            if (!data || !data.content) return null;
+            return JSON.parse(atob(data.content));
+        }
+
+        async function loadAll() {
+            try {
+                setCfgStatus('● Loading...', '');
+                githubService = new GitHubService();
+
+                const fbCfg = await loadGitConfigFromFirebase();
+                if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                    githubService.saveConfig({
+                        repoOwner: fbCfg.repoOwner,
+                        repoName: fbCfg.repoName,
+                        branchName: fbCfg.branch || 'main',
+                        token: fbCfg.token
+                    });
+                    setCfgStatus('● Configured', 'ok');
+                } else if (githubService.config && githubService.config.token) {
+                    setCfgStatus('● Configured (Local)', 'warn');
+                } else {
+                    setCfgStatus('● Not configured', 'bad');
+                }
+
+                agentInfo = JSON.parse(localStorage.getItem('agentInfo') || 'null');
+                if (!agentInfo) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                document.getElementById('agentSubtitle').textContent = `${agentInfo.fullName || 'Agent'} (${agentInfo.scCode || ''})`;
+
+                // Load submissions
+                try {
+                    const subsData = await loadJsonFileFromGitHub('submissions.json');
+                    const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+                    submissions = Array.isArray(list) ? list : [];
+                } catch (e) {
+                    console.warn('Failed to load submissions from GitHub, trying local cache:', e);
+                    const cached = localStorage.getItem('adminSubmissions');
+                    const parsed = cached ? JSON.parse(cached) : null;
+                    submissions = parsed && parsed.submissions ? parsed.submissions : [];
+                }
+
+                // Load portfolio report
+                try {
+                    portfolio = await loadJsonFileFromGitHub('agent-portfolio.json');
+                } catch (e) {
+                    portfolio = null;
+                }
+
+                // Load activations
+                try {
+                    activations = await loadJsonFileFromGitHub('activations.json');
+                } catch (e) {
+                    activations = null;
+                }
+
+                render();
+            } catch (e) {
+                console.error(e);
+                showAlert('Failed to load performance data: ' + e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                localStorage.removeItem('agentInfo');
+                window.location.href = 'login.html';
+            });
+
+            document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
+            document.getElementById('search').addEventListener('input', () => render());
+
+            loadAll();
+        });
+    </script>
+</body>
+</html>

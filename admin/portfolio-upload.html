@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Upload - Super Admin</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+        .title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .title h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-dark);
+        }
+        .title div {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-muted { background: #eef2ff; color: #1e40af; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 980px) {
+            .grid { grid-template-columns: 420px 1fr; }
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .card h2 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .help {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .form-group { margin-top: 12px; }
+        label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        input[type="text"], input[type="password"], input[type="file"] {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .pill {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: #f9fafb;
+        }
+        .pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .pill.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .pill.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .preview {
+            width: 100%;
+            height: 260px;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            overflow:hidden;
+            background: #f9fafb;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: white;
+        }
+
+        table { width:100%; border-collapse: collapse; }
+        th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f9fafb; font-weight: 700; color: #111827; }
+        .muted { color: var(--muted); font-size: 12px; }
+        .right { text-align: right; }
+
+        .alert {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <h1>Portfolio Upload</h1>
+                <div>Upload onboarding report screenshots. The system extracts portfolio rows and updates agent dashboards.</div>
+            </div>
+            <div class="row">
+                <button class="btn btn-muted" id="btnBack">Back</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Configuration</h2>
+                <div class="help">
+                    This page uses the shared GitHub configuration stored in Firebase. If Firebase config is missing, it will fall back to local config.
+                </div>
+
+                <div class="form-group">
+                    <div class="row" style="justify-content:space-between;">
+                        <div class="pill" id="cfgStatus">● Loading config...</div>
+                        <button class="btn btn-primary" id="btnTest">Test GitHub</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Screenshot</label>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <div class="preview" id="preview">
+                        No image selected
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <button class="btn btn-primary" id="btnExtract" disabled>Extract Data</button>
+                        <button class="btn btn-primary" id="btnSave" disabled>Save to GitHub</button>
+                    </div>
+                    <div class="help" style="margin-top:8px;">
+                        OCR runs in your browser. Extraction quality depends on screenshot clarity.
+                    </div>
+                </div>
+
+                <div id="alert" class="alert" style="display:none;"></div>
+            </div>
+
+            <div class="card">
+                <h2>Extracted Rows (Preview)</h2>
+                <div class="help">Expected columns: Agent, SC Code, # of Txns Last Week, Value of Txns Last Week.</div>
+
+                <div style="margin-top:10px;" class="muted" id="extractMeta">No data extracted yet.</div>
+
+                <div class="table-container" style="margin-top:10px; overflow-x:auto;">
+                    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+                        <div class="muted" id="editHint">Tip: You can edit rows before saving.</div>
+                        <div class="row">
+                            <button class="btn btn-muted" id="btnAddRow" disabled>Add Row</button>
+                        </div>
+                    </div>
+
+                    <datalist id="clientNamesDatalist"></datalist>
+
+                    <table id="rowsTable">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>SC Code</th>
+                                <th class="right">Txns Last Week</th>
+                                <th class="right">Value Last Week (UGX)</th>
+                                <th class="right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="muted">No extracted rows</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="../js/github-service.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        let githubService;
+        let githubCfg = null;
+
+        let selectedFile = null;
+        let extracted = [];
+        let extractedRawText = '';
+        let knownClients = [];
+        let knownClientIndex = [];
+
+        function showAlert(message, type) {
+            const el = document.getElementById('alert');
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function setCfgStatus(text, variant) {
+            const el = document.getElementById('cfgStatus');
+            el.textContent = text;
+            el.className = 'pill ' + (variant || '');
+        }
+
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data() || {};
+                return data.github || null;
+            } catch (e) {
+                console.warn('Failed to load GitHub config from Firebase:', e);
+                return null;
+            }
+        }
+
+        function normalizeMoneyUGX(text) {
+            const s = String(text || '').trim();
+            if (!s) return null;
+            const cleaned = s
+                .replace(/UGX/gi, '')
+                .replace(/,/g, '')
+                .replace(/\s+/g, '')
+                .trim();
+            const n = Number(cleaned);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function normalizeInt(text) {
+            const cleaned = String(text || '').replace(/,/g, '').trim();
+            const n = parseInt(cleaned, 10);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function renderRows() {
+            const tbody = document.querySelector('#rowsTable tbody');
+            const meta = document.getElementById('extractMeta');
+
+            if (!extracted || extracted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="muted">No extracted rows</td></tr>';
+                meta.textContent = 'No data extracted yet.';
+                document.getElementById('btnAddRow').disabled = true;
+                return;
+            }
+
+            meta.textContent = `Extracted ${extracted.length} rows`;
+
+            document.getElementById('btnAddRow').disabled = false;
+
+            tbody.innerHTML = extracted.map((r, idx) => {
+                const nameVal = (r.matchedClientName || r.agentName || '').trim();
+                const sc = (r.scCode || '').trim();
+                const tx = (r.txnsLastWeek ?? '').toString();
+                const val = (r.valueLastWeekUGX ?? '').toString();
+
+                return `
+                    <tr>
+                        <td style="min-width:240px;">
+                            <input type="text" value="${escapeHtml(nameVal)}" list="clientNamesDatalist" data-row="${idx}" data-field="matchedClientName" style="width:100%;">
+                            <div class="muted" style="margin-top:4px;">${r.matchScore ? 'Match: ' + (Math.round(r.matchScore * 100) + '%') : ''}</div>
+                        </td>
+                        <td style="min-width:140px;">
+                            <input type="text" value="${escapeHtml(sc)}" data-row="${idx}" data-field="scCode" style="width:100%;">
+                        </td>
+                        <td class="right" style="min-width:140px;">
+                            <input type="text" value="${escapeHtml(tx)}" data-row="${idx}" data-field="txnsLastWeek" style="width:100%; text-align:right;">
+                        </td>
+                        <td class="right" style="min-width:180px;">
+                            <input type="text" value="${escapeHtml(val)}" data-row="${idx}" data-field="valueLastWeekUGX" style="width:100%; text-align:right;">
+                        </td>
+                        <td class="right" style="min-width:120px;">
+                            <button class="btn btn-danger" data-action="remove" data-row="${idx}" style="padding:8px 10px;border-radius:10px;">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildClientNamesDatalist() {
+            const dl = document.getElementById('clientNamesDatalist');
+            if (!dl) return;
+            if (!knownClientIndex || knownClientIndex.length === 0) {
+                dl.innerHTML = '';
+                return;
+            }
+            dl.innerHTML = knownClientIndex
+                .map(c => `<option value="${escapeHtml(c.fullName)}"></option>`)
+                .join('');
+        }
+
+        function applyManualEdit(rowIndex, field, value) {
+            const idx = Number(rowIndex);
+            if (!Number.isFinite(idx) || idx < 0 || idx >= extracted.length) return;
+
+            if (field === 'txnsLastWeek') {
+                const n = normalizeInt(value);
+                extracted[idx].txnsLastWeek = n === null ? '' : n;
+                return;
+            }
+            if (field === 'valueLastWeekUGX') {
+                const n = normalizeMoneyUGX(value);
+                extracted[idx].valueLastWeekUGX = n === null ? '' : n;
+                return;
+            }
+
+            extracted[idx][field] = String(value || '').trim();
+
+            if (field === 'matchedClientName') {
+                // if admin typed a valid full name from datalist, attach matchScore=1
+                const key = normalizeNameKey(extracted[idx].matchedClientName);
+                const exists = knownClientIndex && knownClientIndex.some(c => c.key === key);
+                extracted[idx].matchScore = exists ? 1 : extracted[idx].matchScore;
+                extracted[idx].agentName = extracted[idx].matchedClientName;
+            }
+        }
+
+        function removeRow(idx) {
+            const i = Number(idx);
+            if (!Number.isFinite(i) || i < 0 || i >= extracted.length) return;
+            extracted.splice(i, 1);
+            renderRows();
+        }
+
+        function addRow() {
+            extracted.push({
+                agentName: '',
+                matchedClientName: '',
+                scCode: '',
+                txnsLastWeek: '',
+                valueLastWeekUGX: '',
+                currency: 'UGX',
+                matchScore: ''
+            });
+            renderRows();
+        }
+
+        function validateRowsForSave() {
+            const errors = [];
+            for (let i = 0; i < extracted.length; i++) {
+                const r = extracted[i] || {};
+                const name = String(r.matchedClientName || '').trim();
+                const sc = String(r.scCode || '').trim();
+                const tx = normalizeInt(r.txnsLastWeek);
+                const val = normalizeMoneyUGX(r.valueLastWeekUGX);
+
+                if (!name) errors.push(`Row ${i + 1}: missing client name`);
+                if (!sc) errors.push(`Row ${i + 1}: missing SC code`);
+                if (tx === null) errors.push(`Row ${i + 1}: invalid txns`);
+                if (val === null) errors.push(`Row ${i + 1}: invalid value`);
+            }
+            return errors;
+        }
+
+        function normalizeNameKey(s) {
+            return String(s || '')
+                .toLowerCase()
+                .replace(/[^a-z\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function tokenSet(s) {
+            const stop = new Set(['ugx','agent','portfolio','sc','code','txns','txn','last','week','value','of','search','records','report']);
+            return new Set(
+                normalizeNameKey(s)
+                    .split(' ')
+                    .map(t => t.trim())
+                    .filter(t => t && t.length >= 2 && !stop.has(t))
+            );
+        }
+
+        function jaccard(a, b) {
+            if (!a.size || !b.size) return 0;
+            let inter = 0;
+            for (const t of a) if (b.has(t)) inter++;
+            const union = a.size + b.size - inter;
+            return union ? inter / union : 0;
+        }
+
+        function buildKnownClientIndex(submissions) {
+            const map = new Map();
+            for (const s of submissions || []) {
+                const c = s.clientInfo || {};
+                const fullName = String(c.fullName || '').trim();
+                if (!fullName) continue;
+                const key = normalizeNameKey(fullName);
+                if (!key) continue;
+                if (!map.has(key)) {
+                    map.set(key, {
+                        fullName,
+                        key,
+                        tokens: tokenSet(fullName),
+                        phoneNumber: String(c.phoneNumber || '').trim(),
+                        submissionId: s.id
+                    });
+                }
+            }
+            return Array.from(map.values());
+        }
+
+        function bestClientMatch(extractedName) {
+            const nameTokens = tokenSet(extractedName);
+            if (!nameTokens.size || !knownClientIndex.length) return null;
+
+            let best = null;
+            let bestScore = 0;
+
+            for (const c of knownClientIndex) {
+                const score = jaccard(nameTokens, c.tokens);
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = c;
+                }
+            }
+
+            // Stricter threshold for reliability
+            if (!best || bestScore < 0.6) return null;
+            return { client: best, score: bestScore };
+        }
+
+        function applyWhitelistMatching(rows) {
+            if (!knownClientIndex || knownClientIndex.length === 0) return rows || [];
+            const matched = [];
+            for (const r of (rows || [])) {
+                const candidate = r && r.nameCandidate ? r.nameCandidate : (r && r.agentName ? r.agentName : '');
+                const match = bestClientMatch(candidate);
+                if (!match) continue;
+                matched.push({
+                    ...r,
+                    matchedClientName: match.client.fullName,
+                    matchScore: match.score
+                });
+            }
+            return matched;
+        }
+
+        function parsePortfolioTextToRows(text) {
+            // Robust heuristic parser for scrolled screenshots.
+            // We only accept the 4 columns we care about:
+            // Agent (name), SC Code (digits), #Txns (int), Value (amount + UGX).
+            // Rules:
+            // - Join multi-line names (name line followed by numeric columns line).
+            // - Ignore trailing columns like the "La" column and constant "20".
+            // - Require UGX to be present somewhere for Value; if UGX is cut off, ignore the row.
+            // - Ignore partial rows (missing any of the 4 values).
+
+            const rawLines = String(text || '')
+                .split(/\r?\n/)
+                .map(l => l.replace(/\s+/g, ' ').trim())
+                .filter(Boolean);
+
+            const isHeader = (line) => {
+                const s = String(line || '').toLowerCase();
+                if (!s) return true;
+                if (s.includes('onboarding report')) return true;
+                if (s.includes('agent portfolio')) return true;
+                if (s === 'search') return true;
+                if (s.includes('records')) return true;
+                if (s.includes('sc code') && s.includes('txns')) return true;
+                if (s.includes('value of') && s.includes('txns')) return true;
+                if (s.includes('txns last') && s.includes('week')) return true;
+                if (s.includes('sc') && s.includes('code') && s.includes('week')) return true;
+                return false;
+            };
+
+            const lines = rawLines.filter(l => !isHeader(l));
+
+            const rows = [];
+            let nameCarry = [];
+
+            const extractRowFrom = (candidate, hasUgx) => {
+                // Candidate could be like:
+                // "BARASA GODWILL 75701323 7 180,000 UGX 20"
+                // We ignore trailing tokens after UGX.
+                const m = candidate.match(/^(.+?)\s+(\d{5,})\s+(\d{1,4})\s+([\d,]+)\s*(UGX)?\b/i);
+                if (!m) return null;
+
+                const agentName = String(m[1] || '').trim();
+                const scCode = String(m[2] || '').trim();
+                const txns = normalizeInt(m[3]);
+                const value = normalizeMoneyUGX(m[4]);
+                const ugxPresent = hasUgx || !!m[5] || /\bUGX\b/i.test(candidate);
+
+                if (!agentName) return null;
+                if (!scCode) return null;
+                if (txns === null) return null;
+                if (value === null) return null;
+                if (!ugxPresent) return null;
+
+                // Basic sanity checks to reduce OCR mistakes
+                if (agentName.length < 3) return null;
+                if (txns < 0 || txns > 2000) return null;
+                if (value < 0 || value > 1000000000) return null;
+
+                // Reject rows that still look like headers
+                if (/\bagent\b/i.test(agentName) && /\bcode\b/i.test(agentName)) return null;
+                if (/\bsc\b/i.test(agentName) && /\btxns\b/i.test(agentName)) return null;
+
+                const row = {
+                    agentName,
+                    scCode,
+                    txnsLastWeek: txns,
+                    valueLastWeekUGX: value,
+                    currency: 'UGX'
+                };
+
+                // If we have known clients loaded, attempt to match extracted name to a known full name.
+                if (knownClientIndex && knownClientIndex.length) {
+                    const match = bestClientMatch(agentName);
+                    if (!match) return null;
+                    row.matchedClientName = match.client.fullName;
+                    row.matchScore = match.score;
+                }
+
+                return row;
+            };
+
+            const looksLikeNameOnly = (line) => {
+                // A name line often has letters/spaces and no long digit blocks
+                if (!line) return false;
+                if (/\d{5,}/.test(line)) return false;
+                if (/\bUGX\b/i.test(line)) return false;
+                // Must have at least 2 words
+                const words = line.split(' ').filter(Boolean);
+                if (words.length < 2) return false;
+                // Mostly letters
+                const letters = (line.match(/[A-Za-z]/g) || []).length;
+                const chars = line.length;
+                return chars > 4 && letters / chars > 0.5;
+            };
+
+            const looksLikeNumericLine = (line) => {
+                // Numeric line contains SC code + txns + amount (UGX may be on same or next line)
+                // We use this as the row boundary anchor.
+                return /\b\d{5,}\b\s+\b\d{1,4}\b\s+\b[\d,]+\b/.test(line);
+            };
+
+            const isGarbage = (line) => {
+                const s = String(line || '').toLowerCase();
+                if (!s) return true;
+                // common OCR header fragments
+                if (s.includes('sc last last')) return true;
+                if (s.includes('agent code week')) return true;
+                if (s.includes('txns last week')) return true;
+                if (s === 'ugx') return true;
+                // navigation/footer hints
+                if (s.includes('transactions') || s.includes('agents') || s.includes('reports') || s.includes('more')) return true;
+                return false;
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (isGarbage(line)) continue;
+
+                // Row boundary: numeric line anchors a row, everything before it (since last numeric line) is the name.
+                if (looksLikeNumericLine(line)) {
+                    const carriedName = nameCarry.join(' ').trim();
+                    nameCarry = [];
+
+                    const combined = carriedName ? (carriedName + ' ' + line) : line;
+
+                    // Ensure UGX is present either on this line or next line (OCR may split)
+                    const hasUgxNow = /\bUGX\b/i.test(combined);
+                    let candidate = combined;
+                    let hasUgx = hasUgxNow;
+
+                    if (!hasUgx && i + 1 < lines.length && /\bUGX\b/i.test(lines[i + 1])) {
+                        candidate = (combined + ' ' + lines[i + 1]).trim();
+                        hasUgx = true;
+                        i++; // consume next line
+                    }
+
+                    const row = extractRowFrom(candidate, hasUgx);
+                    if (row) rows.push(row);
+                    continue;
+                }
+
+                // Accumulate possible name lines until we hit the numeric line.
+                if (looksLikeNameOnly(line)) {
+                    nameCarry.push(line);
+                    // Cap to avoid dragging headers/irrelevant lines, but allow long names
+                    while (nameCarry.length > 4) nameCarry.shift();
+                    continue;
+                }
+
+                // If the line is neither name-only nor numeric, it may still contain full row; try direct parse.
+                const hasUgxLine = /\bUGX\b/i.test(line);
+                const directRow = extractRowFrom(line, hasUgxLine);
+                if (directRow) {
+                    rows.push(directRow);
+                    nameCarry = [];
+                }
+            }
+
+            // Post-process: de-duplicate by scCode, keep the row with the largest txns (usually most complete)
+            const bySc = new Map();
+            for (const r of rows) {
+                const key = String(r.scCode || '').trim();
+                if (!key) continue;
+                const prev = bySc.get(key);
+                if (!prev) {
+                    bySc.set(key, r);
+                    continue;
+                }
+                const prevTxns = typeof prev.txnsLastWeek === 'number' ? prev.txnsLastWeek : normalizeInt(prev.txnsLastWeek);
+                const thisTxns = typeof r.txnsLastWeek === 'number' ? r.txnsLastWeek : normalizeInt(r.txnsLastWeek);
+                if ((thisTxns ?? 0) > (prevTxns ?? 0)) {
+                    bySc.set(key, r);
+                }
+            }
+
+            return Array.from(bySc.values());
+        }
+
+        async function loadSubmissionsForMatching() {
+            try {
+                const data = await githubService.readFile('submissions.json');
+                if (!data || !data.content) {
+                    knownClients = [];
+                    knownClientIndex = [];
+                    return;
+                }
+
+                const parsed = JSON.parse(atob(data.content));
+                const subs = parsed && parsed.submissions ? parsed.submissions : (Array.isArray(parsed) ? parsed : []);
+                knownClients = Array.isArray(subs) ? subs : [];
+                knownClientIndex = buildKnownClientIndex(knownClients);
+                buildClientNamesDatalist();
+            } catch (e) {
+                console.warn('Could not load submissions.json for matching:', e);
+                knownClients = [];
+                knownClientIndex = [];
+                buildClientNamesDatalist();
+            }
+        }
+
+        async function ocrFile(file) {
+            const imgUrl = URL.createObjectURL(file);
+            try {
+                const result = await Tesseract.recognize(imgUrl, 'eng');
+                return {
+                    text: (result && result.data && result.data.text) ? result.data.text : '',
+                    words: (result && result.data && Array.isArray(result.data.words)) ? result.data.words : []
+                };
+            } finally {
+                URL.revokeObjectURL(imgUrl);
+            }
+        }
+
+        function groupWordsByRow(words) {
+            const cleaned = (words || [])
+                .filter(w => w && w.text)
+                .map(w => {
+                    const bbox = w.bbox || {};
+                    const y0 = typeof bbox.y0 === 'number' ? bbox.y0 : null;
+                    const y1 = typeof bbox.y1 === 'number' ? bbox.y1 : null;
+                    const x0 = typeof bbox.x0 === 'number' ? bbox.x0 : null;
+                    const x1 = typeof bbox.x1 === 'number' ? bbox.x1 : null;
+                    const cy = (y0 !== null && y1 !== null) ? (y0 + y1) / 2 : null;
+                    const cx = (x0 !== null && x1 !== null) ? (x0 + x1) / 2 : null;
+                    return {
+                        text: String(w.text || '').trim(),
+                        confidence: typeof w.confidence === 'number' ? w.confidence : null,
+                        bbox: { x0, x1, y0, y1, cx, cy }
+                    };
+                })
+                .filter(w => w.text && w.bbox.cy !== null && w.bbox.cx !== null);
+
+            cleaned.sort((a, b) => a.bbox.cy - b.bbox.cy);
+
+            const rows = [];
+            const rowThreshold = 22; // pixels; tolerant for different devices / font sizes
+
+            for (const w of cleaned) {
+                const last = rows[rows.length - 1];
+                if (!last || Math.abs(w.bbox.cy - last.cy) > rowThreshold) {
+                    rows.push({ cy: w.bbox.cy, words: [w] });
+                } else {
+                    // weighted average center
+                    last.cy = (last.cy * last.words.length + w.bbox.cy) / (last.words.length + 1);
+                    last.words.push(w);
+                }
+            }
+
+            for (const r of rows) {
+                r.words.sort((a, b) => a.bbox.cx - b.bbox.cx);
+            }
+
+            return rows;
+        }
+
+        function isHeaderRowText(s) {
+            const t = String(s || '').toLowerCase();
+            if (!t) return true;
+            if (t.includes('onboarding')) return true;
+            if (t.includes('agent portfolio')) return true;
+            if (t.includes('search')) return true;
+            if (t.includes('records')) return true;
+            if (t.includes('agent') && t.includes('sc')) return true;
+            if (t.includes('sc') && t.includes('code')) return true;
+            if (t.includes('txns') && t.includes('week')) return true;
+            if (t.includes('value') && t.includes('week')) return true;
+            if (t === 'ugx') return true;
+            return false;
+        }
+
+        function parseRowsFromWordLayout(words) {
+            const rows = groupWordsByRow(words);
+
+            const parsed = [];
+            // Intentionally do not carry name parts across rows.
+            // Carrying causes joined/merged names when OCR row grouping is imperfect.
+
+            const stopTokens = new Set(['agent','sc','code','txns','txn','last','week','value','of','ugx','la','more','reports','transactions','agents','search','records']);
+            const isNoiseToken = (tok) => {
+                const t = String(tok || '').toLowerCase();
+                if (!t) return true;
+                if (stopTokens.has(t)) return true;
+                if (t === '20') return true;
+                if (t.length === 1) return true;
+                return false;
+            };
+
+            const digits = (s) => String(s || '').replace(/\D/g, '');
+            const isIntToken = (s) => /^\d{1,4}$/.test(digits(s));
+            const isScToken = (s) => /^\d{7,}$/.test(digits(s));
+            const isMoneyToken = (s) => /^\d{1,3}(,\d{3})+$/.test(String(s || '').trim()) || /^\d{3,}$/.test(digits(s));
+
+            for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+                const r = rows[rowIdx];
+                const rowText = r.words.map(w => w.text).join(' ');
+                if (isHeaderRowText(rowText)) continue;
+
+                // Identify SC code token index (a long number)
+                const tokens = r.words.map(w => w.text);
+                let scIdx = -1;
+                for (let i = 0; i < tokens.length; i++) {
+                    if (isScToken(tokens[i])) {
+                        scIdx = i;
+                        break;
+                    }
+                }
+
+                // If this row has no SC code, it is not a data row we can safely use.
+                // Skipping avoids accidentally joining names across rows.
+                if (scIdx === -1) {
+                    continue;
+                }
+
+                const scCode = digits(tokens[scIdx]);
+
+                // Find txns after SC
+                let txns = null;
+                for (let i = scIdx + 1; i < tokens.length; i++) {
+                    const t = digits(tokens[i]);
+                    if (isIntToken(tokens[i])) {
+                        txns = parseInt(t, 10);
+                        break;
+                    }
+                }
+
+                // Find value after txns
+                let value = null;
+                let valueToken = null;
+                if (txns !== null) {
+                    const txnsPos = tokens.findIndex((t, idx) => idx > scIdx && digits(t) === String(txns));
+                    for (let i = Math.max(txnsPos + 1, scIdx + 1); i < tokens.length; i++) {
+                        if (isMoneyToken(tokens[i])) {
+                            valueToken = tokens[i];
+                            value = normalizeMoneyUGX(tokens[i]);
+                            break;
+                        }
+                    }
+                }
+
+                // UGX can appear in a separate line/cell; allow it to be on a nearby row too.
+                const hasUGX = /\bUGX\b/i.test(rowText)
+                    || (rows[rowIdx + 1] ? /\bUGX\b/i.test(rows[rowIdx + 1].words.map(w => w.text).join(' ')) : false)
+                    || (rows[rowIdx - 1] ? /\bUGX\b/i.test(rows[rowIdx - 1].words.map(w => w.text).join(' ')) : false);
+                if (!scCode || txns === null || value === null || !hasUGX) {
+                    continue;
+                }
+
+                // Name candidate comes ONLY from tokens before SC on the same row.
+                // We'll match it against submissions.json to assign the full correct name.
+                const beforeSc = tokens.slice(0, scIdx)
+                    .filter(t => !isNoiseToken(t) && !/\d/.test(t))
+                    .join(' ')
+                    .trim();
+                const candidateRaw = beforeSc;
+                const candidateClean = String(candidateRaw || '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                // Drop obvious header contamination in the candidate
+                const candidateFiltered = candidateClean
+                    .replace(/\b(onboarding|report|portfolio|search|records)\b/gi, ' ')
+                    .replace(/\b(sc|code|txns|txn|last|week|value|of|ugx|la)\b/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                // If candidate still looks like a header fragment, drop the row.
+                if (!candidateFiltered || candidateFiltered.length < 3) continue;
+                if (/\bvalue\b/i.test(candidateFiltered) || /\btxns\b/i.test(candidateFiltered) || /\bcode\b/i.test(candidateFiltered)) continue;
+
+                const row = {
+                    // keep original candidate for debugging
+                    agentName: candidateFiltered,
+                    nameCandidate: candidateFiltered,
+                    scCode,
+                    txnsLastWeek: txns,
+                    valueLastWeekUGX: value,
+                    currency: 'UGX'
+                };
+
+                // Require a whitelist match to accept this row (prevents header/junk names)
+                if (knownClientIndex && knownClientIndex.length) {
+                    const match = bestClientMatch(row.nameCandidate);
+                    if (!match) continue;
+                    row.matchedClientName = match.client.fullName;
+                    row.matchScore = match.score;
+                } else {
+                    // No known clients loaded -> without matching, names are unreliable, so drop.
+                    continue;
+                }
+
+                parsed.push(row);
+            }
+
+            // de-duplicate by scCode
+            const bySc = new Map();
+            for (const r of parsed) {
+                if (!r.scCode) continue;
+                const prev = bySc.get(r.scCode);
+                if (!prev || (r.txnsLastWeek ?? 0) > (prev.txnsLastWeek ?? 0)) {
+                    bySc.set(r.scCode, r);
+                }
+            }
+            return Array.from(bySc.values());
+        }
+
+        async function saveExtractedToGitHub() {
+            if (!githubService || !githubService.config || !githubService.config.token) {
+                throw new Error('GitHub config missing');
+            }
+            const payload = {
+                generatedAt: new Date().toISOString(),
+                rows: extracted,
+                source: {
+                    type: 'screenshot_ocr'
+                }
+            };
+
+            const content = btoa(JSON.stringify(payload, null, 2));
+            await githubService.uploadFile('agent-portfolio.json', content, 'Update agent portfolio metrics');
+        }
+
+        async function init() {
+            githubService = new GitHubService();
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = 'super-admin.html';
+            });
+
+            const fbCfg = await loadGitConfigFromFirebase();
+            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                githubCfg = {
+                    repoOwner: fbCfg.repoOwner,
+                    repoName: fbCfg.repoName,
+                    branchName: fbCfg.branch || 'main',
+                    token: fbCfg.token
+                };
+                githubService.saveConfig(githubCfg);
+                setCfgStatus('● Configured (Firebase)', 'ok');
+            } else if (githubService.config && githubService.config.token) {
+                setCfgStatus('● Configured (Local)', 'warn');
+            } else {
+                setCfgStatus('● Not configured', 'bad');
+            }
+
+            // Load known client names to improve OCR reliability
+            await loadSubmissionsForMatching();
+
+            document.getElementById('btnAddRow').addEventListener('click', () => addRow());
+
+            // Manual edit handlers
+            document.querySelector('#rowsTable tbody').addEventListener('input', (e) => {
+                const target = e.target;
+                if (!target || !target.dataset) return;
+                const row = target.dataset.row;
+                const field = target.dataset.field;
+                if (row === undefined || !field) return;
+                applyManualEdit(row, field, target.value);
+            });
+
+            document.querySelector('#rowsTable tbody').addEventListener('click', (e) => {
+                const btn = e.target;
+                if (!btn || !btn.dataset) return;
+                if (btn.dataset.action === 'remove') {
+                    removeRow(btn.dataset.row);
+                }
+            });
+
+            document.getElementById('btnTest').addEventListener('click', async () => {
+                try {
+                    showAlert('Testing GitHub connection...', '');
+                    await githubService.testConnection();
+                    showAlert('GitHub connection successful.', 'success');
+                } catch (e) {
+                    showAlert('GitHub connection failed: ' + e.message, 'error');
+                }
+            });
+
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                selectedFile = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                extracted = [];
+                extractedRawText = '';
+                renderRows();
+
+                const preview = document.getElementById('preview');
+                preview.innerHTML = 'No image selected';
+
+                document.getElementById('btnExtract').disabled = !selectedFile;
+                document.getElementById('btnSave').disabled = true;
+
+                if (selectedFile) {
+                    const url = URL.createObjectURL(selectedFile);
+                    preview.innerHTML = `<img src="${url}">`;
+                    preview.querySelector('img').onload = () => URL.revokeObjectURL(url);
+                }
+            });
+
+            document.getElementById('btnExtract').addEventListener('click', async () => {
+                if (!selectedFile) return;
+                try {
+                    document.getElementById('btnExtract').disabled = true;
+                    showAlert('Running OCR... this can take 10-30 seconds.', '');
+                    const ocr = await ocrFile(selectedFile);
+                    extractedRawText = ocr.text;
+
+                    // Prefer layout-based parsing; fall back to text parsing if words are missing.
+                    let parsedRows = (ocr.words && ocr.words.length)
+                        ? parseRowsFromWordLayout(ocr.words)
+                        : [];
+
+                    // If layout parsing yields nothing, fall back to text parsing (more permissive).
+                    if (!parsedRows || parsedRows.length === 0) {
+                        parsedRows = parsePortfolioTextToRows(ocr.text);
+                    }
+
+                    // Apply whitelist matching after parsing (reduces false positives).
+                    extracted = applyWhitelistMatching(parsedRows);
+
+                    renderRows();
+                    if (extracted.length === 0) {
+                        showAlert('OCR finished but no matching rows were detected. Tips: take a clearer screenshot, include the full table rows (especially UGX), and ensure the client names exist in submissions.json.', 'error');
+                        document.getElementById('btnSave').disabled = true;
+                    } else {
+                        showAlert('OCR finished. Rows were matched against your submissions list for accuracy. Review extracted rows, then Save to GitHub.', 'success');
+                        document.getElementById('btnSave').disabled = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showAlert('OCR failed: ' + e.message, 'error');
+                } finally {
+                    document.getElementById('btnExtract').disabled = !selectedFile;
+                }
+            });
+
+            document.getElementById('btnSave').addEventListener('click', async () => {
+                try {
+                    const errors = validateRowsForSave();
+                    if (errors.length) {
+                        showAlert(errors.slice(0, 5).join(' | '), 'error');
+                        return;
+                    }
+                    document.getElementById('btnSave').disabled = true;
+                    showAlert('Saving agent-portfolio.json to GitHub...', '');
+                    await saveExtractedToGitHub();
+                    showAlert('Saved successfully to agent-portfolio.json.', 'success');
+                } catch (e) {
+                    showAlert('Save failed: ' + e.message, 'error');
+                } finally {
+                    document.getElementById('btnSave').disabled = extracted.length === 0;
+                }
+            });
+
+            renderRows();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
