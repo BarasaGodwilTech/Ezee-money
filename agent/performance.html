@@ -565,8 +565,6 @@
             const mySubs = getMyClientSubmissions();
             const clients = uniqClientsFromSubmissions(mySubs);
 
-            const idx = buildPortfolioIndex(portfolio && portfolio.rows ? portfolio.rows : []);
-
             const rows = [];
             let activeCount = 0;
             let activatedCount = 0;
@@ -576,24 +574,7 @@
                 const phone = client.phoneNumber || '';
                 const name = client.fullName || '';
 
-                const p = getClientPortfolioRow(client, idx);
-                const scCode = p ? (p.scCode || '') : '';
-                const txns = p ? p.txnsLastWeek : null;
-                const value = p ? p.valueLastWeekUGX : null;
-
-                const isActive = (typeof txns === 'number' ? txns : parseInt(txns || '0', 10)) >= 15;
-                if (isActive) activeCount++;
-
-                const act = activations && activations.clients ? activations.clients[item.submissionId] : null;
-                const isActivated = !!(act && act.activated);
-                if (isActivated) activatedCount++;
-
-                const statusBadges = [
-                    `<span class="badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span>`,
-                    isActivated ? `<span class="badge activated">Activated</span>` : ''
-                ].filter(Boolean).join(' ');
-
-                const key = normalizeName(name + ' ' + phone + ' ' + scCode);
+                const key = normalizeName(name + ' ' + phone);
                 if (search && !key.includes(search)) continue;
 
                 rows.push(`
