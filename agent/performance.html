@@ -621,6 +621,33 @@
             }
         }
 
+        async function loadJsonFileFromPublicRaw(filename) {
+            const cfg = (githubService && githubService.config) ? githubService.config : null;
+            const owner = cfg?.repoOwner;
+            const repo = cfg?.repoName;
+            const branch = cfg?.branchName || 'main';
+            if (!owner || !repo) return null;
+
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                if (res.status === 404) return null;
+                throw new Error(`Failed to fetch ${filename} from raw GitHub: ${res.status} ${res.statusText}`);
+            }
+            return await res.json();
+        }
+
+        async function loadJsonFileBestEffort(filename) {
+            try {
+                const v = await loadJsonFileFromGitHub(filename);
+                if (v !== null) return v;
+            } catch (e) {
+                console.warn(`GitHub API read failed for ${filename} (will try raw):`, e);
+            }
+
+            return await loadJsonFileFromPublicRaw(filename);
+        }
+
         async function loadOptionalJsonFileFromGitHub(filename) {
             try {
                 return await loadJsonFileFromGitHub(filename);
@@ -660,7 +687,7 @@
 
                 // Load submissions
                 try {
-                    const subsData = await loadJsonFileFromGitHub('submissions.json');
+                    const subsData = await loadJsonFileBestEffort('submissions.json');
                     const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
                     submissions = Array.isArray(list) ? list : [];
                 } catch (e) {
