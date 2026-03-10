@@ -949,10 +949,21 @@
         }
 
         async function init() {
+            const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
+            const role = (localStorage.getItem('adminRole') || '').trim();
+            if (!loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (role !== 'super') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
             githubService = new GitHubService();
 
             document.getElementById('btnBack').addEventListener('click', () => {
-                window.location.href = 'super-admin.html';
+                window.location.href = 'dashboard.html';
             });
 
             const fbCfg = await loadGitConfigFromFirebase();
