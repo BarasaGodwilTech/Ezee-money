@@ -451,18 +451,14 @@
         }
 
         function getMyClientSubmissions() {
-            const myId = agentInfo && (agentInfo.id || agentInfo.agentId);
             const mySc = agentInfo && (agentInfo.scCode || agentInfo.agentScCode);
-            if (!myId && !mySc) return [];
+            if (!mySc) return [];
 
-            const myIdStr = myId ? String(myId).trim() : '';
-            const myScStr = mySc ? String(mySc).trim() : '';
+            const myScStr = String(mySc).trim();
 
             return (submissions || []).filter(s => {
                 const submittedBy = s.submittedBy || s.submitted_by || {};
-                const subId = submittedBy.agentId || submittedBy.agentID || s.agentId || '';
                 const subSc = submittedBy.agentScCode || submittedBy.scCode || s.scCode || '';
-                if (myIdStr && String(subId || '').trim() === myIdStr) return true;
                 if (myScStr && String(subSc || '').trim() === myScStr) return true;
                 return false;
             });
