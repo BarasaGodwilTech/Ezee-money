@@ -460,7 +460,7 @@
                 normalizeNameKey(s)
                     .split(' ')
                     .map(t => t.trim())
-                    .filter(t => t && t.length >= 2 && !stop.has(t))
+                    .filter(t => t && t.length >= 1 && !stop.has(t))
             );
         }
 
@@ -549,6 +549,15 @@
                 return /[A-Za-z]/.test(s);
             };
 
+            const isOnlyLetters = (line) => {
+                const s = String(line || '').trim();
+                if (!s) return false;
+                if (/\d/.test(s)) return false;
+                // allow multi-word name lines too
+                const letters = (s.match(/[A-Za-z]/g) || []).length;
+                return letters >= 2;
+            };
+
             const normalized = (words || [])
                 .map(w => ({
                     text: String(w.text || '').trim(),
@@ -600,18 +609,22 @@
 
         function applyWhitelistMatching(rows) {
             if (!knownClientIndex || knownClientIndex.length === 0) return rows || [];
-            const matched = [];
-            for (const r of (rows || [])) {
+            return (rows || []).map(r => {
                 const candidate = r && r.nameCandidate ? r.nameCandidate : (r && r.agentName ? r.agentName : '');
                 const match = bestClientMatch(candidate);
-                if (!match) continue;
-                matched.push({
+                if (!match) {
+                    return {
+                        ...r,
+                        matchedClientName: (r && r.matchedClientName) ? r.matchedClientName : '',
+                        matchScore: (r && r.matchScore) ? r.matchScore : ''
+                    };
+                }
+                return {
                     ...r,
                     matchedClientName: match.client.fullName,
                     matchScore: match.score
-                });
-            }
-            return matched;
+                };
+            });
         }
 
         function parsePortfolioTextToRows(text) {
@@ -709,10 +722,28 @@
                 return chars > 4 && letters / chars > 0.5;
             };
 
+            const looksLikeSingleName = (line) => {
+                // Wrapped second names like "GODWILL" appear as a single word line.
+                if (!line) return false;
+                if (/\d{5,}/.test(line)) return false;
+                if (/\bUGX\b/i.test(line)) return false;
+                const words = line.split(' ').filter(Boolean);
+                if (words.length !== 1) return false;
+                const letters = (line.match(/[A-Za-z]/g) || []).length;
+                return letters >= 2;
+            };
+
             const looksLikeNumericLine = (line) => {
                 // Numeric line contains SC code + txns + amount (UGX may be on same or next line)
                 // We use this as the row boundary anchor.
                 return /\b\d{5,}\b\s+\b\d{1,4}\b\s+\b[\d,]+\b/.test(line);
+            };
+
+            const looksLikeScOnlyLine = (line) => {
+                // Handles cases where OCR splits the row so SC code line starts the numeric row,
+                // and the name is on the line above.
+                // Example: "GODWILL" then next line "75701323 7 180,000 20"
+                return /^\d{7,}\b\s+\d{1,4}\b\s+[\d,]+\b/.test(String(line || '').trim());
             };
 
             const isGarbage = (line) => {
@@ -739,7 +770,45 @@
 
                     const combined = carriedName ? (carriedName + ' ' + line) : line;
 
+                    // Handle wrapped name continuation where the next line is a single name word,
+                    // and UGX appears on that line or the line after.
+                    let nameContinuation = '';
+                    if (i + 1 < lines.length && (looksLikeSingleName(lines[i + 1]) || isOnlyLetters(lines[i + 1]))) {
+                        const cont = String(lines[i + 1] || '').trim();
+                        const ugxOnCont = /\bUGX\b/i.test(lines[i + 1]);
+                        const ugxAfterCont = (i + 2 < lines.length) ? /\bUGX\b/i.test(lines[i + 2]) : false;
+                        if (ugxOnCont || ugxAfterCont) {
+                            nameContinuation = cont;
+                            i++; // consume the continuation name line
+                        }
+                    }
+
+                    const combinedWithWrap = nameContinuation ? (combined.replace(/^(.+?)\s+(\d{5,}\s+)/, `$1 ${nameContinuation} $2`)) : combined;
+
                     // Ensure UGX is present either on this line or next line (OCR may split)
+                    const hasUgxNow = /\bUGX\b/i.test(combinedWithWrap);
+                    let candidate = combinedWithWrap;
+                    let hasUgx = hasUgxNow;
+
+                    if (!hasUgx && i + 1 < lines.length && /\bUGX\b/i.test(lines[i + 1])) {
+                        candidate = (combinedWithWrap + ' ' + lines[i + 1]).trim();
+                        hasUgx = true;
+                        i++; // consume next line
+                    }
+
+                    const row = extractRowFrom(candidate, hasUgx);
+                    if (row) rows.push(row);
+                    continue;
+                }
+
+                // Special case: SC code line starts the numeric row but OCR broke it away from the name.
+                // If previous accumulated carry contains a name-only line, use it.
+                if (looksLikeScOnlyLine(line)) {
+                    const carriedName = nameCarry.join(' ').trim();
+                    nameCarry = [];
+
+                    const combined = carriedName ? (carriedName + ' ' + line) : line;
+
                     const hasUgxNow = /\bUGX\b/i.test(combined);
                     let candidate = combined;
                     let hasUgx = hasUgxNow;
@@ -792,13 +861,46 @@
             return Array.from(bySc.values());
         }
 
+        function buildScToFullNameFromOcrText(text) {
+            const rawLines = String(text || '')
+                .split(/\r?\n/)
+                .map(l => l.replace(/\s+/g, ' ').trim())
+                .filter(Boolean);
+
+            const map = new Map();
+            const digitsOnly = (s) => String(s || '').replace(/\D/g, '');
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const line = rawLines[i];
+                const m = line.match(/^(.+?)\s+(\d{7,})\s+\d{1,4}\s+[\d,]+/);
+                if (!m) continue;
+                const firstNamePart = String(m[1] || '').trim();
+                const sc = digitsOnly(m[2]);
+                if (!sc) continue;
+
+                let fullName = firstNamePart;
+
+                // If next line is just letters (wrapped name), join it
+                const next = rawLines[i + 1] || '';
+                const nextHasLettersOnly = next && !/\d/.test(next) && /[A-Za-z]/.test(next);
+                const nextHasUgx = /\bUGX\b/i.test(next);
+                const ugxAfter = rawLines[i + 2] ? /\bUGX\b/i.test(rawLines[i + 2]) : false;
+                if (nextHasLettersOnly && (nextHasUgx || ugxAfter)) {
+                    // remove UGX if present
+                    const cleaned = String(next).replace(/\bUGX\b/ig, '').trim();
+                    if (cleaned) fullName = (firstNamePart + ' ' + cleaned).replace(/\s+/g, ' ').trim();
+                }
+
+                if (fullName && sc) map.set(sc, fullName);
+            }
+            return map;
+        }
+
         async function loadSubmissionsForMatching() {
             try {
                 const data = await githubService.readFile('submissions.json');
                 if (!data || !data.content) {
-                    knownClients = [];
-                    knownClientIndex = [];
-                    return;
+                    throw new Error('GitHub read returned empty content');
                 }
 
                 const parsed = JSON.parse(atob(data.content));
@@ -807,10 +909,22 @@
                 knownClientIndex = buildKnownClientIndex(knownClients);
                 buildClientNamesDatalist();
             } catch (e) {
-                console.warn('Could not load submissions.json for matching:', e);
-                knownClients = [];
-                knownClientIndex = [];
-                buildClientNamesDatalist();
+                // Fallback: try public raw GitHub (works without token)
+                try {
+                    const url = 'https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/submissions.json';
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) throw new Error('raw fetch failed: ' + res.status);
+                    const parsed = await res.json();
+                    const subs = parsed && parsed.submissions ? parsed.submissions : (Array.isArray(parsed) ? parsed : []);
+                    knownClients = Array.isArray(subs) ? subs : [];
+                    knownClientIndex = buildKnownClientIndex(knownClients);
+                    buildClientNamesDatalist();
+                } catch (e2) {
+                    console.warn('Could not load submissions.json for matching:', e, e2);
+                    knownClients = [];
+                    knownClientIndex = [];
+                    buildClientNamesDatalist();
+                }
             }
         }
 
@@ -956,6 +1070,29 @@
             const isScToken = (s) => /^\d{7,}$/.test(digits(s));
             const isMoneyToken = (s) => /^\d{1,3}(,\d{3})+$/.test(String(s || '').trim()) || /^\d{3,}$/.test(digits(s));
 
+            const rowHasScCode = (rowObj) => {
+                const toks = (rowObj && rowObj.words) ? rowObj.words.map(w => w.text) : [];
+                return toks.some(t => isScToken(t));
+            };
+
+            const nameFromRowLeftOf = (rowObj, scX0) => {
+                if (!rowObj || !Array.isArray(rowObj.words) || typeof scX0 !== 'number') return '';
+                return rowObj.words
+                    .filter(w => {
+                        const x0 = w && w.bbox ? w.bbox.x0 : null;
+                        const txt = w ? w.text : '';
+                        if (typeof x0 !== 'number') return false;
+                        if (x0 >= scX0 - 10) return false;
+                        if (!txt || /\d/.test(txt)) return false;
+                        if (isNoiseToken(txt)) return false;
+                        return /[A-Za-z]/.test(txt);
+                    })
+                    .map(w => w.text)
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
             for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
                 const r = rows[rowIdx];
                 const rowText = r.words.map(w => w.text).join(' ');
@@ -1029,20 +1166,26 @@
                     const scWord = r.words[scIdx];
                     const scX0 = scWord && scWord.bbox ? scWord.bbox.x0 : null;
                     if (typeof scX0 === 'number') {
-                        altCandidate = r.words
-                            .filter(w => {
-                                const x0 = w && w.bbox ? w.bbox.x0 : null;
-                                const txt = w ? w.text : '';
-                                if (typeof x0 !== 'number') return false;
-                                if (x0 >= scX0 - 10) return false;
-                                if (!txt || /\d/.test(txt)) return false;
-                                if (isNoiseToken(txt)) return false;
-                                return /[A-Za-z]/.test(txt);
-                            })
-                            .map(w => w.text)
-                            .join(' ')
-                            .replace(/\s+/g, ' ')
-                            .trim();
+                        // current name words are those left of the SC column on THIS numeric row
+                        const currentName = nameFromRowLeftOf(r, scX0);
+
+                        // Merge up to 2 previous name-only rows (wrapped long names)
+                        const mergedParts = [];
+                        for (let back = 1; back <= 2; back++) {
+                            const prev = rows[rowIdx - back];
+                            if (!prev) break;
+                            if (rowHasScCode(prev)) break;
+                            const prevName = nameFromRowLeftOf(prev, scX0);
+                            if (prevName) mergedParts.unshift(prevName);
+                        }
+                        if (currentName) mergedParts.push(currentName);
+
+                        altCandidate = mergedParts.join(' ').replace(/\s+/g, ' ').trim();
+
+                        // If we failed to extract any letters (rare), fall back to token-based candidate.
+                        if (!altCandidate) {
+                            altCandidate = candidateClean;
+                        }
                     }
                 } catch (e) {
                     // ignore
@@ -1061,10 +1204,28 @@
                     .replace(/\s+/g, ' ')
                     .trim();
 
+                // Also handle cases where the wrapped second name is on the NEXT OCR row,
+                // e.g. row: "BARASA 75701323 7 180,000" then next row: "GODWILL UGX".
+                let nextWrap = '';
+                const nextRow = rows[rowIdx + 1];
+                if (nextRow && !rowHasScCode(nextRow)) {
+                    const nextText = nextRow.words.map(w => w.text).join(' ').trim();
+                    const nextTokens = nextText.split(/\s+/).filter(Boolean);
+                    const looksLikeSingleWord = nextTokens.length === 1 && /[A-Za-z]/.test(nextTokens[0]) && !/\d/.test(nextTokens[0]);
+                    const hasUgxNear = /\bUGX\b/i.test(nextText)
+                        || (rows[rowIdx + 2] ? /\bUGX\b/i.test(rows[rowIdx + 2].words.map(w => w.text).join(' ')) : false);
+                    if (looksLikeSingleWord && hasUgxNear) {
+                        nextWrap = nextTokens[0];
+                    }
+                }
+
                 // If candidate still looks like a header fragment, drop the row.
                 const primaryCandidate = candidateFiltered;
                 const fallbackCandidate = altCandidateFiltered;
-                const usableCandidate = (primaryCandidate && primaryCandidate.length >= 3) ? primaryCandidate : fallbackCandidate;
+                let usableCandidate = (primaryCandidate && primaryCandidate.length >= 3) ? primaryCandidate : fallbackCandidate;
+                if (usableCandidate && nextWrap) {
+                    usableCandidate = (usableCandidate + ' ' + nextWrap).replace(/\s+/g, ' ').trim();
+                }
                 if (!usableCandidate || usableCandidate.length < 3) continue;
                 if (/\bvalue\b/i.test(usableCandidate) || /\btxns\b/i.test(usableCandidate) || /\bcode\b/i.test(usableCandidate)) continue;
 
@@ -1081,12 +1242,10 @@
                 // Require a whitelist match to accept this row (prevents header/junk names)
                 if (knownClientIndex && knownClientIndex.length) {
                     const match = bestClientMatch(row.nameCandidate);
-                    if (!match) continue;
-                    row.matchedClientName = match.client.fullName;
-                    row.matchScore = match.score;
-                } else {
-                    // No known clients loaded -> without matching, names are unreliable, so drop.
-                    continue;
+                    if (match) {
+                        row.matchedClientName = match.client.fullName;
+                        row.matchScore = match.score;
+                    }
                 }
 
                 parsed.push(row);
@@ -1218,6 +1377,7 @@
                         showAlert(label, '');
                     });
                     extractedRawText = ocr.text;
+                    const scToName = buildScToFullNameFromOcrText(extractedRawText);
 
                     // Prefer layout-based parsing; fall back to text parsing if words are missing.
                     let parsedRows = (ocr.words && ocr.words.length)
@@ -1229,8 +1389,29 @@
                         parsedRows = parsePortfolioTextToRows(ocr.text);
                     }
 
-                    // Apply whitelist matching after parsing (reduces false positives).
-                    extracted = applyWhitelistMatching(parsedRows);
+                    // Apply whitelist matching only if parsers did not already assign matchedClientName.
+                    // (Both parsers attempt whitelist matching internally when submissions.json is available.)
+                    extracted = (parsedRows || []).map(r => ({ ...r }));
+
+                    // If OCR text indicates a wrapped full name for this SC code, prefer it.
+                    for (const r of extracted) {
+                        const sc = String(r && r.scCode || '').trim();
+                        if (!sc) continue;
+                        const full = scToName.get(sc);
+                        if (full) {
+                            r.agentName = full;
+                            r.nameCandidate = full;
+                        }
+                    }
+
+                    const hasMatched = extracted.some(r => String(r && r.matchedClientName || '').trim());
+                    if (!hasMatched) {
+                        extracted = applyWhitelistMatching(extracted);
+                    }
+
+                    if (!knownClientIndex || knownClientIndex.length === 0) {
+                        showAlert('OCR finished, but submissions.json could not be loaded for matching. Names may appear incomplete. Configure GitHub access or ensure the public submissions.json exists.', 'error');
+                    }
 
                     renderRows();
                     if (extracted.length === 0) {
