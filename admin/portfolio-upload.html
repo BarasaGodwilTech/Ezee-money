@@ -1267,9 +1267,38 @@
             if (!githubService || !githubService.config || !githubService.config.token) {
                 throw new Error('GitHub config missing');
             }
+
+            // Read existing agent-portfolio.json if present so we merge instead of overwriting.
+            // If the file doesn't exist, we'll create it.
+            let existingRows = [];
+            try {
+                const existing = await githubService.readFile('agent-portfolio.json');
+                if (existing && existing.content) {
+                    const parsed = JSON.parse(atob(existing.content));
+                    existingRows = Array.isArray(parsed?.rows) ? parsed.rows : [];
+                }
+            } catch (e) {
+                // 404 or parse error -> treat as empty
+                existingRows = [];
+            }
+
+            // Merge by scCode (prefer the new extracted row)
+            const merged = new Map();
+            for (const r of (existingRows || [])) {
+                const key = String(r?.scCode || '').trim();
+                if (!key) continue;
+                merged.set(key, r);
+            }
+            for (const r of (extracted || [])) {
+                const key = String(r?.scCode || '').trim();
+                if (!key) continue;
+                merged.set(key, r);
+            }
+
             const payload = {
                 generatedAt: new Date().toISOString(),
-                rows: extracted,
+                lastUpdated: new Date().toISOString(),
+                rows: Array.from(merged.values()),
                 source: {
                     type: 'screenshot_ocr'
                 }
