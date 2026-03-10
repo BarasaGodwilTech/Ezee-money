@@ -631,9 +631,26 @@
         }
 
         async function loadJsonFileFromGitHub(filename) {
-            const data = await githubService.readFile(filename);
-            if (!data || !data.content) return null;
-            return JSON.parse(atob(data.content));
+            try {
+                const data = await githubService.readFile(filename);
+                if (!data || !data.content) return null;
+                return JSON.parse(atob(data.content));
+            } catch (e) {
+                const msg = String(e?.message || e);
+                if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+                    return null;
+                }
+                throw e;
+            }
+        }
+
+        async function loadOptionalJsonFileFromGitHub(filename) {
+            try {
+                return await loadJsonFileFromGitHub(filename);
+            } catch (e) {
+                console.warn(`Failed to load optional file ${filename} (continuing):`, e);
+                return null;
+            }
         }
 
         async function loadAll() {
@@ -677,18 +694,10 @@
                 }
 
                 // Load portfolio report
-                try {
-                    portfolio = await loadJsonFileFromGitHub('agent-portfolio.json');
-                } catch (e) {
-                    portfolio = null;
-                }
+                portfolio = await loadOptionalJsonFileFromGitHub('agent-portfolio.json');
 
                 // Load activations
-                try {
-                    activations = await loadJsonFileFromGitHub('activations.json');
-                } catch (e) {
-                    activations = null;
-                }
+                activations = await loadOptionalJsonFileFromGitHub('activations.json');
 
                 render();
             } catch (e) {
