@@ -272,6 +272,8 @@
         let knownClients = [];
         let knownClientIndex = [];
 
+        let ocrWorker = null;
+
         function showAlert(message, type) {
             const el = document.getElementById('alert');
             el.style.display = 'block';
@@ -462,6 +464,27 @@
             );
         }
 
+        function nameInitials(s) {
+            const toks = normalizeNameKey(s)
+                .split(' ')
+                .map(t => t.trim())
+                .filter(Boolean);
+            return toks.map(t => t[0]).join('');
+        }
+
+        function initialsScore(a, b) {
+            const ia = nameInitials(a);
+            const ib = nameInitials(b);
+            if (!ia || !ib) return 0;
+            if (ia === ib) return 1;
+            if (ia.length >= 2 && ib.startsWith(ia)) return 0.9;
+            if (ib.length >= 2 && ia.startsWith(ib)) return 0.9;
+            // small partial credit if first+second name match (common case)
+            const k = Math.min(2, ia.length, ib.length);
+            if (k >= 2 && ia.slice(0, k) === ib.slice(0, k)) return 0.75;
+            return 0;
+        }
+
         function jaccard(a, b) {
             if (!a.size || !b.size) return 0;
             let inter = 0;
@@ -483,6 +506,7 @@
                         fullName,
                         key,
                         tokens: tokenSet(fullName),
+                        initials: nameInitials(fullName),
                         phoneNumber: String(c.phoneNumber || '').trim(),
                         submissionId: s.id
                     });
@@ -499,16 +523,79 @@
             let bestScore = 0;
 
             for (const c of knownClientIndex) {
-                const score = jaccard(nameTokens, c.tokens);
+                const tokenScore = jaccard(nameTokens, c.tokens);
+                const initScore = initialsScore(extractedName, c.fullName);
+                const score = Math.max(tokenScore, initScore);
                 if (score > bestScore) {
                     bestScore = score;
                     best = c;
                 }
             }
 
-            // Stricter threshold for reliability
-            if (!best || bestScore < 0.6) return null;
+            // Threshold for reliability (allow initials-based matches too)
+            if (!best || bestScore < 0.55) return null;
             return { client: best, score: bestScore };
+        }
+
+        function extractNameCandidatesFromWords(words) {
+            // Build multi-word name candidates by grouping words on same line that are
+            // left of the SC code numeric column.
+            const isNameWord = (t) => {
+                const s = String(t || '').trim();
+                if (!s) return false;
+                if (/\d/.test(s)) return false;
+                if (/\bUGX\b/i.test(s)) return false;
+                if (s.length < 2) return false;
+                return /[A-Za-z]/.test(s);
+            };
+
+            const normalized = (words || [])
+                .map(w => ({
+                    text: String(w.text || '').trim(),
+                    x0: w.bbox?.x0 ?? w.x0,
+                    y0: w.bbox?.y0 ?? w.y0,
+                    x1: w.bbox?.x1 ?? w.x1,
+                    y1: w.bbox?.y1 ?? w.y1
+                }))
+                .filter(w => w.text && Number.isFinite(w.x0) && Number.isFinite(w.y0) && Number.isFinite(w.x1));
+
+            // Determine typical x-position of SC code column from 5+ digit words
+            const scWords = normalized
+                .filter(w => /^\d{5,}$/.test(w.text))
+                .map(w => w.x0);
+            if (!scWords.length) return [];
+            scWords.sort((a, b) => a - b);
+            const medianScX = scWords[Math.floor(scWords.length / 2)];
+            const nameXMax = medianScX - 10;
+
+            // Group by line using y0 band
+            const byLine = new Map();
+            for (const w of normalized) {
+                const lineKey = Math.round(w.y0 / 8) * 8;
+                if (!byLine.has(lineKey)) byLine.set(lineKey, []);
+                byLine.get(lineKey).push(w);
+            }
+
+            const candidates = [];
+            for (const [, lineWords] of byLine) {
+                const nameWords = lineWords
+                    .filter(w => w.x0 <= nameXMax && isNameWord(w.text))
+                    .sort((a, b) => a.x0 - b.x0);
+
+                if (nameWords.length >= 2) {
+                    const cand = nameWords.map(w => w.text).join(' ').trim();
+                    if (cand.length >= 4) candidates.push(cand);
+                }
+            }
+
+            // Dedup
+            const uniq = Array.from(new Set(candidates.map(c => normalizeNameKey(c))))
+                .filter(Boolean)
+                .map(k => {
+                    const orig = candidates.find(c => normalizeNameKey(c) === k);
+                    return orig || k;
+                });
+            return uniq;
         }
 
         function applyWhitelistMatching(rows) {
@@ -727,17 +814,67 @@
             }
         }
 
-        async function ocrFile(file) {
-            const imgUrl = URL.createObjectURL(file);
+        async function fileToDownscaledDataUrl(file, maxWidth, quality) {
+            const url = URL.createObjectURL(file);
             try {
-                const result = await Tesseract.recognize(imgUrl, 'eng');
-                return {
-                    text: (result && result.data && result.data.text) ? result.data.text : '',
-                    words: (result && result.data && Array.isArray(result.data.words)) ? result.data.words : []
-                };
+                const img = await new Promise((resolve, reject) => {
+                    const el = new Image();
+                    el.onload = () => resolve(el);
+                    el.onerror = () => reject(new Error('Failed to load image'));
+                    el.src = url;
+                });
+
+                const w = img.naturalWidth || img.width;
+                const h = img.naturalHeight || img.height;
+                if (!w || !h) throw new Error('Invalid image dimensions');
+
+                const targetW = Math.min(maxWidth, w);
+                const scale = targetW / w;
+                const targetH = Math.max(1, Math.round(h * scale));
+
+                const canvas = document.createElement('canvas');
+                canvas.width = targetW;
+                canvas.height = targetH;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                return canvas.toDataURL('image/jpeg', quality);
             } finally {
-                URL.revokeObjectURL(imgUrl);
+                URL.revokeObjectURL(url);
             }
+        }
+
+        async function ensureOcrWorker(progressCb) {
+            if (ocrWorker) return ocrWorker;
+            ocrWorker = await Tesseract.createWorker('eng', 1, {
+                logger: (m) => {
+                    if (progressCb && m && m.status) progressCb(m);
+                }
+            });
+            try {
+                await ocrWorker.setParameters({
+                    // Focus on the characters we expect in this report (speeds up + reduces confusion)
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789, UGXugx',
+                    preserve_interword_spaces: '1'
+                });
+            } catch (e) {
+                // ignore if unsupported
+            }
+            return ocrWorker;
+        }
+
+        async function ocrFile(file, onProgress) {
+            // Downscale large screenshots for speed while keeping legibility.
+            // 1600px wide is a good speed/accuracy tradeoff for typical report screenshots.
+            const dataUrl = await fileToDownscaledDataUrl(file, 1600, 0.85);
+            const worker = await ensureOcrWorker(onProgress);
+            const result = await worker.recognize(dataUrl);
+            return {
+                text: (result && result.data && result.data.text) ? result.data.text : '',
+                words: (result && result.data && Array.isArray(result.data.words)) ? result.data.words : []
+            };
         }
 
         function groupWordsByRow(words) {
@@ -885,6 +1022,32 @@
                     .replace(/\s+/g, ' ')
                     .trim();
 
+                // Sometimes OCR tokenization loses the second name in the token stream.
+                // Build an alternate candidate using word bounding boxes (left of SC column).
+                let altCandidate = '';
+                try {
+                    const scWord = r.words[scIdx];
+                    const scX0 = scWord && scWord.bbox ? scWord.bbox.x0 : null;
+                    if (typeof scX0 === 'number') {
+                        altCandidate = r.words
+                            .filter(w => {
+                                const x0 = w && w.bbox ? w.bbox.x0 : null;
+                                const txt = w ? w.text : '';
+                                if (typeof x0 !== 'number') return false;
+                                if (x0 >= scX0 - 10) return false;
+                                if (!txt || /\d/.test(txt)) return false;
+                                if (isNoiseToken(txt)) return false;
+                                return /[A-Za-z]/.test(txt);
+                            })
+                            .map(w => w.text)
+                            .join(' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                    }
+                } catch (e) {
+                    // ignore
+                }
+
                 // Drop obvious header contamination in the candidate
                 const candidateFiltered = candidateClean
                     .replace(/\b(onboarding|report|portfolio|search|records)\b/gi, ' ')
@@ -892,14 +1055,23 @@
                     .replace(/\s+/g, ' ')
                     .trim();
 
+                const altCandidateFiltered = String(altCandidate || '')
+                    .replace(/\b(onboarding|report|portfolio|search|records)\b/gi, ' ')
+                    .replace(/\b(sc|code|txns|txn|last|week|value|of|ugx|la)\b/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
                 // If candidate still looks like a header fragment, drop the row.
-                if (!candidateFiltered || candidateFiltered.length < 3) continue;
-                if (/\bvalue\b/i.test(candidateFiltered) || /\btxns\b/i.test(candidateFiltered) || /\bcode\b/i.test(candidateFiltered)) continue;
+                const primaryCandidate = candidateFiltered;
+                const fallbackCandidate = altCandidateFiltered;
+                const usableCandidate = (primaryCandidate && primaryCandidate.length >= 3) ? primaryCandidate : fallbackCandidate;
+                if (!usableCandidate || usableCandidate.length < 3) continue;
+                if (/\bvalue\b/i.test(usableCandidate) || /\btxns\b/i.test(usableCandidate) || /\bcode\b/i.test(usableCandidate)) continue;
 
                 const row = {
                     // keep original candidate for debugging
-                    agentName: candidateFiltered,
-                    nameCandidate: candidateFiltered,
+                    agentName: usableCandidate,
+                    nameCandidate: usableCandidate,
                     scCode,
                     txnsLastWeek: txns,
                     valueLastWeekUGX: value,
@@ -1038,8 +1210,13 @@
                 if (!selectedFile) return;
                 try {
                     document.getElementById('btnExtract').disabled = true;
-                    showAlert('Running OCR... this can take 10-30 seconds.', '');
-                    const ocr = await ocrFile(selectedFile);
+                    showAlert('Running OCR... preparing image.', '');
+                    const startedAt = Date.now();
+                    const ocr = await ocrFile(selectedFile, (m) => {
+                        const pct = (typeof m.progress === 'number') ? Math.round(m.progress * 100) : null;
+                        const label = pct !== null ? `Running OCR... ${pct}%` : 'Running OCR...';
+                        showAlert(label, '');
+                    });
                     extractedRawText = ocr.text;
 
                     // Prefer layout-based parsing; fall back to text parsing if words are missing.
@@ -1060,7 +1237,8 @@
                         showAlert('OCR finished but no matching rows were detected. Tips: take a clearer screenshot, include the full table rows (especially UGX), and ensure the client names exist in submissions.json.', 'error');
                         document.getElementById('btnSave').disabled = true;
                     } else {
-                        showAlert('OCR finished. Rows were matched against your submissions list for accuracy. Review extracted rows, then Save to GitHub.', 'success');
+                        const secs = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+                        showAlert(`OCR finished in ${secs}s. Rows were matched against your submissions list for accuracy. Review extracted rows, then Save to GitHub.`, 'success');
                         document.getElementById('btnSave').disabled = false;
                     }
                 } catch (e) {
