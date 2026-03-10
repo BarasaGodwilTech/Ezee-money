@@ -139,36 +139,8 @@
       },
       "submissionDate": "2026-03-09T16:36:05.018Z",
       "status": "pending"
-    },
-    {
-      "id": "SUB-1773141319262-cni75che6",
-      "submittedBy": {
-        "agentName": "Barasa Godwill",
-        "agentScCode": "SC001",
-        "agentId": "1771597985946"
-      },
-      "clientInfo": {
-        "fullName": "Barasa Godwill",
-        "phoneNumber": "68959",
-        "email": "edrineocen@gmail.com",
-        "nationalId": "gfhkgfk",
-        "dob": "2026-03-14",
-        "gender": "female",
-        "businessAddress": "dggg",
-        "residentialAddress": "dghjgdj",
-        "nextOfKinName": "cvknncvk",
-        "nextOfKinRelationship": "parent",
-        "nextOfKinPhone": "7593"
-      },
-      "images": {
-        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773141319262-cni75che6/idFront_1773141319271.jpg",
-        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773141319262-cni75che6/idBack_1773141342432.jpg",
-        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773141319262-cni75che6/agentPhoto_1773141345701.jpg"
-      },
-      "submissionDate": "2026-03-10T11:15:48.171Z",
-      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-10T11:15:49.691Z",
-  "totalSubmissions": 6
+  "lastUpdated": "2026-03-10T19:46:51.578Z",
+  "totalSubmissions": 5
 }
