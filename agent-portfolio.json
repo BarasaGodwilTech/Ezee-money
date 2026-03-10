@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-03-10T17:26:25.204Z",
+  "rows": [
+    {
+      "agentName": "NAMUKONGO FRANCIS",
+      "nameCandidate": "NAMUKONGO FRANCIS",
+      "scCode": "46116222",
+      "txnsLastWeek": 33,
+      "valueLastWeekUGX": 173500,
+      "currency": "UGX",
+      "matchedClientName": "NAMUKONGO FRANCIS",
+      "matchScore": 1
+    },
+    {
+      "agentName": "BARASA GODWILL",
+      "nameCandidate": "BARASA GODWILL",
+      "scCode": "75701323",
+      "txnsLastWeek": 7,
+      "valueLastWeekUGX": 180000,
+      "currency": "UGX",
+      "matchedClientName": "Barasa Godwill",
+      "matchScore": 1
+    },
+    {
+      "agentName": "OWORI INNOCENT",
+      "nameCandidate": "OWORI INNOCENT",
+      "scCode": "56308178",
+      "txnsLastWeek": 44,
+      "valueLastWeekUGX": 253500,
+      "currency": "UGX",
+      "matchedClientName": "OWORI INNOCENT",
+      "matchScore": 1
+    }
+  ],
+  "source": {
+    "type": "screenshot_ocr"
+  }
+}
