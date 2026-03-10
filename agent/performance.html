@@ -362,6 +362,10 @@
         let activations = null; // { clients: { [submissionId]: {activated, floatAmount,...}} }
         let submissions = [];
 
+        let autoPollTimer = null;
+        let lastPortfolioGeneratedAt = null;
+        let lastAutoPollAt = null;
+
         function showAlert(message, type) {
             const el = document.getElementById('alert');
             el.style.display = 'block';
@@ -378,6 +382,12 @@
             const el = document.getElementById('cfgStatus');
             el.textContent = text;
             el.className = 'pill ' + (variant || '');
+        }
+
+        function setAutoPollMeta(text) {
+            const el = document.getElementById('statUpdated');
+            if (!el) return;
+            el.textContent = text;
         }
 
         async function loadGitConfigFromFirebase() {
@@ -628,7 +638,8 @@
             const branch = cfg?.branchName || 'main';
             if (!owner || !repo) return null;
 
-            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}`;
+            const cacheBust = `t=${Date.now()}`;
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
             const res = await fetch(url, { cache: 'no-store' });
             if (!res.ok) {
                 if (res.status === 404) return null;
@@ -654,6 +665,57 @@
             } catch (e) {
                 console.warn(`Failed to load optional file ${filename} (continuing):`, e);
                 return null;
+            }
+        }
+
+        async function loadOptionalJsonFileBestEffort(filename) {
+            try {
+                return await loadJsonFileBestEffort(filename);
+            } catch (e) {
+                console.warn(`Failed to load optional file best-effort ${filename} (continuing):`, e);
+                return null;
+            }
+        }
+
+        async function pollForUpdates() {
+            try {
+                if (document.hidden) return;
+                if (!githubService || !githubService.config || !githubService.config.repoOwner || !githubService.config.repoName) return;
+
+                lastAutoPollAt = new Date().toISOString();
+
+                const latestPortfolio = await loadOptionalJsonFileBestEffort('agent-portfolio.json');
+                const latestGeneratedAt = latestPortfolio && latestPortfolio.generatedAt ? String(latestPortfolio.generatedAt) : null;
+
+                if (latestGeneratedAt && latestGeneratedAt !== lastPortfolioGeneratedAt) {
+                    portfolio = latestPortfolio;
+                    lastPortfolioGeneratedAt = latestGeneratedAt;
+
+                    // Activations may also change
+                    activations = await loadOptionalJsonFileBestEffort('activations.json');
+
+                    render();
+                }
+
+                const display = (portfolio && portfolio.generatedAt)
+                    ? new Date(portfolio.generatedAt).toLocaleString()
+                    : '—';
+                setAutoPollMeta(display);
+            } catch (e) {
+                console.warn('Auto-update poll failed:', e);
+            }
+        }
+
+        function startAutoPolling() {
+            stopAutoPolling();
+            // Keep it conservative to avoid rate limiting.
+            autoPollTimer = setInterval(() => pollForUpdates(), 30000);
+        }
+
+        function stopAutoPolling() {
+            if (autoPollTimer) {
+                clearInterval(autoPollTimer);
+                autoPollTimer = null;
             }
         }
 
@@ -698,12 +760,15 @@
                 }
 
                 // Load portfolio report
-                portfolio = await loadOptionalJsonFileFromGitHub('agent-portfolio.json');
+                portfolio = await loadOptionalJsonFileBestEffort('agent-portfolio.json');
+                lastPortfolioGeneratedAt = (portfolio && portfolio.generatedAt) ? String(portfolio.generatedAt) : null;
 
                 // Load activations
-                activations = await loadOptionalJsonFileFromGitHub('activations.json');
+                activations = await loadOptionalJsonFileBestEffort('activations.json');
 
                 render();
+
+                startAutoPolling();
             } catch (e) {
                 console.error(e);
                 showAlert('Failed to load performance data: ' + e.message, 'error');
@@ -712,6 +777,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btnLogout').addEventListener('click', () => {
+                stopAutoPolling();
                 localStorage.removeItem('agentInfo');
                 window.location.href = 'login.html';
             });
@@ -726,6 +792,11 @@
 
             document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
             document.getElementById('search').addEventListener('input', () => render());
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) return;
+                pollForUpdates();
+            });
 
             loadAll();
         });
