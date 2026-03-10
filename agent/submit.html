@@ -777,6 +777,10 @@
             submitBtn.addEventListener('click', handleSubmit);
             newAgentBtn.addEventListener('click', resetForm);
         }
+
+        function setupFormSubmission() {
+            setupEventListeners();
+        }
         
         function initializeForm() {
             // Local fallback for GitHub config if gitconfig.json was not available

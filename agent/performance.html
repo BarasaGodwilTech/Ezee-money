@@ -141,6 +141,106 @@
         .badge.inactive { border-color:#fde68a; background:#fffbeb; color:#92400e; }
         .badge.activated { border-color:#bfdbfe; background:#eff6ff; color:#1e40af; }
 
+        tr.clickable-row { cursor: pointer; }
+        tr.clickable-row:hover { background: #f9fafb; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 9999;
+        }
+
+        .modal {
+            width: min(920px, 100%);
+            max-height: min(86vh, 900px);
+            overflow: auto;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .modal-title { margin: 0; font-size: 14px; }
+        .modal-close {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 800;
+            cursor: pointer;
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            gap: 10px;
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .kv:first-of-type { border-top: 0; }
+        .k { font-size: 12px; color: var(--muted); }
+        .v { font-size: 13px; color: var(--dark); word-break: break-word; }
+
+        .images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .img-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .img-card .label {
+            padding: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
+        }
+
+        .img-card img {
+            width: 100%;
+            height: 240px;
+            object-fit: contain;
+            background: #fff;
+            display: block;
+        }
+
+        .img-card a {
+            display: block;
+            padding: 10px;
+            font-size: 12px;
+            color: #1e40af;
+            text-decoration: none;
+            border-top: 1px solid var(--border);
+            background: #f9fafb;
+        }
+
+        @media (max-width: 520px) {
+            .kv { grid-template-columns: 1fr; }
+        }
+
         .muted { color: var(--muted); font-size: 12px; }
         .right { text-align: right; }
 
@@ -220,6 +320,20 @@
             </div>
 
             <div id="alert" class="alert" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document">
+            <div class="modal-head">
+                <div>
+                    <h3 class="modal-title" id="detailsTitle">Client Details</h3>
+                    <div class="help" id="detailsSubtitle">Read-only</div>
+                </div>
+                <button class="modal-close" id="detailsCloseBtn" type="button">Close</button>
+            </div>
+            <div id="detailsBody"></div>
+            <div class="images" id="detailsImages"></div>
         </div>
     </div>
 
@@ -338,12 +452,95 @@
 
         function getMyClientSubmissions() {
             const myId = agentInfo && (agentInfo.id || agentInfo.agentId);
-            if (!myId) return [];
+            const mySc = agentInfo && (agentInfo.scCode || agentInfo.agentScCode);
+            if (!myId && !mySc) return [];
+
+            const myIdStr = myId ? String(myId).trim() : '';
+            const myScStr = mySc ? String(mySc).trim() : '';
 
             return (submissions || []).filter(s => {
-                const submittedBy = s.submittedBy || {};
-                return String(submittedBy.agentId || '') === String(myId);
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const subId = submittedBy.agentId || submittedBy.agentID || s.agentId || '';
+                const subSc = submittedBy.agentScCode || submittedBy.scCode || s.scCode || '';
+                if (myIdStr && String(subId || '').trim() === myIdStr) return true;
+                if (myScStr && String(subSc || '').trim() === myScStr) return true;
+                return false;
             });
+        }
+
+        function escapeHtml(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function openDetailsModal(item) {
+            const overlay = document.getElementById('detailsModalOverlay');
+            const title = document.getElementById('detailsTitle');
+            const subtitle = document.getElementById('detailsSubtitle');
+            const body = document.getElementById('detailsBody');
+            const imagesEl = document.getElementById('detailsImages');
+
+            const s = (item && item.submission) ? item.submission : (item || {});
+            const c = s.clientInfo || {};
+            const submittedBy = s.submittedBy || {};
+            const imgs = s.images || {};
+
+            title.textContent = (c.fullName ? String(c.fullName) : 'Client Details');
+            subtitle.textContent = `Submission ID: ${s.id || '—'}`;
+
+            const kvs = [
+                ['Phone', c.phoneNumber || '—'],
+                ['Email', c.email || '—'],
+                ['National ID / NIN', c.nationalId || '—'],
+                ['DOB', c.dob || '—'],
+                ['Gender', c.gender || '—'],
+                ['Business Address', c.businessAddress || '—'],
+                ['Residential Address', c.residentialAddress || '—'],
+                ['Next of Kin Name', c.nextOfKinName || '—'],
+                ['Next of Kin Relationship', c.nextOfKinRelationship || '—'],
+                ['Next of Kin Phone', c.nextOfKinPhone || '—'],
+                ['Submitted By', submittedBy.agentName || agentInfo?.fullName || '—'],
+                ['Agent SC Code', submittedBy.agentScCode || agentInfo?.scCode || '—'],
+                ['Submission Date', s.submissionDate ? new Date(s.submissionDate).toLocaleString() : '—'],
+                ['Status', s.status || '—']
+            ];
+
+            body.innerHTML = kvs.map(([k, v]) => {
+                return `<div class="kv"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`;
+            }).join('');
+
+            const images = [
+                { key: 'idFrontUrl', label: 'ID Front' },
+                { key: 'idBackUrl', label: 'ID Back' },
+                { key: 'agentPhotoUrl', label: 'Agent Photo' }
+            ];
+
+            const imgCards = [];
+            for (const img of images) {
+                const url = String(imgs[img.key] || '').trim();
+                if (!url) continue;
+                imgCards.push(
+                    `<div class="img-card">
+                        <div class="label">${escapeHtml(img.label)}</div>
+                        <img src="${escapeHtml(url)}" alt="${escapeHtml(img.label)}" loading="lazy" />
+                        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open image</a>
+                    </div>`
+                );
+            }
+            imagesEl.innerHTML = imgCards.join('');
+
+            overlay.style.display = 'flex';
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeDetailsModal() {
+            const overlay = document.getElementById('detailsModalOverlay');
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
         }
 
         function uniqClientsFromSubmissions(mySubs) {
@@ -400,13 +597,13 @@
                 if (search && !key.includes(search)) continue;
 
                 rows.push(`
-                    <tr>
+                    <tr class="clickable-row" data-submission-id="${item.submissionId}">
                         <td>${phone}</td>
                         <td>${name}</td>
-                        <td>${scCode}</td>
-                        <td class="right">${txns ?? ''}</td>
-                        <td class="right">${formatMoneyUGX(value)}</td>
-                        <td>${statusBadges}</td>
+                        <td>${''}</td>
+                        <td class="right">${''}</td>
+                        <td class="right">${''}</td>
+                        <td>${''}</td>
                     </tr>
                 `);
             }
@@ -421,6 +618,16 @@
             } else {
                 tbody.innerHTML = rows.join('');
             }
+
+            Array.from(tbody.querySelectorAll('tr.clickable-row')).forEach(tr => {
+                tr.addEventListener('click', () => {
+                    const id = tr.getAttribute('data-submission-id');
+                    const mySubs = getMyClientSubmissions();
+                    const found = (mySubs || []).find(s => String(s.id || '') === String(id || ''));
+                    if (!found) return;
+                    openDetailsModal({ submission: found });
+                });
+            });
         }
 
         async function loadJsonFileFromGitHub(filename) {
@@ -494,6 +701,14 @@
             document.getElementById('btnLogout').addEventListener('click', () => {
                 localStorage.removeItem('agentInfo');
                 window.location.href = 'login.html';
+            });
+
+            document.getElementById('detailsCloseBtn').addEventListener('click', () => closeDetailsModal());
+            document.getElementById('detailsModalOverlay').addEventListener('click', (e) => {
+                if (e.target && e.target.id === 'detailsModalOverlay') closeDetailsModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeDetailsModal();
             });
 
             document.getElementById('btnRefresh').addEventListener('click', () => loadAll());

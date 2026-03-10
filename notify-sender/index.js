@@ -56,6 +56,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'X-Ezee-Notify-Secret']
 }));
 
+app.options('/notifyNewSubmission', (req, res) => {
+  const origin = String(req.get('Origin') || '');
+  if (!allowedOrigins.includes('*')) {
+    if (!isAllowedOrigin(origin)) {
+      return res.sendStatus(204);
+    }
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Ezee-Notify-Secret');
+  return res.sendStatus(204);
+});
+
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/', (req, res) => {
