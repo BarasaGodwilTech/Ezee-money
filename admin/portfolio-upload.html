@@ -242,6 +242,43 @@
                 </div>
             </div>
         </div>
+
+        <div class="card" style="margin-top:16px;">
+            <h2>Activations (Min Float)</h2>
+            <div class="help">Mark clients who have topped up the minimum float. This updates agent dashboards.</div>
+
+            <div class="row" style="margin-top:10px; justify-content:space-between;">
+                <input type="text" id="actSearch" placeholder="Search by client, phone, agent" style="max-width:420px;">
+                <div class="row">
+                    <button class="btn btn-muted" id="btnReloadAct" type="button">Reload</button>
+                    <button class="btn btn-primary" id="btnSaveAct" type="button" disabled>Save Activations</button>
+                </div>
+            </div>
+
+            <div class="muted" id="actMeta" style="margin-top:10px;">Loading...</div>
+
+            <div class="table-container" style="margin-top:10px; overflow-x:auto;">
+                <table id="actTable">
+                    <thead>
+                        <tr>
+                            <th>Submitted By</th>
+                            <th>Client</th>
+                            <th>Phone</th>
+                            <th>SC Code</th>
+                            <th class="right">Txns Last Week</th>
+                            <th class="right">Value Last Week</th>
+                            <th>Activated</th>
+                            <th class="right">Float (UGX)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="8" class="muted">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="actAlert" class="alert" style="display:none;"></div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
@@ -272,6 +309,11 @@
         let knownClients = [];
         let knownClientIndex = [];
 
+        let adminSubmissions = [];
+        let adminPortfolio = null;
+        let adminActivations = null;
+        let activationDraft = new Map();
+
         let ocrWorker = null;
 
         function showAlert(message, type) {
@@ -279,6 +321,20 @@
             el.style.display = 'block';
             el.className = 'alert ' + (type || '');
             el.textContent = message;
+        }
+
+        function showActAlert(message, type) {
+            const el = document.getElementById('actAlert');
+            if (!el) return;
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function hideActAlert() {
+            const el = document.getElementById('actAlert');
+            if (!el) return;
+            el.style.display = 'none';
         }
 
         function setCfgStatus(text, variant) {
@@ -452,6 +508,221 @@
                 .replace(/[^a-z\s]/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
+        }
+
+        function normalizeDigitsOnly(s) {
+            return String(s || '').replace(/\D/g, '').trim();
+        }
+
+        function formatMoneyUGX(n) {
+            if (n === null || n === undefined || n === '') return '';
+            const num = Number(n);
+            if (!Number.isFinite(num)) return '';
+            return num.toLocaleString() + ' UGX';
+        }
+
+        function normalizeFloatUGX(v) {
+            const s = String(v || '').trim();
+            if (!s) return null;
+            const cleaned = s.replace(/UGX/gi, '').replace(/,/g, '').replace(/\s+/g, '').trim();
+            const n = Number(cleaned);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        async function loadJsonFileFromGitHubApi(filename) {
+            if (!githubService || !githubService.config || !githubService.config.token) throw new Error('GitHub config missing');
+            const cfg = githubService.config;
+            const response = await fetch(`https://api.github.com/repos/${cfg.repoOwner}/${cfg.repoName}/contents/${filename}`, {
+                headers: {
+                    'Authorization': `token ${cfg.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (!response.ok) {
+                if (response.status === 404) return null;
+                throw new Error(`GitHub read failed: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (!data || !data.content) return null;
+            return JSON.parse(atob(data.content));
+        }
+
+        async function loadJsonFileFromPublicRaw(filename) {
+            const cfg = (githubService && githubService.config) ? githubService.config : null;
+            const owner = cfg?.repoOwner;
+            const repo = cfg?.repoName;
+            const branch = cfg?.branchName || 'main';
+            if (!owner || !repo) return null;
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?t=${Date.now()}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                if (res.status === 404) return null;
+                throw new Error(`Raw fetch failed: ${res.status} ${res.statusText}`);
+            }
+            return await res.json();
+        }
+
+        async function loadJsonFileBestEffort(filename) {
+            try {
+                const v = await loadJsonFileFromGitHubApi(filename);
+                if (v !== null) return v;
+            } catch (e) {
+                console.warn('GitHub API read failed (will try raw):', e);
+            }
+            return await loadJsonFileFromPublicRaw(filename);
+        }
+
+        function buildPortfolioIndexForAdmin(rows) {
+            const byName = new Map();
+            const bySc = new Map();
+            for (const r of (rows || [])) {
+                const sc = normalizeDigitsOnly(r && r.scCode);
+                if (sc) bySc.set(sc, r);
+                const k1 = normalizeNameKey(r && r.matchedClientName);
+                if (k1) byName.set(k1, r);
+                const k2 = normalizeNameKey(r && r.agentName);
+                if (k2 && !byName.has(k2)) byName.set(k2, r);
+            }
+            return { byName, bySc };
+        }
+
+        function getClientPortfolioRowAdmin(clientInfo, pIdx) {
+            const nameKey = normalizeNameKey(clientInfo && clientInfo.fullName);
+            if (nameKey && pIdx && pIdx.byName && pIdx.byName.has(nameKey)) return pIdx.byName.get(nameKey);
+            return null;
+        }
+
+        function safeText(s) {
+            return String(s || '').trim();
+        }
+
+        function renderActivationsTable() {
+            hideActAlert();
+            const tbody = document.querySelector('#actTable tbody');
+            const meta = document.getElementById('actMeta');
+            const search = normalizeNameKey(document.getElementById('actSearch')?.value || '');
+
+            const subs = Array.isArray(adminSubmissions) ? adminSubmissions : [];
+            const rows = (adminPortfolio && Array.isArray(adminPortfolio.rows)) ? adminPortfolio.rows : [];
+            const pIdx = buildPortfolioIndexForAdmin(rows);
+            const acts = (adminActivations && adminActivations.clients) ? adminActivations.clients : {};
+
+            const filtered = subs.filter(s => {
+                const c = s && s.clientInfo ? s.clientInfo : {};
+                const sb = s && s.submittedBy ? s.submittedBy : (s && s.submitted_by ? s.submitted_by : {});
+                const key = normalizeNameKey((c.fullName || '') + ' ' + (c.phoneNumber || '') + ' ' + (sb.agentName || ''));
+                if (!search) return true;
+                return key.includes(search);
+            });
+
+            meta.textContent = `Showing ${filtered.length} submissions`;
+            document.getElementById('btnSaveAct').disabled = filtered.length === 0;
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="muted">No submissions found</td></tr>';
+                return;
+            }
+
+            const html = [];
+            for (const s of filtered) {
+                const id = safeText(s && s.id);
+                const c = s && s.clientInfo ? s.clientInfo : {};
+                const sb = s && s.submittedBy ? s.submittedBy : (s && s.submitted_by ? s.submitted_by : {});
+                const pRow = getClientPortfolioRowAdmin(c, pIdx);
+                const scCode = pRow ? safeText(pRow.scCode) : '';
+                const txns = pRow && pRow.txnsLastWeek !== undefined && pRow.txnsLastWeek !== null ? pRow.txnsLastWeek : '';
+                const value = pRow && pRow.valueLastWeekUGX !== undefined && pRow.valueLastWeekUGX !== null ? pRow.valueLastWeekUGX : '';
+
+                const existing = acts && id ? acts[id] : null;
+                const draft = activationDraft.has(id) ? activationDraft.get(id) : null;
+                const activated = draft ? !!draft.activated : !!(existing && existing.activated);
+                const floatAmount = draft ? draft.floatAmount : (existing && existing.floatAmount !== undefined ? existing.floatAmount : '');
+
+                html.push(`
+                    <tr>
+                        <td>${escapeHtml(sb.agentName || '')}</td>
+                        <td>${escapeHtml(c.fullName || '')}</td>
+                        <td>${escapeHtml(c.phoneNumber || '')}</td>
+                        <td>${escapeHtml(scCode)}</td>
+                        <td class="right">${escapeHtml(txns)}</td>
+                        <td class="right">${escapeHtml(formatMoneyUGX(value))}</td>
+                        <td>
+                            <input type="checkbox" data-act-id="${escapeHtml(id)}" data-act-field="activated" ${activated ? 'checked' : ''} />
+                        </td>
+                        <td class="right" style="min-width:160px;">
+                            <input type="text" value="${escapeHtml(floatAmount)}" data-act-id="${escapeHtml(id)}" data-act-field="floatAmount" style="width:140px; text-align:right;" />
+                        </td>
+                    </tr>
+                `);
+            }
+
+            tbody.innerHTML = html.join('');
+        }
+
+        function upsertActivationDraft(submissionId, patch) {
+            const id = safeText(submissionId);
+            if (!id) return;
+            const prev = activationDraft.has(id) ? (activationDraft.get(id) || {}) : {};
+            activationDraft.set(id, { ...prev, ...patch });
+        }
+
+        async function loadAdminActivationData() {
+            activationDraft = new Map();
+            document.getElementById('btnSaveAct').disabled = true;
+            const meta = document.getElementById('actMeta');
+            if (meta) meta.textContent = 'Loading...';
+            try {
+                const subsData = await loadJsonFileBestEffort('submissions.json');
+                const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+                adminSubmissions = Array.isArray(list) ? list : [];
+
+                adminPortfolio = await loadJsonFileBestEffort('agent-portfolio.json');
+                adminActivations = await loadJsonFileBestEffort('activations.json');
+                if (!adminActivations || typeof adminActivations !== 'object') {
+                    adminActivations = { clients: {}, lastUpdated: null };
+                }
+                if (!adminActivations.clients || typeof adminActivations.clients !== 'object') {
+                    adminActivations.clients = {};
+                }
+
+                renderActivationsTable();
+            } catch (e) {
+                console.error(e);
+                showActAlert('Failed to load activation data: ' + e.message, 'error');
+                const tbody = document.querySelector('#actTable tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="muted">Failed to load</td></tr>';
+                if (meta) meta.textContent = 'Failed to load';
+            }
+        }
+
+        async function saveActivationsToGitHub() {
+            if (!githubService || !githubService.config || !githubService.config.token) {
+                throw new Error('GitHub config missing');
+            }
+
+            let existing = { clients: {}, lastUpdated: null };
+            try {
+                const loaded = await loadJsonFileFromGitHubApi('activations.json');
+                if (loaded && typeof loaded === 'object') existing = loaded;
+            } catch (e) {
+                existing = { clients: {}, lastUpdated: null };
+            }
+            if (!existing.clients || typeof existing.clients !== 'object') existing.clients = {};
+
+            for (const [id, patch] of activationDraft.entries()) {
+                if (!id) continue;
+                const prev = existing.clients[id] && typeof existing.clients[id] === 'object' ? existing.clients[id] : {};
+                existing.clients[id] = {
+                    ...prev,
+                    ...patch,
+                    updatedAt: new Date().toISOString()
+                };
+            }
+
+            existing.lastUpdated = new Date().toISOString();
+
+            const content = btoa(JSON.stringify(existing, null, 2));
+            await githubService.uploadFile('activations.json', content, 'Update client activations');
         }
 
         function tokenSet(s) {
@@ -1355,7 +1626,63 @@
             // Load known client names to improve OCR reliability
             await loadSubmissionsForMatching();
 
+            await loadAdminActivationData();
+
             document.getElementById('btnAddRow').addEventListener('click', () => addRow());
+
+            document.getElementById('btnReloadAct').addEventListener('click', async () => {
+                try {
+                    showActAlert('Reloading...', '');
+                    await loadAdminActivationData();
+                    showActAlert('Reloaded.', 'success');
+                } catch (e) {
+                    showActAlert('Reload failed: ' + e.message, 'error');
+                }
+            });
+
+            document.getElementById('actSearch').addEventListener('input', () => renderActivationsTable());
+
+            document.querySelector('#actTable tbody').addEventListener('input', (e) => {
+                const t = e.target;
+                if (!t || !t.dataset) return;
+                const id = t.dataset.actId;
+                const field = t.dataset.actField;
+                if (!id || !field) return;
+                if (field === 'floatAmount') {
+                    const n = normalizeFloatUGX(t.value);
+                    upsertActivationDraft(id, { floatAmount: n === null ? '' : n });
+                }
+            });
+
+            document.querySelector('#actTable tbody').addEventListener('change', (e) => {
+                const t = e.target;
+                if (!t || !t.dataset) return;
+                const id = t.dataset.actId;
+                const field = t.dataset.actField;
+                if (!id || !field) return;
+                if (field === 'activated') {
+                    upsertActivationDraft(id, { activated: !!t.checked });
+                }
+            });
+
+            document.getElementById('btnSaveAct').addEventListener('click', async () => {
+                try {
+                    if (!activationDraft || activationDraft.size === 0) {
+                        showActAlert('No activation changes to save.', 'error');
+                        return;
+                    }
+                    document.getElementById('btnSaveAct').disabled = true;
+                    showActAlert('Saving activations...', '');
+                    await saveActivationsToGitHub();
+                    activationDraft = new Map();
+                    showActAlert('Saved activations successfully.', 'success');
+                    await loadAdminActivationData();
+                } catch (e) {
+                    showActAlert('Save failed: ' + e.message, 'error');
+                } finally {
+                    document.getElementById('btnSaveAct').disabled = false;
+                }
+            });
 
             // Manual edit handlers
             document.querySelector('#rowsTable tbody').addEventListener('input', (e) => {
