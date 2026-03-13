@@ -640,7 +640,7 @@
             document.getElementById('statUpdated').textContent = (portfolio && portfolio.generatedAt) ? new Date(portfolio.generatedAt).toLocaleString() : '—';
 
             if (portfolio && pRows.length > 0 && matchedRowsCount === 0 && clients.length > 0) {
-                showAlert('Portfolio data loaded but no rows matched your clients. Ask super admin to ensure names are selected from the list in Portfolio Upload (matchedClientName).', 'error');
+                showAlert('Portfolio data loaded please make sure you have active agents registered.', 'error');
             }
 
             if (rows.length === 0) {
