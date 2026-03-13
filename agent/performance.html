@@ -457,18 +457,6 @@
             const nameKey = normalizeName(client.fullName);
             if (nameKey && idx.byName.has(nameKey)) return idx.byName.get(nameKey);
 
-            // Fuzzy contains (guarded): short / single-token names can match unrelated clients.
-            // Only allow fuzzy matching for reasonably long, multi-word names.
-            if (nameKey) {
-                const tokens = nameKey.split(' ').filter(Boolean);
-                const allowFuzzy = tokens.length >= 2 && nameKey.length >= 8;
-                if (allowFuzzy) {
-                    for (const [k, r] of idx.byName.entries()) {
-                        if (k.includes(nameKey) || nameKey.includes(k)) return r;
-                    }
-                }
-            }
-
             return null;
         }
 
