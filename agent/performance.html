@@ -410,6 +410,16 @@
                 .replace(/\s+/g, ' ');
         }
 
+        function normalizeStrictAgentName(s) {
+            // Strict matching for access control (case-insensitive, whitespace-normalized).
+            // Do not allow SC-code-only access.
+            return normalizeName(s);
+        }
+
+        function normalizeStrictAgentId(s) {
+            return String(s || '').trim();
+        }
+
         function normalizeDigits(s) {
             return String(s || '').replace(/\D/g, '');
         }
@@ -458,16 +468,33 @@
         }
 
         function getMyClientSubmissions() {
-            const mySc = agentInfo && (agentInfo.scCode || agentInfo.agentScCode);
-            if (!mySc) return [];
+            const myId = normalizeStrictAgentId(agentInfo && agentInfo.id);
+            const myName = normalizeStrictAgentName(agentInfo && agentInfo.fullName);
+            const mySc = String(agentInfo && (agentInfo.scCode || agentInfo.agentScCode) || '').trim();
 
-            const myScStr = String(mySc).trim();
+            // Require at least one strong identifier.
+            if (!myId && !myName) return [];
 
             return (submissions || []).filter(s => {
                 const submittedBy = s.submittedBy || s.submitted_by || {};
-                const subSc = submittedBy.agentScCode || submittedBy.scCode || s.scCode || '';
-                if (myScStr && String(subSc || '').trim() === myScStr) return true;
-                return false;
+
+                // Primary security key: agentId (most stable/secure).
+                const subId = normalizeStrictAgentId(submittedBy.agentId);
+                if (myId && subId) {
+                    return subId === myId;
+                }
+
+                // Fallback (only if agentId is missing on either side): strict name match.
+                const subName = normalizeStrictAgentName(submittedBy.agentName);
+                if (!subName) return false;
+                if (!myName) return false;
+                if (subName !== myName) return false;
+
+                // Optional second factor: if both sides have an SC code, require it to match too.
+                const subSc = String(submittedBy.agentScCode || submittedBy.scCode || s.scCode || '').trim();
+                if (mySc && subSc && subSc !== mySc) return false;
+
+                return true;
             });
         }
 

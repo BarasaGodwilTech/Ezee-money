@@ -187,7 +187,7 @@
 
                 <div class="form-group">
                     <label>Upload Screenshot</label>
-                    <input type="file" id="fileInput" accept="image/*">
+                    <input type="file" id="fileInput" accept="image/*" multiple>
                 </div>
 
                 <div class="form-group">
@@ -266,7 +266,7 @@
         let githubService;
         let githubCfg = null;
 
-        let selectedFile = null;
+        let selectedFiles = [];
         let extracted = [];
         let extractedRawText = '';
         let knownClients = [];
@@ -1308,6 +1308,16 @@
             await githubService.uploadFile('agent-portfolio.json', content, 'Update agent portfolio metrics');
         }
 
+        function mergeExtractedRowsByScCode(rows) {
+            const merged = new Map();
+            for (const r of (rows || [])) {
+                const key = String(r?.scCode || '').trim();
+                if (!key) continue;
+                merged.set(key, r);
+            }
+            return Array.from(merged.values());
+        }
+
         async function init() {
             const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
             const role = (localStorage.getItem('adminRole') || '').trim();
@@ -1376,7 +1386,7 @@
             });
 
             document.getElementById('fileInput').addEventListener('change', (e) => {
-                selectedFile = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                selectedFiles = e.target.files ? Array.from(e.target.files) : [];
                 extracted = [];
                 extractedRawText = '';
                 renderRows();
@@ -1384,59 +1394,72 @@
                 const preview = document.getElementById('preview');
                 preview.innerHTML = 'No image selected';
 
-                document.getElementById('btnExtract').disabled = !selectedFile;
+                document.getElementById('btnExtract').disabled = !selectedFiles.length;
                 document.getElementById('btnSave').disabled = true;
 
-                if (selectedFile) {
-                    const url = URL.createObjectURL(selectedFile);
-                    preview.innerHTML = `<img src="${url}">`;
-                    preview.querySelector('img').onload = () => URL.revokeObjectURL(url);
+                if (selectedFiles.length) {
+                    const first = selectedFiles[0];
+                    const url = URL.createObjectURL(first);
+                    const extra = selectedFiles.length > 1 ? `<div class=\"muted\" style=\"position:absolute;bottom:8px;left:10px;right:10px;text-align:center;\">${selectedFiles.length} images selected</div>` : '';
+                    preview.innerHTML = `<div style=\"position:relative;width:100%;height:100%;\"><img src=\"${url}\">${extra}</div>`;
+                    const img = preview.querySelector('img');
+                    if (img) img.onload = () => URL.revokeObjectURL(url);
                 }
             });
 
             document.getElementById('btnExtract').addEventListener('click', async () => {
-                if (!selectedFile) return;
+                if (!selectedFiles.length) return;
                 try {
                     document.getElementById('btnExtract').disabled = true;
-                    showAlert('Running OCR... preparing image.', '');
+                    showAlert('Running OCR... preparing images.', '');
                     const startedAt = Date.now();
-                    const ocr = await ocrFile(selectedFile, (m) => {
-                        const pct = (typeof m.progress === 'number') ? Math.round(m.progress * 100) : null;
-                        const label = pct !== null ? `Running OCR... ${pct}%` : 'Running OCR...';
-                        showAlert(label, '');
-                    });
-                    extractedRawText = ocr.text;
-                    const scToName = buildScToFullNameFromOcrText(extractedRawText);
+                    const allRows = [];
+                    const allRawText = [];
 
-                    // Prefer layout-based parsing; fall back to text parsing if words are missing.
-                    let parsedRows = (ocr.words && ocr.words.length)
-                        ? parseRowsFromWordLayout(ocr.words)
-                        : [];
+                    for (let fi = 0; fi < selectedFiles.length; fi++) {
+                        const file = selectedFiles[fi];
+                        const fileLabel = selectedFiles.length > 1 ? ` (${fi + 1}/${selectedFiles.length})` : '';
+                        const ocr = await ocrFile(file, (m) => {
+                            const pct = (typeof m.progress === 'number') ? Math.round(m.progress * 100) : null;
+                            const label = pct !== null ? `Running OCR${fileLabel}... ${pct}%` : `Running OCR${fileLabel}...`;
+                            showAlert(label, '');
+                        });
 
-                    // If layout parsing yields nothing, fall back to text parsing (more permissive).
-                    if (!parsedRows || parsedRows.length === 0) {
-                        parsedRows = parsePortfolioTextToRows(ocr.text);
-                    }
+                        allRawText.push(ocr.text || '');
 
-                    // Apply whitelist matching only if parsers did not already assign matchedClientName.
-                    // (Both parsers attempt whitelist matching internally when submissions.json is available.)
-                    extracted = (parsedRows || []).map(r => ({ ...r }));
+                        // Prefer layout-based parsing; fall back to text parsing if words are missing.
+                        let parsedRows = (ocr.words && ocr.words.length)
+                            ? parseRowsFromWordLayout(ocr.words)
+                            : [];
 
-                    // If OCR text indicates a wrapped full name for this SC code, prefer it.
-                    for (const r of extracted) {
-                        const sc = String(r && r.scCode || '').trim();
-                        if (!sc) continue;
-                        const full = scToName.get(sc);
-                        if (full) {
-                            r.agentName = full;
-                            r.nameCandidate = full;
+                        // If layout parsing yields nothing, fall back to text parsing (more permissive).
+                        if (!parsedRows || parsedRows.length === 0) {
+                            parsedRows = parsePortfolioTextToRows(ocr.text);
                         }
+
+                        let fileRows = (parsedRows || []).map(r => ({ ...r }));
+
+                        const scToName = buildScToFullNameFromOcrText(ocr.text || '');
+                        for (const r of fileRows) {
+                            const sc = String(r && r.scCode || '').trim();
+                            if (!sc) continue;
+                            const full = scToName.get(sc);
+                            if (full) {
+                                r.agentName = full;
+                                r.nameCandidate = full;
+                            }
+                        }
+
+                        const hasMatched = fileRows.some(r => String(r && r.matchedClientName || '').trim());
+                        if (!hasMatched) {
+                            fileRows = applyWhitelistMatching(fileRows);
+                        }
+
+                        for (const r of fileRows) allRows.push(r);
                     }
 
-                    const hasMatched = extracted.some(r => String(r && r.matchedClientName || '').trim());
-                    if (!hasMatched) {
-                        extracted = applyWhitelistMatching(extracted);
-                    }
+                    extractedRawText = allRawText.join('\n\n');
+                    extracted = mergeExtractedRowsByScCode(allRows);
 
                     if (!knownClientIndex || knownClientIndex.length === 0) {
                         showAlert('OCR finished, but submissions.json could not be loaded for matching. Names may appear incomplete. Configure GitHub access or ensure the public submissions.json exists.', 'error');
@@ -1455,7 +1478,7 @@
                     console.error(e);
                     showAlert('OCR failed: ' + e.message, 'error');
                 } finally {
-                    document.getElementById('btnExtract').disabled = !selectedFile;
+                    document.getElementById('btnExtract').disabled = !selectedFiles.length;
                 }
             });
 
