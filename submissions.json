@@ -195,8 +195,36 @@
       },
       "submissionDate": "2026-03-14T10:23:13.617Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773499715066-ltkmquaei",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Shibuta  Aziz Abdallah",
+        "phoneNumber": "0701955029",
+        "email": "shibutaaziz@gmail.com",
+        "nationalId": "CM92026104XE2G",
+        "dob": "1992-11-26",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Naluya",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0704325375"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/idFront_1773499715098.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/idBack_1773499731804.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/agentPhoto_1773499741035.jpg"
+      },
+      "submissionDate": "2026-03-14T14:49:09.269Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-14T10:23:14.296Z",
-  "totalSubmissions": 7
+  "lastUpdated": "2026-03-14T14:49:09.947Z",
+  "totalSubmissions": 8
 }
