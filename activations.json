@@ -1,0 +1,23 @@
+{
+  "clients": {
+    "SUB-1772122026725-dk4p2zlt5": {
+      "activated": true,
+      "floatAmount": 50000,
+      "updatedAt": "2026-03-14T08:52:17.819Z"
+    },
+    "SUB-1772355923448-r3y6h7dpk": {
+      "activated": true,
+      "updatedAt": "2026-03-14T08:52:17.824Z"
+    },
+    "SUB-1772723407964-bhbll4zf5": {
+      "activated": true,
+      "floatAmount": 50000,
+      "updatedAt": "2026-03-14T08:52:17.824Z"
+    },
+    "SUB-1772898362526-cfxdopy49": {
+      "activated": true,
+      "updatedAt": "2026-03-14T08:52:17.825Z"
+    }
+  },
+  "lastUpdated": "2026-03-14T08:52:17.825Z"
+}
