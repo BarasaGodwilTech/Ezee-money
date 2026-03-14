@@ -1,15 +1,25 @@
 {
-  "generatedAt": "2026-03-14T11:25:01.874Z",
-  "lastUpdated": "2026-03-14T11:25:01.874Z",
+  "generatedAt": "2026-03-14T11:28:51.716Z",
+  "lastUpdated": "2026-03-14T11:28:51.716Z",
   "rows": [
     {
-      "agentName": "WETAKA MARGARET",
-      "nameCandidate": "WETAKA MARGARET",
-      "scCode": "46500687",
-      "txnsLastWeek": 1,
-      "valueLastWeekUGX": 21000,
+      "agentName": "Mukaaya Moses",
+      "nameCandidate": "Mukaaya Moses",
+      "scCode": "34491785",
+      "txnsLastWeek": 3,
+      "valueLastWeekUGX": 309100,
       "currency": "UGX",
-      "matchedClientName": "WETAKA MARGARET",
+      "matchedClientName": "Mukaaya Moses Tenywa",
+      "matchScore": 0.9
+    },
+    {
+      "agentName": "NAMUKONGO FRANCIS",
+      "nameCandidate": "NAMUKONGO FRANCIS",
+      "scCode": "46116222",
+      "txnsLastWeek": 127,
+      "valueLastWeekUGX": 1029600,
+      "currency": "UGX",
+      "matchedClientName": "NAMUKONGO FRANCIS",
       "matchScore": 1
     }
   ],
