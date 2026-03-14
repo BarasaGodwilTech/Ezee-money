@@ -167,8 +167,36 @@
       },
       "submissionDate": "2026-03-14T10:04:07.401Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773483739344-sgz193wyg",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "NAMBUYA SHAMILAH",
+        "phoneNumber": "0770590381",
+        "email": "shamilahnambuya0@gmail.com",
+        "nationalId": "CF04026109YCND",
+        "dob": "2004-12-20",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Naluya",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0705925374"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/idFront_1773483739403.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/idBack_1773483765994.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/agentPhoto_1773483783258.jpg"
+      },
+      "submissionDate": "2026-03-14T10:23:13.617Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-14T10:04:08.096Z",
-  "totalSubmissions": 6
+  "lastUpdated": "2026-03-14T10:23:14.296Z",
+  "totalSubmissions": 7
 }
