@@ -139,8 +139,36 @@
       },
       "submissionDate": "2026-03-09T16:36:05.018Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773482609876-oywyqlcyw",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Hirya joshua malwa",
+        "phoneNumber": "0779672004",
+        "email": "joshuamalwah@gmail.com",
+        "nationalId": "CM890601013QTG",
+        "dob": "1989-10-24",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Gloria mercy",
+        "nextOfKinRelationship": "other_relative",
+        "nextOfKinPhone": "705925375"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/idFront_1773482609926.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/idBack_1773482626639.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/agentPhoto_1773482635861.jpg"
+      },
+      "submissionDate": "2026-03-14T10:04:07.401Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-10T19:46:51.578Z",
-  "totalSubmissions": 5
+  "lastUpdated": "2026-03-14T10:04:08.096Z",
+  "totalSubmissions": 6
 }
