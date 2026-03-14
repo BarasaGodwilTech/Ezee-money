@@ -1,9 +1,9 @@
 {
   "clients": {
     "SUB-1772122026725-dk4p2zlt5": {
-      "activated": true,
+      "activated": false,
       "floatAmount": 50000,
-      "updatedAt": "2026-03-14T09:01:17.289Z"
+      "updatedAt": "2026-03-14T11:38:43.777Z"
     },
     "SUB-1772355923448-r3y6h7dpk": {
       "activated": false,
@@ -20,5 +20,5 @@
       "updatedAt": "2026-03-14T08:59:36.276Z"
     }
   },
-  "lastUpdated": "2026-03-14T09:01:17.290Z"
+  "lastUpdated": "2026-03-14T11:38:43.777Z"
 }
