@@ -223,8 +223,36 @@
       },
       "submissionDate": "2026-03-14T14:49:09.269Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773588449437-db2u6yudy",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Namono Recheal",
+        "phoneNumber": "0770701544",
+        "email": "remonamono@gmail.com",
+        "nationalId": "CF0206710A5K8D",
+        "dob": "2002-05-25",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Shafik",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0705325300"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/idFront_1773588449475.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/idBack_1773588467773.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/agentPhoto_1773588477604.jpg"
+      },
+      "submissionDate": "2026-03-15T15:28:07.494Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-14T14:49:09.947Z",
-  "totalSubmissions": 8
+  "lastUpdated": "2026-03-15T15:28:08.210Z",
+  "totalSubmissions": 9
 }
