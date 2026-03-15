@@ -1,15 +1,45 @@
 {
-  "generatedAt": "2026-03-14T11:37:33.435Z",
-  "lastUpdated": "2026-03-14T11:37:33.436Z",
+  "generatedAt": "2026-03-15T13:53:10.077Z",
+  "lastUpdated": "2026-03-15T13:53:10.104Z",
   "rows": [
     {
-      "agentName": "WETAKA MARGARET",
-      "nameCandidate": "WETAKA MARGARET",
-      "scCode": "46500687",
-      "txnsLastWeek": 1,
-      "valueLastWeekUGX": 21000,
+      "agentName": "Shibuta Aziz Abdallah",
+      "nameCandidate": "Shibuta Aziz Abdallah",
+      "scCode": "01278593",
+      "txnsLastWeek": 12,
+      "valueLastWeekUGX": 53500,
       "currency": "UGX",
-      "matchedClientName": "WETAKA MARGARET",
+      "matchedClientName": "Shibuta  Aziz Abdallah",
+      "matchScore": 0.9
+    },
+    {
+      "agentName": "OWORI INNOCENT",
+      "nameCandidate": "OWORI INNOCENT",
+      "scCode": "56308178",
+      "txnsLastWeek": 54,
+      "valueLastWeekUGX": 693824,
+      "currency": "UGX",
+      "matchedClientName": "OWORI INNOCENT",
+      "matchScore": 1
+    },
+    {
+      "agentName": "NAMUKONGO FRANCIS",
+      "nameCandidate": "NAMUKONGO FRANCIS",
+      "scCode": "46116222",
+      "txnsLastWeek": 116,
+      "valueLastWeekUGX": 1522600,
+      "currency": "UGX",
+      "matchedClientName": "NAMUKONGO FRANCIS",
+      "matchScore": 1
+    },
+    {
+      "agentName": "NAMBUYA SHAMILAH",
+      "nameCandidate": "NAMBUYA SHAMILAH",
+      "scCode": "61270903",
+      "txnsLastWeek": 15,
+      "valueLastWeekUGX": 35000,
+      "currency": "UGX",
+      "matchedClientName": "NAMBUYA SHAMILAH",
       "matchScore": 1
     },
     {
@@ -21,26 +51,6 @@
       "currency": "UGX",
       "matchedClientName": "Mukaaya Moses Tenywa",
       "matchScore": 0.9
-    },
-    {
-      "agentName": "OWORI INNOCENT",
-      "nameCandidate": "OWORI INNOCENT",
-      "scCode": "56308178",
-      "txnsLastWeek": 65,
-      "valueLastWeekUGX": 799000,
-      "currency": "UGX",
-      "matchedClientName": "OWORI INNOCENT",
-      "matchScore": 1
-    },
-    {
-      "agentName": "NAMUKONGO FRANCIS",
-      "nameCandidate": "NAMUKONGO FRANCIS",
-      "scCode": "46116222",
-      "txnsLastWeek": 127,
-      "valueLastWeekUGX": 1029600,
-      "currency": "UGX",
-      "matchedClientName": "NAMUKONGO FRANCIS",
-      "matchScore": 1
     }
   ],
   "source": {
