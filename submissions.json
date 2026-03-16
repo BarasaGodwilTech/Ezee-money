@@ -139,8 +139,120 @@
       },
       "submissionDate": "2026-03-09T16:36:05.018Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773482609876-oywyqlcyw",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Hirya joshua malwa",
+        "phoneNumber": "0779672004",
+        "email": "joshuamalwah@gmail.com",
+        "nationalId": "CM890601013QTG",
+        "dob": "1989-10-24",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Gloria mercy",
+        "nextOfKinRelationship": "other_relative",
+        "nextOfKinPhone": "705925375"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/idFront_1773482609926.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/idBack_1773482626639.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773482609876-oywyqlcyw/agentPhoto_1773482635861.jpg"
+      },
+      "submissionDate": "2026-03-14T10:04:07.401Z",
+      "status": "pending"
+    },
+    {
+      "id": "SUB-1773483739344-sgz193wyg",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "NAMBUYA SHAMILAH",
+        "phoneNumber": "0770590381",
+        "email": "shamilahnambuya0@gmail.com",
+        "nationalId": "CF04026109YCND",
+        "dob": "2004-12-20",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Naluya",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0705925374"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/idFront_1773483739403.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/idBack_1773483765994.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/agentPhoto_1773483783258.jpg"
+      },
+      "submissionDate": "2026-03-14T10:23:13.617Z",
+      "status": "pending"
+    },
+    {
+      "id": "SUB-1773499715066-ltkmquaei",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Shibuta  Aziz Abdallah",
+        "phoneNumber": "0701955029",
+        "email": "shibutaaziz@gmail.com",
+        "nationalId": "CM92026104XE2G",
+        "dob": "1992-11-26",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Naluya",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0704325375"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/idFront_1773499715098.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/idBack_1773499731804.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/agentPhoto_1773499741035.jpg"
+      },
+      "submissionDate": "2026-03-14T14:49:09.269Z",
+      "status": "pending"
+    },
+    {
+      "id": "SUB-1773588449437-db2u6yudy",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Namono Recheal",
+        "phoneNumber": "0770701544",
+        "email": "remonamono@gmail.com",
+        "nationalId": "CF0206710A5K8D",
+        "dob": "2002-05-25",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Shafik",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0705325300"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/idFront_1773588449475.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/idBack_1773588467773.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/agentPhoto_1773588477604.jpg"
+      },
+      "submissionDate": "2026-03-15T15:28:07.494Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-10T19:46:51.578Z",
-  "totalSubmissions": 5
+  "lastUpdated": "2026-03-15T15:28:08.210Z",
+  "totalSubmissions": 9
 }

@@ -1,0 +1,40 @@
+{
+  "clients": {
+    "SUB-1772122026725-dk4p2zlt5": {
+      "activated": true,
+      "floatAmount": 50000,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1772355923448-r3y6h7dpk": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z",
+      "floatAmount": 120000
+    },
+    "SUB-1772723407964-bhbll4zf5": {
+      "activated": true,
+      "floatAmount": 50000,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1772898362526-cfxdopy49": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1773482609876-oywyqlcyw": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1773483739344-sgz193wyg": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1773499715066-ltkmquaei": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    },
+    "SUB-1773588449437-db2u6yudy": {
+      "activated": true,
+      "updatedAt": "2026-03-16T15:02:17.570Z"
+    }
+  },
+  "lastUpdated": "2026-03-16T15:02:17.570Z"
+}
