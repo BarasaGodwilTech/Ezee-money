@@ -251,8 +251,37 @@
       },
       "submissionDate": "2026-03-15T15:28:07.494Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773682751945-3muo4ptgo",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Barasa Godwil",
+        "phoneNumber": "68959",
+        "email": "barasagodwil@gmail.com",
+        "nationalId": "gfhkgfk",
+        "dob": "2026-03-06",
+        "gender": "female",
+        "businessAddress": "mbale",
+        "businessCoordinates": "1.0737764328562571, 34.114469132811855",
+        "residentialAddress": "mbale",
+        "nextOfKinName": "Barasa Godwil",
+        "nextOfKinRelationship": "other_relative",
+        "nextOfKinPhone": "7593"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773682751945-3muo4ptgo/idFront_1773682751976.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773682751945-3muo4ptgo/idBack_1773682765677.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773682751945-3muo4ptgo/agentPhoto_1773682774124.jpg"
+      },
+      "submissionDate": "2026-03-16T17:39:42.429Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-15T15:28:08.210Z",
-  "totalSubmissions": 9
+  "lastUpdated": "2026-03-16T17:39:42.761Z",
+  "totalSubmissions": 10
 }
