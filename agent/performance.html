@@ -139,7 +139,6 @@
         }
         .badge.active { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
         .badge.inactive { border-color:#fde68a; background:#fffbeb; color:#92400e; }
-        .badge.activated { border-color:#bfdbfe; background:#eff6ff; color:#1e40af; }
 
         tr.clickable-row { cursor: pointer; }
         tr.clickable-row:hover { background: #f9fafb; }
@@ -615,9 +614,9 @@
                 const isActivated = !!(act && act.activated);
                 if (isActivated) activatedCount++;
 
-                const statusBadge = isActivated
-                    ? '<span class="badge activated">Activated</span>'
-                    : (isActive ? '<span class="badge active">Active</span>' : '<span class="badge inactive">Inactive</span>');
+                const statusBadge = isActive
+                    ? '<span class="badge active">Active</span>'
+                    : '<span class="badge inactive">Inactive</span>';
 
                 const key = normalizeName(name + ' ' + phone);
                 if (search && !key.includes(search)) continue;

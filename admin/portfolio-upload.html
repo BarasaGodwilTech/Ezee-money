@@ -220,6 +220,7 @@
                         <div class="muted" id="editHint">Tip: You can edit rows before saving.</div>
                         <div class="row">
                             <button class="btn btn-muted" id="btnAddRow" disabled>Add Row</button>
+                            <button class="btn btn-muted" id="btnRematch" disabled>Re-match Names</button>
                         </div>
                     </div>
 
@@ -382,12 +383,16 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="muted">No extracted rows</td></tr>';
                 meta.textContent = 'No data extracted yet.';
                 document.getElementById('btnAddRow').disabled = true;
+                document.getElementById('btnRematch').disabled = true;
                 return;
             }
 
-            meta.textContent = `Extracted ${extracted.length} rows`;
+            const matched = extracted.filter(r => String(r && r.matchedClientName || '').trim()).length;
+            const pct = extracted.length ? Math.round((matched / extracted.length) * 100) : 0;
+            meta.textContent = `Extracted ${extracted.length} rows — Matched ${matched}/${extracted.length} (${pct}%)`;
 
             document.getElementById('btnAddRow').disabled = false;
+            document.getElementById('btnRematch').disabled = false;
 
             tbody.innerHTML = extracted.map((r, idx) => {
                 const nameVal = (r.matchedClientName || r.agentName || '').trim();
@@ -470,6 +475,21 @@
             if (!Number.isFinite(i) || i < 0 || i >= extracted.length) return;
             extracted.splice(i, 1);
             renderRows();
+        }
+
+        function rematchExtractedRows() {
+            if (!extracted || !extracted.length) return;
+            if (!knownClientIndex || knownClientIndex.length === 0) {
+                showAlert('Cannot re-match: submissions.json was not loaded.', 'error');
+                return;
+            }
+
+            extracted = applyWhitelistMatching(extracted);
+            renderRows();
+
+            const matched = extracted.filter(r => String(r && r.matchedClientName || '').trim()).length;
+            const pct = extracted.length ? Math.round((matched / extracted.length) * 100) : 0;
+            showAlert(`Re-match complete: ${matched}/${extracted.length} matched (${pct}%).`, matched === extracted.length ? 'success' : '');
         }
 
         function addRow() {
@@ -949,7 +969,9 @@
                 if (!scCode) return null;
                 if (txns === null) return null;
                 if (value === null) return null;
-                if (!ugxPresent) return null;
+                if (!ugxPresent) {
+                    if (!(txns === 0 && value === 0 && knownClientIndex && knownClientIndex.length)) return null;
+                }
 
                 // Basic sanity checks to reduce OCR mistakes
                 if (agentName.length < 3) return null;
@@ -971,9 +993,12 @@
                 // If we have known clients loaded, attempt to match extracted name to a known full name.
                 if (knownClientIndex && knownClientIndex.length) {
                     const match = bestClientMatch(agentName);
-                    if (!match) return null;
-                    row.matchedClientName = match.client.fullName;
-                    row.matchScore = match.score;
+                    if (!match) {
+                        if (!(txns === 0 && value === 0)) return null;
+                    } else {
+                        row.matchedClientName = match.client.fullName;
+                        row.matchScore = match.score;
+                    }
                 }
 
                 return row;
@@ -1415,8 +1440,13 @@
                 const hasUGX = /\bUGX\b/i.test(rowText)
                     || (rows[rowIdx + 1] ? /\bUGX\b/i.test(rows[rowIdx + 1].words.map(w => w.text).join(' ')) : false)
                     || (rows[rowIdx - 1] ? /\bUGX\b/i.test(rows[rowIdx - 1].words.map(w => w.text).join(' ')) : false);
-                if (!scCode || txns === null || value === null || !hasUGX) {
+                if (!scCode || txns === null || value === null) {
                     continue;
+                }
+                if (!hasUGX) {
+                    if (!(txns === 0 && value === 0 && knownClientIndex && knownClientIndex.length)) {
+                        continue;
+                    }
                 }
 
                 // Name candidate comes ONLY from tokens before SC on the same row.
@@ -1629,6 +1659,7 @@
             await loadAdminActivationData();
 
             document.getElementById('btnAddRow').addEventListener('click', () => addRow());
+            document.getElementById('btnRematch').addEventListener('click', () => rematchExtractedRows());
 
             document.getElementById('btnReloadAct').addEventListener('click', async () => {
                 try {
@@ -1723,6 +1754,7 @@
 
                 document.getElementById('btnExtract').disabled = !selectedFiles.length;
                 document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnRematch').disabled = true;
 
                 if (selectedFiles.length) {
                     const first = selectedFiles[0];
