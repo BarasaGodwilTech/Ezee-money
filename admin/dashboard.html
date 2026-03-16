@@ -2551,6 +2551,13 @@
                                     <input type="text" value="${clientInfo.businessAddress || ''}" readonly>
                                 </div>
                                 <div class="field full">
+                                    <label>Business Coordinates</label>
+                                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                        <input type="text" value="${clientInfo.businessCoordinates || ''}" readonly style="flex:1; min-width:220px;">
+                                        ${clientInfo.businessCoordinates ? `<a class="btn btn-sm btn-primary" href="https://www.google.com/maps?q=${encodeURIComponent(clientInfo.businessCoordinates)}" target="_blank" rel="noopener noreferrer">Open in Maps</a>` : ''}
+                                    </div>
+                                </div>
+                                <div class="field full">
                                     <label>Residential Address</label>
                                     <input type="text" value="${clientInfo.residentialAddress || ''}" readonly>
                                 </div>

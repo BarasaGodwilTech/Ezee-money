@@ -309,6 +309,7 @@ class GitHubService {
                 dob: submissionData.dob || '',
                 gender: submissionData.gender || '',
                 businessAddress: submissionData.businessAddress || '',
+                businessCoordinates: submissionData.businessCoordinates || '',
                 residentialAddress: submissionData.residentialAddress || '',
                 nextOfKinName: submissionData.nextOfKinName || '',
                 nextOfKinRelationship: submissionData.nextOfKinRelationship || '',

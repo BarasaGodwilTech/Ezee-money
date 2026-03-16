@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Field Agent Data Submission - Ezee Money</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         * {
             margin: 0;
@@ -332,6 +333,7 @@
             cursor: pointer;
             font-size: 14px;
             margin-right: 10px;
+            white-space: nowrap;
         }
 
         .performance-btn:hover {
@@ -340,6 +342,94 @@
         
         .logout-btn:hover {
             background: #c82333;
+        }
+
+        @media (max-width: 520px) {
+            .agent-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .agent-info > div:last-child {
+                width: 100%;
+                display: flex;
+                gap: 10px;
+            }
+            .performance-btn,
+            .logout-btn {
+                width: 100%;
+                justify-content: center;
+                margin-right: 0;
+            }
+        }
+
+        .coords-wrap {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @media (max-width: 520px) {
+            .coords-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .icon-btn {
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .map-help {
+            margin-top: 10px;
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .map-box {
+            margin-top: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        #businessMap {
+            width: 100%;
+            height: 260px;
+        }
+
+        @media (max-width: 520px) {
+            #businessMap { height: 220px; }
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            padding: 12px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        @media (max-width: 520px) {
+            .search-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -405,6 +495,31 @@
             <div class="form-group">
                 <label for="businessAddress" class="required">Business Address Landmark</label>
                 <input type="text" id="businessAddress" placeholder="Enter business address landmark">
+            </div>
+
+            <div class="form-group">
+                <label for="businessCoordinates" class="required">Select agent's business location on the map</label>
+                <div class="coords-wrap">
+                    <input type="text" id="businessCoordinates" placeholder="Fetching coordinates..." readonly>
+                    <button type="button" class="icon-btn" id="btnUseMyLocation" aria-label="Use current location">
+                        <i class="fas fa-location-crosshairs"></i>
+                    </button>
+                </div>
+                <div class="map-help">
+                    - Press and drag the map to move around<br>
+                    - Use + and - to zoom in and out<br>
+                    - Tap the target button to move to your current location<br>
+                    - Tap on the map to move the red pin marker
+                </div>
+                <div class="map-box">
+                    <div class="search-row">
+                        <input type="text" id="placeSearch" placeholder="Search a place">
+                        <button type="button" class="icon-btn" id="btnSearchPlace">
+                            <i class="fas fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                    <div id="businessMap"></div>
+                </div>
             </div>
             
             <div class="form-group">
@@ -542,6 +657,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="../js/github-service.js"></script>
     <script src="../js/submission-service.js"></script>
     <script src="../js/real-time-service.js"></script>
@@ -641,6 +757,7 @@
 
             setupPhotoUploads();
             initializeForm();
+            initBusinessLocationPicker();
             setupFormSubmission();
             initializeRealTimeService();
         });
@@ -793,6 +910,128 @@
             }
         }
 
+        let businessMap = null;
+        let businessMarker = null;
+        let businessLatLng = null;
+
+        function normalizeCoordNumber(n) {
+            const num = Number(n);
+            if (!Number.isFinite(num)) return null;
+            return num;
+        }
+
+        function formatLatLng(lat, lng) {
+            const la = normalizeCoordNumber(lat);
+            const lo = normalizeCoordNumber(lng);
+            if (la === null || lo === null) return '';
+            return `${la}, ${lo}`;
+        }
+
+        function setBusinessLatLng(lat, lng, moveMap) {
+            const la = normalizeCoordNumber(lat);
+            const lo = normalizeCoordNumber(lng);
+            if (la === null || lo === null) return;
+
+            businessLatLng = { lat: la, lng: lo };
+            document.getElementById('businessCoordinates').value = formatLatLng(la, lo);
+
+            if (businessMarker) {
+                businessMarker.setLatLng([la, lo]);
+            }
+
+            if (moveMap && businessMap) {
+                businessMap.setView([la, lo], Math.max(15, businessMap.getZoom() || 15));
+            }
+        }
+
+        async function requestBrowserGeolocation() {
+            return await new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve(pos),
+                    (err) => reject(err),
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+                );
+            });
+        }
+
+        async function useMyCurrentLocation() {
+            try {
+                const btn = document.getElementById('btnUseMyLocation');
+                btn.disabled = true;
+                const pos = await requestBrowserGeolocation();
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setBusinessLatLng(lat, lng, true);
+            } catch (e) {
+                alert('Failed to get current location. Please enable location permission and try again.');
+            } finally {
+                const btn = document.getElementById('btnUseMyLocation');
+                btn.disabled = false;
+            }
+        }
+
+        async function searchPlace() {
+            const q = String(document.getElementById('placeSearch').value || '').trim();
+            if (!q) return;
+            const btn = document.getElementById('btnSearchPlace');
+            btn.disabled = true;
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('Search failed');
+                const data = await res.json();
+                if (!Array.isArray(data) || data.length === 0) {
+                    alert('No results found. Try a different search.');
+                    return;
+                }
+                const item = data[0];
+                const lat = Number(item.lat);
+                const lon = Number(item.lon);
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+                setBusinessLatLng(lat, lon, true);
+            } catch (e) {
+                alert('Place search failed. Please check your internet connection and try again.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function initBusinessLocationPicker() {
+            const coordsEl = document.getElementById('businessCoordinates');
+            if (!coordsEl) return;
+
+            businessMap = L.map('businessMap', { zoomControl: true, attributionControl: true });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(businessMap);
+
+            businessMap.setView([1.2833, 32.5], 6);
+            businessMarker = L.marker([1.2833, 32.5], { draggable: true }).addTo(businessMap);
+
+            businessMarker.on('dragend', () => {
+                const ll = businessMarker.getLatLng();
+                setBusinessLatLng(ll.lat, ll.lng, false);
+            });
+
+            businessMap.on('click', (e) => {
+                if (!e || !e.latlng) return;
+                setBusinessLatLng(e.latlng.lat, e.latlng.lng, false);
+            });
+
+            document.getElementById('btnUseMyLocation').addEventListener('click', () => useMyCurrentLocation());
+            document.getElementById('btnSearchPlace').addEventListener('click', () => searchPlace());
+            document.getElementById('placeSearch').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchPlace();
+                }
+            });
+
+            // Auto-fill initial coordinates from browser location if permitted.
+            useMyCurrentLocation();
+        }
+
         function initializeRealTimeService() {
             realTimeService = new RealTimeService();
             
@@ -837,6 +1076,7 @@
                     dob: document.getElementById('dob').value,
                     gender: document.getElementById('gender').value,
                     businessAddress: document.getElementById('businessAddress').value.trim(),
+                    businessCoordinates: document.getElementById('businessCoordinates').value.trim(),
                     residentialAddress: document.getElementById('residentialAddress').value.trim(),
                     nextOfKinName: document.getElementById('nextOfKinName').value.trim(),
                     nextOfKinRelationship: document.getElementById('nextOfKinRelationship').value,
