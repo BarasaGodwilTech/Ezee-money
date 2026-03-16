@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Ezee Money</title>
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         html {
             -webkit-text-size-adjust: 100%;
@@ -163,6 +164,20 @@
         .submission-modal-body {
             padding: 16px 18px 18px;
             overflow-y: auto;
+        }
+
+        .submission-map {
+            width: 100%;
+            height: 260px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f3f4f6;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 520px) {
+            .submission-map { height: 220px; }
         }
 
         .submission-sections {
@@ -1164,9 +1179,9 @@
             </section>
         </main>
     </div>
-
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -2479,6 +2494,7 @@
             modal.className = 'submission-modal';
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
+                    destroySubmissionLeafletMap(modal);
                     modal.remove();
                 }
             });
@@ -2556,6 +2572,7 @@
                                         <input type="text" value="${clientInfo.businessCoordinates || ''}" readonly style="flex:1; min-width:220px;">
                                         ${clientInfo.businessCoordinates ? `<a class="btn btn-sm btn-primary" href="https://www.google.com/maps?q=${encodeURIComponent(clientInfo.businessCoordinates)}" target="_blank" rel="noopener noreferrer">Open in Maps</a>` : ''}
                                     </div>
+                                    ${clientInfo.businessCoordinates ? `<div class="submission-map" id="subMap_${escapeHtml(submission.id)}" data-coords="${escapeHtml(clientInfo.businessCoordinates)}"></div>` : ''}
                                 </div>
                                 <div class="field full">
                                     <label>Residential Address</label>
@@ -2647,6 +2664,59 @@
 
             modal.appendChild(content);
             document.body.appendChild(modal);
+
+            // Initialize map after modal is in DOM.
+            initSubmissionLeafletMap(modal);
+        }
+
+        function parseLatLngString(s) {
+            const raw = String(s || '').trim();
+            if (!raw) return null;
+            const parts = raw.split(',').map(p => p.trim());
+            if (parts.length < 2) return null;
+            const lat = Number(parts[0]);
+            const lng = Number(parts[1]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+            return { lat, lng };
+        }
+
+        function destroySubmissionLeafletMap(modalEl) {
+            try {
+                const map = modalEl && modalEl.__leafletMapInstance;
+                if (map && typeof map.remove === 'function') {
+                    map.remove();
+                }
+            } catch (e) {
+                // ignore
+            }
+            if (modalEl) modalEl.__leafletMapInstance = null;
+        }
+
+        function initSubmissionLeafletMap(modalEl) {
+            try {
+                if (!window.L || !modalEl) return;
+                const mapEl = modalEl.querySelector('.submission-map');
+                if (!mapEl) return;
+                const coords = parseLatLngString(mapEl.getAttribute('data-coords'));
+                if (!coords) return;
+
+                // If reopened quickly, ensure old map is gone.
+                destroySubmissionLeafletMap(modalEl);
+
+                const map = L.map(mapEl, { zoomControl: true, attributionControl: true });
+                modalEl.__leafletMapInstance = map;
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                map.setView([coords.lat, coords.lng], 16);
+                L.marker([coords.lat, coords.lng]).addTo(map);
+
+                // Fix sizing inside modal (Leaflet needs invalidateSize after visible).
+                setTimeout(() => {
+                    try { map.invalidateSize(); } catch (e) {}
+                }, 50);
+            } catch (e) {
+                console.warn('Map init failed:', e);
+            }
         }
 
         async function writeToClipboard(text) {

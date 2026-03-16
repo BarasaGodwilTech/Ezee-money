@@ -291,9 +291,18 @@ class RealTimeService {
                 }
             }
 
+            // Normalize shape so admin/agent views can rely on clientInfo.businessCoordinates.
+            const normalizedClientInfo = {
+                ...(submission.clientInfo || {}),
+            };
+            if (!normalizedClientInfo.businessCoordinates) {
+                normalizedClientInfo.businessCoordinates = submission.businessCoordinates || '';
+            }
+
             // Create submission with image URLs
             const finalSubmission = {
                 ...submission,
+                clientInfo: normalizedClientInfo,
                 images: imageUrls,
                 submittedAt: new Date().toISOString(),
                 id: submission.id || `SUB-${timestamp}`

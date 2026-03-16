@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agent Performance - Ezee Money</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         :root {
             --primary: #2563eb;
@@ -236,6 +237,20 @@
             background: #f9fafb;
         }
 
+        .details-map {
+            width: 100%;
+            height: 260px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f3f4f6;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 520px) {
+            .details-map { height: 220px; }
+        }
+
         @media (max-width: 520px) {
             .kv { grid-template-columns: 1fr; }
         }
@@ -332,12 +347,14 @@
                 <button class="modal-close" id="detailsCloseBtn" type="button">Close</button>
             </div>
             <div id="detailsBody"></div>
+            <div id="detailsMapWrap"></div>
             <div class="images" id="detailsImages"></div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="../js/github-service.js"></script>
 
     <script>
@@ -505,6 +522,7 @@
             const subtitle = document.getElementById('detailsSubtitle');
             const body = document.getElementById('detailsBody');
             const imagesEl = document.getElementById('detailsImages');
+            const mapWrap = document.getElementById('detailsMapWrap');
 
             const s = (item && item.submission) ? item.submission : (item || {});
             const c = s.clientInfo || {};
@@ -521,6 +539,7 @@
                 ['DOB', c.dob || '—'],
                 ['Gender', c.gender || '—'],
                 ['Business Address', c.businessAddress || '—'],
+                ['Business Coordinates', c.businessCoordinates || '—'],
                 ['Residential Address', c.residentialAddress || '—'],
                 ['Next of Kin Name', c.nextOfKinName || '—'],
                 ['Next of Kin Relationship', c.nextOfKinRelationship || '—'],
@@ -534,6 +553,19 @@
             body.innerHTML = kvs.map(([k, v]) => {
                 return `<div class="kv"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`;
             }).join('');
+
+            mapWrap.innerHTML = '';
+            destroyDetailsLeafletMap();
+            if (String(c.businessCoordinates || '').trim()) {
+                mapWrap.innerHTML = `
+                    <div class="kv">
+                        <div class="k">Location Map</div>
+                        <div class="v"><a href="https://www.google.com/maps?q=${encodeURIComponent(String(c.businessCoordinates || '').trim())}" target="_blank" rel="noopener noreferrer">Open in Maps</a></div>
+                    </div>
+                    <div class="details-map" id="detailsMap" data-coords="${escapeHtml(String(c.businessCoordinates || '').trim())}"></div>
+                `;
+                initDetailsLeafletMap();
+            }
 
             const images = [
                 { key: 'idFrontUrl', label: 'ID Front' },
@@ -561,8 +593,55 @@
 
         function closeDetailsModal() {
             const overlay = document.getElementById('detailsModalOverlay');
+            destroyDetailsLeafletMap();
             overlay.style.display = 'none';
             overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        let detailsLeafletMap = null;
+
+        function parseLatLngString(s) {
+            const raw = String(s || '').trim();
+            if (!raw) return null;
+            const parts = raw.split(',').map(p => p.trim());
+            if (parts.length < 2) return null;
+            const lat = Number(parts[0]);
+            const lng = Number(parts[1]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+            return { lat, lng };
+        }
+
+        function destroyDetailsLeafletMap() {
+            try {
+                if (detailsLeafletMap && typeof detailsLeafletMap.remove === 'function') {
+                    detailsLeafletMap.remove();
+                }
+            } catch (e) {
+                // ignore
+            }
+            detailsLeafletMap = null;
+        }
+
+        function initDetailsLeafletMap() {
+            try {
+                if (!window.L) return;
+                const el = document.getElementById('detailsMap');
+                if (!el) return;
+                const coords = parseLatLngString(el.getAttribute('data-coords'));
+                if (!coords) return;
+
+                destroyDetailsLeafletMap();
+                detailsLeafletMap = L.map(el, { zoomControl: true, attributionControl: true });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(detailsLeafletMap);
+                detailsLeafletMap.setView([coords.lat, coords.lng], 16);
+                L.marker([coords.lat, coords.lng]).addTo(detailsLeafletMap);
+
+                setTimeout(() => {
+                    try { detailsLeafletMap.invalidateSize(); } catch (e) {}
+                }, 50);
+            } catch (e) {
+                console.warn('Map init failed:', e);
+            }
         }
 
         function uniqClientsFromSubmissions(mySubs) {
