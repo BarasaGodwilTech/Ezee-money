@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-03-19T15:56:07.244Z",
+  "updatedAt": "2026-03-19T18:24:45.019Z",
   "permits": [
     {
       "permitId": "PERM-1772033414438-SUB-1773930056124-0ei8sbo0o-1773935765696",
@@ -13,6 +13,17 @@
       "allowImages": true,
       "allowCoords": true,
       "note": "missing id images and cordinates nake sure you acxcept permissions to location if it pops up"
+    }
+  ],
+  "locationPrompts": [
+    {
+      "requestId": "LP-1773944685019-kxexyuao",
+      "agentId": "1772033414438",
+      "agentName": "TIMOTHY KIBUKUNA",
+      "agentScCode": "05544657",
+      "createdAt": "2026-03-19T18:24:45.019Z",
+      "expiresAt": "2026-03-19T19:24:44.987Z",
+      "note": "allow permissions"
     }
   ]
 }
