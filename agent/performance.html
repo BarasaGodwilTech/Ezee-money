@@ -280,6 +280,7 @@
             </div>
             <div class="row">
                 <div class="pill" id="cfgStatus">● Loading config...</div>
+                <button class="btn btn-muted" id="btnPayments">Payments</button>
                 <button class="btn btn-muted" id="btnRefresh">Refresh</button>
                 <button class="btn btn-danger" id="btnLogout">Logout</button>
             </div>
@@ -897,6 +898,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnPayments').addEventListener('click', () => {
+                window.location.href = 'payments.html';
+            });
+
             document.getElementById('btnLogout').addEventListener('click', () => {
                 stopAutoPolling();
                 localStorage.removeItem('agentInfo');

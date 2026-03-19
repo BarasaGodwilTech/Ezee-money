@@ -167,6 +167,7 @@
                 <div>Upload onboarding report screenshots. The system extracts portfolio rows and updates agent dashboards.</div>
             </div>
             <div class="row">
+                <button class="btn btn-primary" id="btnOpenPayments" type="button">Open Payments</button>
                 <button class="btn btn-muted" id="btnBack">Back</button>
             </div>
         </div>
@@ -1635,6 +1636,10 @@
 
             document.getElementById('btnBack').addEventListener('click', () => {
                 window.location.href = 'dashboard.html';
+            });
+
+            document.getElementById('btnOpenPayments').addEventListener('click', () => {
+                window.location.href = 'field-agent-payments.html';
             });
 
             const fbCfg = await loadGitConfigFromFirebase();

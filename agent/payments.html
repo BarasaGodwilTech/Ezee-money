@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Payments - Ezee Money</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 18px;
+        }
+        .header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-dark);
+        }
+        .sub {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-muted { background: #eef2ff; color: #1e40af; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .pill {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: #f9fafb;
+            max-width: 100%;
+        }
+        .pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .pill.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .pill.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .stat .label { font-size: 12px; color: var(--muted); }
+        .stat .value { font-size: 22px; font-weight: 800; color: var(--primary-dark); margin-top: 4px; }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .card-head {
+            display:flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .card-head h2 { margin: 0; font-size: 14px; }
+        .help { font-size: 12px; color: var(--muted); }
+
+        input[type="text"], select {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width:100%; border-collapse: collapse; }
+        th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f9fafb; font-weight: 800; }
+        .right { text-align: right; }
+        .muted { color: var(--muted); font-size: 12px; }
+
+        .badge {
+            display:inline-flex;
+            align-items:center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .badge.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .badge.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .badge.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .simple-table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .simple-table th, .simple-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .simple-table th {
+            background: #f9fafb;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-size: 11px;
+            color: #374151;
+        }
+        .simple-table tr:last-child td { border-bottom: 0; }
+
+        .alert {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>My Payments</h1>
+                <div class="sub" id="agentSubtitle">Loading agent...</div>
+            </div>
+            <div class="row">
+                <div class="pill" id="cfgStatus">● Loading...</div>
+                <button class="btn btn-muted" id="btnBack">Back</button>
+                <button class="btn btn-muted" id="btnRefresh">Refresh</button>
+                <button class="btn btn-danger" id="btnLogout">Logout</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="label">Paid Clients</div>
+                <div class="value" id="statPaidCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Pending (This Week)</div>
+                <div class="value" id="statPendingCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Deferred (Month End)</div>
+                <div class="value" id="statDeferredCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Total Earned</div>
+                <div class="value" id="statTotalEarned">0 UGX</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <h2>Paid Clients</h2>
+                    <div class="help">These are the clients you have already been paid for.</div>
+                </div>
+                <div class="row" style="min-width:260px;">
+                    <input type="text" id="searchPaid" placeholder="Search name, phone, SC code" />
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Phone</th>
+                            <th>SC Code</th>
+                            <th>Paid Date</th>
+                            <th class="right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paidTbody">
+                        <tr><td colspan="5" class="muted">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <h2>Not Yet Paid</h2>
+                    <div class="help">Clients here must be activated and reach 10 transactions for you to be paid. If they reach target after registration week, they become month-end payment.</div>
+                </div>
+                <div class="row" style="min-width:260px;">
+                    <input type="text" id="searchPending" placeholder="Search name, phone, SC code" />
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Phone</th>
+                            <th>SC Code</th>
+                            <th>Registered</th>
+                            <th class="right">Txns</th>
+                            <th>Status</th>
+                            <th>Pay Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTbody">
+                        <tr><td colspan="7" class="muted">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="alert" class="alert" style="display:none;"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <h2>Payment Structure</h2>
+                    <div class="help">Simplified structure for quick reference.</div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="simple-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Requirement</th>
+                            <th class="right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Weekly Pay (Monday)</td>
+                            <td>Registered client is activated + makes 10 transactions in registration week</td>
+                            <td class="right">5,000 UGX / client</td>
+                        </tr>
+                        <tr>
+                            <td>Deferred Pay (Month End)</td>
+                            <td>If client misses registration week but later hits 10 transactions</td>
+                            <td class="right">Paid together month end</td>
+                        </tr>
+                        <tr>
+                            <td>Daily Bonus</td>
+                            <td>Register 5 clients who are activated + make 10 transactions same day</td>
+                            <td class="right">Bonus (admin confirms)</td>
+                        </tr>
+                        <tr>
+                            <td>Daily Minimum</td>
+                            <td>At least 2 registrations per day</td>
+                            <td class="right">Required</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="../js/github-service.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        let githubService;
+        let agentInfo;
+
+        let submissions = [];
+        let activations = null;
+        let portfolio = null;
+        let paymentLedger = null;
+        let paymentFlags = null;
+
+        const AMOUNT_PER_CLIENT_UGX = 5000;
+
+        function setCfgStatus(text, variant) {
+            const el = document.getElementById('cfgStatus');
+            el.textContent = text;
+            el.className = 'pill ' + (variant || '');
+        }
+
+        function showAlert(message, type) {
+            const el = document.getElementById('alert');
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function hideAlert() {
+            const el = document.getElementById('alert');
+            el.style.display = 'none';
+        }
+
+        function normalizeName(s) {
+            return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+
+        function normalizeDigits(s) {
+            return String(s || '').replace(/\D/g, '');
+        }
+
+        function escapeHtml(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatMoneyUGX(n) {
+            const num = Number(n);
+            if (!Number.isFinite(num)) return '0 UGX';
+            return num.toLocaleString() + ' UGX';
+        }
+
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data() || {};
+                return data.github || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function loadJsonFileFromGitHub(filename) {
+            try {
+                const data = await githubService.readFile(filename);
+                if (!data || !data.content) return null;
+                return JSON.parse(atob(data.content));
+            } catch (e) {
+                const msg = String(e?.message || e);
+                if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+                throw e;
+            }
+        }
+
+        async function loadJsonFileFromPublicRaw(filename) {
+            const cfg = (githubService && githubService.config) ? githubService.config : null;
+            const owner = cfg?.repoOwner;
+            const repo = cfg?.repoName;
+            const branch = cfg?.branchName || 'main';
+            if (!owner || !repo) return null;
+
+            const cacheBust = `t=${Date.now()}`;
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                if (res.status === 404) return null;
+                throw new Error(`Failed to fetch ${filename}: ${res.status} ${res.statusText}`);
+            }
+            return await res.json();
+        }
+
+        async function loadJsonFileBestEffort(filename) {
+            try {
+                const v = await loadJsonFileFromGitHub(filename);
+                if (v !== null) return v;
+            } catch (e) {}
+            return await loadJsonFileFromPublicRaw(filename);
+        }
+
+        function buildPortfolioIndex(rows) {
+            const bySc = new Map();
+            const byName = new Map();
+
+            for (const r of (rows || [])) {
+                const sc = normalizeDigits(r.scCode);
+                if (sc) bySc.set(sc, r);
+
+                const nmMatched = normalizeName(r.matchedClientName);
+                if (nmMatched) byName.set(nmMatched, r);
+
+                const nm = normalizeName(r.agentName);
+                if (nm && !byName.has(nm)) byName.set(nm, r);
+            }
+
+            return { bySc, byName };
+        }
+
+        function getClientPortfolioRow(client, idx) {
+            const nameKey = normalizeName(client.fullName);
+            if (nameKey && idx.byName.has(nameKey)) return idx.byName.get(nameKey);
+            return null;
+        }
+
+        function getMyClientSubmissions() {
+            const myId = String(agentInfo && agentInfo.id || '').trim();
+            const myName = normalizeName(agentInfo && agentInfo.fullName);
+            const mySc = String(agentInfo && (agentInfo.scCode || agentInfo.agentScCode) || '').trim();
+
+            if (!myId && !myName) return [];
+
+            return (submissions || []).filter(s => {
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const subId = String(submittedBy.agentId || '').trim();
+                if (myId && subId) return subId === myId;
+
+                const subName = normalizeName(submittedBy.agentName);
+                if (!subName || !myName) return false;
+                if (subName !== myName) return false;
+
+                const subSc = String(submittedBy.agentScCode || submittedBy.scCode || s.scCode || '').trim();
+                if (mySc && subSc && subSc !== mySc) return false;
+                return true;
+            });
+        }
+
+        function parseIsoDate(s) {
+            const d = new Date(String(s || ''));
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function isoYmd(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            return dt.toISOString().slice(0, 10);
+        }
+
+        function startOfWeekMonday(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            const day = dt.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        function weekKeyForDate(d) {
+            const wk = startOfWeekMonday(d);
+            return wk.toISOString().slice(0, 10);
+        }
+
+        function inferCurrentWeekKeyFromLedgerOrToday() {
+            try {
+                const payments = paymentLedger && Array.isArray(paymentLedger.payments) ? paymentLedger.payments : [];
+                if (payments.length) {
+                    const last = payments[payments.length - 1];
+                    const k = String(last && last.batchWeekKey || '').trim();
+                    if (k) return k;
+                }
+            } catch (e) {
+                // ignore
+            }
+            return weekKeyForDate(new Date());
+        }
+
+        function monthKeyForDate(d) {
+            const dt = new Date(d.getTime());
+            return dt.toISOString().slice(0, 7);
+        }
+
+        function getLedgerItem(submissionId) {
+            const byClient = paymentLedger && paymentLedger.clients ? paymentLedger.clients : {};
+            return byClient && byClient[submissionId] ? byClient[submissionId] : null;
+        }
+
+        function getFlags(submissionId) {
+            const byClient = paymentFlags && paymentFlags.clients ? paymentFlags.clients : {};
+            return byClient && byClient[submissionId] ? byClient[submissionId] : null;
+        }
+
+        function render() {
+            hideAlert();
+
+            const currentWeekKey = inferCurrentWeekKeyFromLedgerOrToday();
+
+            const paidTbody = document.getElementById('paidTbody');
+            const pendingTbody = document.getElementById('pendingTbody');
+
+            const pRows = (portfolio && Array.isArray(portfolio.rows)) ? portfolio.rows : [];
+            const pIdx = buildPortfolioIndex(pRows);
+
+            const mySubs = getMyClientSubmissions();
+            const acts = (activations && activations.clients) ? activations.clients : {};
+
+            const paidSearch = normalizeName(document.getElementById('searchPaid').value);
+            const pendingSearch = normalizeName(document.getElementById('searchPending').value);
+
+            const paidRows = [];
+            const pendingRows = [];
+
+            let paidCount = 0;
+            let pendingCount = 0;
+            let deferredCount = 0;
+            let totalEarned = 0;
+
+            for (const s of (mySubs || [])) {
+                const id = String(s.id || '').trim();
+                if (!id) continue;
+
+                const c = s.clientInfo || {};
+                const pRow = getClientPortfolioRow(c, pIdx);
+                const scCode = pRow ? String(pRow.scCode || '') : '';
+                const txns = pRow && pRow.txnsLastWeek !== undefined && pRow.txnsLastWeek !== null ? Number(pRow.txnsLastWeek) : null;
+
+                const regDate = parseIsoDate(s.submissionDate);
+                const regText = regDate ? regDate.toLocaleDateString() : '—';
+                const regWeekKey = regDate ? weekKeyForDate(regDate) : null;
+
+                const act = acts && id ? acts[id] : null;
+                const isActivated = !!(act && act.activated);
+
+                const ledger = getLedgerItem(id);
+                const flags = getFlags(id);
+
+                const isPaid = !!(ledger && ledger.status === 'paid');
+
+                if (isPaid) {
+                    paidCount++;
+                    totalEarned += Number(ledger.amountUGX || 0) || 0;
+
+                    const key = normalizeName((c.fullName || '') + ' ' + (c.phoneNumber || '') + ' ' + scCode);
+                    if (paidSearch && !key.includes(paidSearch)) {
+                    } else {
+                        paidRows.push(`
+                            <tr>
+                                <td>${escapeHtml(c.fullName || '')}</td>
+                                <td>${escapeHtml(c.phoneNumber || '')}</td>
+                                <td>${escapeHtml(scCode)}</td>
+                                <td>${ledger.paidAt ? escapeHtml(new Date(ledger.paidAt).toLocaleDateString()) : '—'}</td>
+                                <td class="right">${escapeHtml(formatMoneyUGX(ledger.amountUGX || 0))}</td>
+                            </tr>
+                        `);
+                    }
+
+                    continue;
+                }
+
+                const hasTenTx = (txns !== null && txns >= 10);
+                const qualifiesNow = isActivated && hasTenTx;
+
+                // If admin has already classified the item in the ledger, respect that.
+                // Otherwise, classify as month_end only when target is met AFTER the registration week.
+                let payType = 'weekly';
+                if (ledger && ledger.payType) {
+                    payType = String(ledger.payType);
+                } else if (qualifiesNow && regWeekKey && currentWeekKey && String(regWeekKey) !== String(currentWeekKey)) {
+                    payType = 'month_end';
+                }
+
+                let statusBadge = '<span class="badge warn">Pending</span>';
+                if (!isActivated) {
+                    statusBadge = '<span class="badge bad">Not Activated</span>';
+                } else if (hasTenTx) {
+                    statusBadge = '<span class="badge ok">Target Met</span>';
+                }
+
+                if (payType === 'month_end') deferredCount++; else pendingCount++;
+
+                const key = normalizeName((c.fullName || '') + ' ' + (c.phoneNumber || '') + ' ' + scCode);
+                if (pendingSearch && !key.includes(pendingSearch)) {
+                } else {
+                    pendingRows.push(`
+                        <tr>
+                            <td>${escapeHtml(c.fullName || '')}</td>
+                            <td>${escapeHtml(c.phoneNumber || '')}</td>
+                            <td>${escapeHtml(scCode)}</td>
+                            <td>${escapeHtml(regText)}</td>
+                            <td class="right">${txns === null ? '' : escapeHtml(String(txns))}</td>
+                            <td>${statusBadge}</td>
+                            <td>${payType === 'month_end' ? '<span class="badge warn">Month End</span>' : '<span class="badge">Weekly</span>'}</td>
+                        </tr>
+                    `);
+                }
+
+                if (flags && flags.sameDayTenTx && isActivated) {
+                }
+            }
+
+            document.getElementById('statPaidCount').textContent = String(paidCount);
+            document.getElementById('statPendingCount').textContent = String(pendingCount);
+            document.getElementById('statDeferredCount').textContent = String(deferredCount);
+            document.getElementById('statTotalEarned').textContent = formatMoneyUGX(totalEarned);
+
+            paidTbody.innerHTML = paidRows.length ? paidRows.join('') : '<tr><td colspan="5" class="muted">No paid clients</td></tr>';
+            pendingTbody.innerHTML = pendingRows.length ? pendingRows.join('') : '<tr><td colspan="7" class="muted">No pending clients</td></tr>';
+
+            if (!paymentLedger) {
+                showAlert('Payment data not found yet. Ask your admin to start using the payments module.', 'error');
+            }
+        }
+
+        async function loadAll() {
+            try {
+                setCfgStatus('● Loading...', '');
+                githubService = new GitHubService();
+
+                const fbCfg = await loadGitConfigFromFirebase();
+                if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                    githubService.saveConfig({
+                        repoOwner: fbCfg.repoOwner,
+                        repoName: fbCfg.repoName,
+                        branchName: fbCfg.branch || 'main',
+                        token: fbCfg.token
+                    });
+                    setCfgStatus('● Configured', 'ok');
+                } else if (githubService.config && githubService.config.token) {
+                    setCfgStatus('● Configured (Local)', 'warn');
+                } else {
+                    setCfgStatus('● Not configured', 'bad');
+                }
+
+                agentInfo = JSON.parse(localStorage.getItem('agentInfo') || 'null');
+                if (!agentInfo) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                document.getElementById('agentSubtitle').textContent = `${agentInfo.fullName || 'Agent'} (${agentInfo.scCode || ''})`;
+
+                const subsData = await loadJsonFileBestEffort('submissions.json');
+                const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+                submissions = Array.isArray(list) ? list : [];
+
+                activations = await loadJsonFileBestEffort('activations.json');
+                portfolio = await loadJsonFileBestEffort('agent-portfolio.json');
+
+                paymentLedger = await loadJsonFileBestEffort('field-agent-payments-ledger.json');
+                paymentFlags = await loadJsonFileBestEffort('field-agent-payment-flags.json');
+
+                render();
+            } catch (e) {
+                showAlert('Failed to load payments: ' + (e?.message || String(e)), 'error');
+                setCfgStatus('● Error', 'bad');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = 'performance.html';
+            });
+
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                localStorage.removeItem('agentInfo');
+                window.location.href = 'login.html';
+            });
+
+            document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
+            document.getElementById('searchPaid').addEventListener('input', () => render());
+            document.getElementById('searchPending').addEventListener('input', () => render());
+
+            loadAll();
+        });
+    </script>
+</body>
+</html>
