@@ -374,8 +374,9 @@
         }
 
         function normalizeMoneyUGX(text) {
-            const s = String(text || '').trim();
-            if (!s) return null;
+            const s = (text === null || text === undefined) ? '' : String(text);
+            const trimmed = s.trim();
+            if (!trimmed) return null;
             const cleaned = s
                 .replace(/UGX/gi, '')
                 .replace(/,/g, '')
@@ -386,7 +387,8 @@
         }
 
         function normalizeInt(text) {
-            const cleaned = String(text || '').replace(/,/g, '').trim();
+            const s = (text === null || text === undefined) ? '' : String(text);
+            const cleaned = s.replace(/,/g, '').trim();
             const n = parseInt(cleaned, 10);
             return Number.isFinite(n) ? n : null;
         }

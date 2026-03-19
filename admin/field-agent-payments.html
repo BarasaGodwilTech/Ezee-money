@@ -875,6 +875,96 @@
             renderHistoricalTable();
         }
 
+        function mergeLedger(remote, local) {
+            const a = ensureLedgerShape(remote);
+            const b = ensureLedgerShape(local);
+
+            const merged = {
+                version: Math.max(Number(a.version || 1), Number(b.version || 1)),
+                clients: {},
+                lastUpdated: null,
+                payments: []
+            };
+
+            const aClients = a.clients || {};
+            const bClients = b.clients || {};
+            const allIds = new Set([...Object.keys(aClients), ...Object.keys(bClients)]);
+            for (const id of allIds) {
+                const ra = aClients[id];
+                const rb = bClients[id];
+                if (!ra) {
+                    merged.clients[id] = rb;
+                    continue;
+                }
+                if (!rb) {
+                    merged.clients[id] = ra;
+                    continue;
+                }
+
+                const aPaid = ra && ra.status === 'paid';
+                const bPaid = rb && rb.status === 'paid';
+                if (aPaid && !bPaid) {
+                    merged.clients[id] = ra;
+                    continue;
+                }
+                if (bPaid && !aPaid) {
+                    merged.clients[id] = rb;
+                    continue;
+                }
+
+                const aTime = ra && ra.paidAt ? Date.parse(ra.paidAt) : NaN;
+                const bTime = rb && rb.paidAt ? Date.parse(rb.paidAt) : NaN;
+                if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+                    merged.clients[id] = (bTime >= aTime) ? rb : ra;
+                } else if (Number.isFinite(bTime)) {
+                    merged.clients[id] = rb;
+                } else {
+                    merged.clients[id] = ra;
+                }
+            }
+
+            const key = (p) => `${String(p && p.submissionId || '').trim()}|${String(p && p.paidAt || '').trim()}|${String(p && p.payType || '').trim()}`;
+            const seen = new Set();
+            for (const p of [...(a.payments || []), ...(b.payments || [])]) {
+                const k = key(p);
+                if (!k || seen.has(k)) continue;
+                seen.add(k);
+                merged.payments.push(p);
+            }
+
+            const aUpd = a.lastUpdated ? Date.parse(a.lastUpdated) : NaN;
+            const bUpd = b.lastUpdated ? Date.parse(b.lastUpdated) : NaN;
+            if (Number.isFinite(aUpd) && Number.isFinite(bUpd)) {
+                merged.lastUpdated = (bUpd >= aUpd) ? b.lastUpdated : a.lastUpdated;
+            } else {
+                merged.lastUpdated = b.lastUpdated || a.lastUpdated || null;
+            }
+
+            return merged;
+        }
+
+        function mergeFlags(remote, local) {
+            const a = ensureFlagsShape(remote);
+            const b = ensureFlagsShape(local);
+
+            const merged = {
+                version: Math.max(Number(a.version || 1), Number(b.version || 1)),
+                clients: {},
+                lastUpdated: null
+            };
+
+            merged.clients = { ...(a.clients || {}), ...(b.clients || {}) };
+
+            const aUpd = a.lastUpdated ? Date.parse(a.lastUpdated) : NaN;
+            const bUpd = b.lastUpdated ? Date.parse(b.lastUpdated) : NaN;
+            if (Number.isFinite(aUpd) && Number.isFinite(bUpd)) {
+                merged.lastUpdated = (bUpd >= aUpd) ? b.lastUpdated : a.lastUpdated;
+            } else {
+                merged.lastUpdated = b.lastUpdated || a.lastUpdated || null;
+            }
+            return merged;
+        }
+
         function findSubmissionByIdOrPhone(token) {
             const raw = String(token || '').trim();
             if (!raw) return null;
@@ -1006,12 +1096,16 @@
         }
 
         async function saveLedger() {
+            const latestRemote = await loadJsonFileFromGitHub(LEDGER_FILE);
+            ledger = mergeLedger(latestRemote, ledger);
             ledger.lastUpdated = new Date().toISOString();
             const content = btoa(JSON.stringify(ledger, null, 2));
             await githubService.uploadFile(LEDGER_FILE, content, 'Update field agent payments ledger');
         }
 
         async function saveFlags() {
+            const latestRemote = await loadJsonFileFromGitHub(FLAGS_FILE);
+            flags = mergeFlags(latestRemote, flags);
             flags.lastUpdated = new Date().toISOString();
             const content = btoa(JSON.stringify(flags, null, 2));
             await githubService.uploadFile(FLAGS_FILE, content, 'Update field agent payment flags');
