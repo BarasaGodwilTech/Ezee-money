@@ -192,6 +192,21 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Report Week (Monday)</label>
+                    <input type="date" id="reportWeekMonday">
+                    <div class="help" id="reportWeekHint" style="margin-top:6px;">Week: —</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Purpose</label>
+                    <select id="uploadPurpose">
+                        <option value="daily_snapshot">Daily snapshot (for monitoring)</option>
+                        <option value="pay_week">Pay week (about to run payments)</option>
+                    </select>
+                    <div class="help" style="margin-top:6px;">Use Daily snapshot for frequent updates. Use Pay week when you are ready to generate a payment batch for the selected report week.</div>
+                </div>
+
+                <div class="form-group">
                     <div class="preview" id="preview">
                         No image selected
                     </div>
@@ -1570,6 +1585,9 @@
                 throw new Error('GitHub config missing');
             }
 
+            const reportWeekMonday = coerceReportWeekMonday();
+            const uploadPurpose = getUploadPurpose();
+
             // Read existing agent-portfolio.json if present so we merge instead of overwriting.
             // If the file doesn't exist, we'll create it.
             let existingRows = [];
@@ -1600,6 +1618,9 @@
             const payload = {
                 generatedAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString(),
+                reportWeekMonday: reportWeekMonday ? formatYmd(reportWeekMonday) : null,
+                reportWeekRange: reportWeekMonday ? { start: formatYmd(reportWeekMonday), end: formatYmd(endOfWeekSundayFromMonday(reportWeekMonday)) } : null,
+                uploadPurpose,
                 rows: Array.from(merged.values()),
                 source: {
                     type: 'screenshot_ocr'
@@ -1620,6 +1641,72 @@
             return Array.from(merged.values());
         }
 
+        function startOfWeekMonday(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            const day = dt.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        function endOfWeekSundayFromMonday(monday) {
+            const d = new Date(monday.getTime());
+            d.setDate(d.getDate() + 6);
+            d.setHours(23,59,59,999);
+            return d;
+        }
+
+        function formatYmd(d) {
+            return new Date(d.getTime()).toISOString().slice(0, 10);
+        }
+
+        function updateReportWeekHint(monday) {
+            const hint = document.getElementById('reportWeekHint');
+            if (!hint) return;
+            if (!monday || isNaN(monday.getTime())) {
+                hint.textContent = 'Week: —';
+                return;
+            }
+            const mon = new Date(monday.getTime());
+            mon.setHours(0,0,0,0);
+            const sun = endOfWeekSundayFromMonday(mon);
+            hint.textContent = `Week: ${formatYmd(mon)} to ${formatYmd(sun)}`;
+        }
+
+        function coerceReportWeekMonday() {
+            const el = document.getElementById('reportWeekMonday');
+            if (!el) return null;
+            const val = String(el.value || '').trim();
+            if (!val) return null;
+            const picked = new Date(val + 'T00:00:00');
+            if (isNaN(picked.getTime())) return null;
+            const monday = startOfWeekMonday(picked);
+            const coerced = formatYmd(monday);
+            if (el.value !== coerced) el.value = coerced;
+            updateReportWeekHint(monday);
+            return monday;
+        }
+
+        function getUploadPurpose() {
+            const el = document.getElementById('uploadPurpose');
+            const v = String(el && el.value || '').trim();
+            if (v === 'pay_week') return 'pay_week';
+            return 'daily_snapshot';
+        }
+
+        function ensureReportWeekDefault() {
+            const el = document.getElementById('reportWeekMonday');
+            if (!el) return;
+            if (String(el.value || '').trim()) {
+                coerceReportWeekMonday();
+                return;
+            }
+            const monday = startOfWeekMonday(new Date());
+            el.value = formatYmd(monday);
+            updateReportWeekHint(monday);
+        }
+
         async function init() {
             const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
             const role = (localStorage.getItem('adminRole') || '').trim();
@@ -1634,8 +1721,19 @@
 
             githubService = new GitHubService();
 
+            ensureReportWeekDefault();
+
+            const purposeEl = document.getElementById('uploadPurpose');
+            if (purposeEl && !String(purposeEl.value || '').trim()) {
+                purposeEl.value = 'daily_snapshot';
+            }
+
             document.getElementById('btnBack').addEventListener('click', () => {
                 window.location.href = 'dashboard.html';
+            });
+
+            document.getElementById('reportWeekMonday').addEventListener('change', () => {
+                coerceReportWeekMonday();
             });
 
             document.getElementById('btnOpenPayments').addEventListener('click', () => {

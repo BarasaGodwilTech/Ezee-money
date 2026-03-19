@@ -419,6 +419,50 @@
             return monday;
         }
 
+        function getPortfolioReportWeekMondayKey() {
+            try {
+                const k = String(portfolio && portfolio.reportWeekMonday || '').trim();
+                return k || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getPortfolioUploadPurpose() {
+            try {
+                const v = String(portfolio && portfolio.uploadPurpose || '').trim();
+                return v || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function showNonBlockingPortfolioPurposeWarning() {
+            const purpose = getPortfolioUploadPurpose();
+            if (!purpose) return;
+            if (purpose === 'daily_snapshot') {
+                showAlert(
+                    'Warning: Latest portfolio upload is marked as Daily snapshot (monitoring). This may be incomplete for the week. If you are paying, consider uploading again and selecting Upload Purpose = Pay week.',
+                    'error'
+                );
+            }
+        }
+
+        function showNonBlockingWeekMismatchWarning(selectedMonday) {
+            const reportWeek = getPortfolioReportWeekMondayKey();
+            if (!reportWeek) return;
+
+            const selectedKey = selectedMonday ? formatYmd(selectedMonday) : null;
+            if (!selectedKey) return;
+
+            if (String(reportWeek) !== String(selectedKey)) {
+                showAlert(
+                    `Warning: Your uploaded portfolio report week is ${reportWeek}, but you selected ${selectedKey}. The batch will use the latest uploaded portfolio data. If this is not the same week, results may be wrong.`,
+                    'error'
+                );
+            }
+        }
+
         function monthKeyForDate(d) {
             return new Date(d.getTime()).toISOString().slice(0, 7);
         }
@@ -751,6 +795,12 @@
                 return;
             }
 
+            // If portfolio upload metadata exists, warn (do not block) when using daily snapshots.
+            showNonBlockingPortfolioPurposeWarning();
+
+            // If portfolio report week metadata exists, warn (do not block) when mismatch.
+            showNonBlockingWeekMismatchWarning(monday);
+
             const mode = String(document.getElementById('batchMode').value || 'weekly');
 
             batchRows = computeEligibility(monday, mode);
@@ -758,7 +808,13 @@
             updateKpis(batchRows, mode);
             renderBatch(batchRows);
 
-            showAlert(`Batch generated: ${batchRows.length} rows. Select items then click Mark Selected Paid when you have paid.`, 'success');
+            // If a mismatch warning was already shown above, keep it visible.
+            // Otherwise show success.
+            const alertEl = document.getElementById('alert');
+            const hasWarning = alertEl && alertEl.style.display !== 'none' && (alertEl.className || '').includes('error');
+            if (!hasWarning) {
+                showAlert(`Batch generated: ${batchRows.length} rows. Select items then click Mark Selected Paid when you have paid.`, 'success');
+            }
         }
 
         async function markSelectedPaid() {
