@@ -220,7 +220,8 @@
                 <div style="margin-top: 12px;">
                     <label for="weekStart">Payment Week (Monday)</label>
                     <input type="date" id="weekStart" />
-                    <div class="small" style="margin-top:6px;">This Monday defines the week (Mon–Sun). Only clients registered in that week can qualify for weekly pay if they hit 10 transactions in that same week.</div>
+                    <div class="small" style="margin-top:6px;" id="weekRangeHint">Week: —</div>
+                    <div class="small" style="margin-top:6px;">This date is the Monday of the week you are paying for (Mon–Sun). Weekly pay only includes clients registered in that same week who hit 10 transactions and are activated.</div>
                 </div>
 
                 <div style="margin-top: 12px;">
@@ -381,6 +382,41 @@
             d.setDate(d.getDate() + 6);
             d.setHours(23,59,59,999);
             return d;
+        }
+
+        function formatYmd(d) {
+            return new Date(d.getTime()).toISOString().slice(0, 10);
+        }
+
+        function updateWeekRangeHint(monday) {
+            const hint = document.getElementById('weekRangeHint');
+            if (!hint) return;
+            if (!monday || isNaN(monday.getTime())) {
+                hint.textContent = 'Week: —';
+                return;
+            }
+            const mon = new Date(monday.getTime());
+            mon.setHours(0,0,0,0);
+            const sun = endOfWeekSundayFromMonday(mon);
+            hint.textContent = `Week: ${formatYmd(mon)} to ${formatYmd(sun)}`;
+        }
+
+        function coerceInputDateToMonday() {
+            const el = document.getElementById('weekStart');
+            if (!el) return null;
+            const wkVal = String(el.value || '').trim();
+            if (!wkVal) return null;
+
+            const picked = new Date(wkVal + 'T00:00:00');
+            if (isNaN(picked.getTime())) return null;
+
+            const monday = startOfWeekMonday(picked);
+            const coerced = formatYmd(monday);
+            if (el.value !== coerced) {
+                el.value = coerced;
+            }
+            updateWeekRangeHint(monday);
+            return monday;
         }
 
         function monthKeyForDate(d) {
@@ -635,6 +671,7 @@
             const today = new Date();
             const monday = startOfWeekMonday(today);
             el.value = monday.toISOString().slice(0, 10);
+            updateWeekRangeHint(monday);
         }
 
         function populateAgentFilter() {
@@ -708,14 +745,9 @@
         async function generateBatch() {
             hideAlert();
 
-            const wkVal = String(document.getElementById('weekStart').value || '').trim();
-            if (!wkVal) {
+            const monday = coerceInputDateToMonday();
+            if (!monday) {
                 showAlert('Please select the payment Monday date.', 'error');
-                return;
-            }
-            const monday = new Date(wkVal + 'T00:00:00');
-            if (isNaN(monday.getTime())) {
-                showAlert('Invalid date.', 'error');
                 return;
             }
 
@@ -837,6 +869,10 @@
             document.getElementById('batchMode').addEventListener('change', () => {
                 document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="muted">Generate a batch to view results.</td></tr>';
                 hideAlert();
+            });
+
+            document.getElementById('weekStart').addEventListener('change', () => {
+                coerceInputDateToMonday();
             });
 
             ensureWeekStartDefault();
