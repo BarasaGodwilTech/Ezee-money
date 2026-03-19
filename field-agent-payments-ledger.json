@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "clients": {
+    "SUB-1773483739344-sgz193wyg": {
+      "status": "paid",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "registrationWeekKey": "2026-03-08",
+      "eligibleWeekKey": null,
+      "agentId": "1772033414438",
+      "agentName": "TIMOTHY KIBUKUNA",
+      "agentScCode": "05544657",
+      "clientName": "NAMBUYA SHAMILAH",
+      "clientPhone": "0770590381",
+      "clientScCode": ""
+    },
+    "SUB-1772898362526-cfxdopy49": {
+      "status": "paid",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "registrationWeekKey": "2026-03-01",
+      "eligibleWeekKey": null,
+      "agentId": "1772033414438",
+      "agentName": "TIMOTHY KIBUKUNA",
+      "agentScCode": "05544657",
+      "clientName": "NAMUKONGO FRANCIS",
+      "clientPhone": "0753852313",
+      "clientScCode": ""
+    },
+    "SUB-1772723407964-bhbll4zf5": {
+      "status": "paid",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "registrationWeekKey": "2026-03-01",
+      "eligibleWeekKey": null,
+      "agentId": "1772033414438",
+      "agentName": "TIMOTHY KIBUKUNA",
+      "agentScCode": "05544657",
+      "clientName": "OWORI INNOCENT",
+      "clientPhone": "0702207363",
+      "clientScCode": ""
+    },
+    "SUB-1773499715066-ltkmquaei": {
+      "status": "paid",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "registrationWeekKey": "2026-03-08",
+      "eligibleWeekKey": null,
+      "agentId": "1772033414438",
+      "agentName": "TIMOTHY KIBUKUNA",
+      "agentScCode": "05544657",
+      "clientName": "Shibuta  Aziz Abdallah",
+      "clientPhone": "0701955029",
+      "clientScCode": ""
+    }
+  },
+  "lastUpdated": "2026-03-19T09:54:53.963Z",
+  "payments": [
+    {
+      "submissionId": "SUB-1773483739344-sgz193wyg",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "batchWeekKey": "2026-03-15",
+      "agentId": "1772033414438",
+      "agentScCode": "05544657"
+    },
+    {
+      "submissionId": "SUB-1772898362526-cfxdopy49",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "batchWeekKey": "2026-03-15",
+      "agentId": "1772033414438",
+      "agentScCode": "05544657"
+    },
+    {
+      "submissionId": "SUB-1772723407964-bhbll4zf5",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "batchWeekKey": "2026-03-15",
+      "agentId": "1772033414438",
+      "agentScCode": "05544657"
+    },
+    {
+      "submissionId": "SUB-1773499715066-ltkmquaei",
+      "paidAt": "2026-03-18T21:00:00.000Z",
+      "amountUGX": 5000,
+      "payType": "historical",
+      "batchWeekKey": "2026-03-15",
+      "agentId": "1772033414438",
+      "agentScCode": "05544657"
+    }
+  ]
+}
