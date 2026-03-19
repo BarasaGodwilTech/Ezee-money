@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Field Agent Payments - Super Admin</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+        .title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .title h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-dark);
+        }
+        .title div {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-muted { background: #eef2ff; color: #1e40af; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+        .pill {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: #f9fafb;
+        }
+        .pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .pill.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .pill.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 980px) {
+            .grid { grid-template-columns: 420px 1fr; }
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .card h2 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .help {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        input[type="text"], input[type="date"], select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        table { width:100%; border-collapse: collapse; }
+        th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f9fafb; font-weight: 800; }
+        .muted { color: var(--muted); font-size: 12px; }
+        .right { text-align: right; }
+
+        .badge {
+            display:inline-flex;
+            align-items:center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .badge.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .badge.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .badge.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .alert {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .table-container { overflow-x:auto; }
+
+        .kpi {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .kpi .stat {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .kpi .label { font-size: 12px; color: var(--muted); }
+        .kpi .value { font-size: 18px; font-weight: 900; color: var(--primary-dark); margin-top: 4px; }
+
+        .small { font-size: 12px; color: var(--muted); }
+
+        .actions {
+            display:flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <h1>Field Agent Payments</h1>
+                <div>Super Admin: generate Monday batches, month-end catch-up, and mark payments by SC code.</div>
+            </div>
+            <div class="row">
+                <div class="pill" id="cfgStatus">● Loading...</div>
+                <button class="btn btn-muted" id="btnBack" type="button">Back</button>
+                <button class="btn btn-danger" id="btnLogout" type="button">Logout</button>
+            </div>
+        </div>
+
+        <div class="kpi">
+            <div class="stat">
+                <div class="label">Weekly Payable Clients</div>
+                <div class="value" id="kpiWeeklyPayable">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Deferred (Month End)</div>
+                <div class="value" id="kpiMonthEndPayable">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Weekly Amount</div>
+                <div class="value" id="kpiWeeklyAmount">0 UGX</div>
+            </div>
+            <div class="stat">
+                <div class="label">Month End Amount</div>
+                <div class="value" id="kpiMonthEndAmount">0 UGX</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Batch Settings</h2>
+                <div class="help">You said portfolio can be uploaded any day. For accuracy, choose which week you are paying for, then generate the batch and mark paid when you complete transfer.</div>
+
+                <div style="margin-top: 12px;">
+                    <label for="weekStart">Payment Week (Monday)</label>
+                    <input type="date" id="weekStart" />
+                    <div class="small" style="margin-top:6px;">This Monday defines the week (Mon–Sun). Only clients registered in that week can qualify for weekly pay if they hit 10 transactions in that same week.</div>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <label for="batchMode">Batch Mode</label>
+                    <select id="batchMode">
+                        <option value="weekly">Weekly Monday Pay</option>
+                        <option value="month_end">Month End Catch-up</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <label for="agentFilter">Filter by Field Agent</label>
+                    <select id="agentFilter">
+                        <option value="">All agents</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <label for="search">Search</label>
+                    <input type="text" id="search" placeholder="Search client name, phone, SC code, agent" />
+                </div>
+
+                <div class="actions" style="margin-top: 14px;">
+                    <button class="btn btn-muted" id="btnRefresh" type="button">Refresh Data</button>
+                    <button class="btn btn-primary" id="btnGenerate" type="button">Generate Batch</button>
+                    <button class="btn btn-primary" id="btnMarkPaid" type="button" disabled>Mark Selected Paid</button>
+                </div>
+
+                <div id="alert" class="alert" style="display:none;"></div>
+            </div>
+
+            <div class="card">
+                <h2>Batch Preview</h2>
+                <div class="help">Select rows then mark paid. The system saves a ledger file to prevent double-paying. Amount per qualifying client = 5,000 UGX.</div>
+
+                <div class="table-container" style="margin-top: 10px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:48px;"><input type="checkbox" id="selectAll" /></th>
+                                <th>Field Agent</th>
+                                <th>Client</th>
+                                <th>Phone</th>
+                                <th>SC Code</th>
+                                <th>Registered</th>
+                                <th class="right">Txns</th>
+                                <th>Status</th>
+                                <th>Pay Type</th>
+                                <th class="right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr><td colspan="10" class="muted">Generate a batch to view results.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="../js/github-service.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        const LEDGER_FILE = 'field-agent-payments-ledger.json';
+        const FLAGS_FILE = 'field-agent-payment-flags.json';
+
+        const AMOUNT_PER_CLIENT_UGX = 5000;
+
+        let githubService;
+        let submissions = [];
+        let activations = null;
+        let portfolio = null;
+        let agents = [];
+
+        let ledger = null;
+        let flags = null;
+
+        let batchRows = []; // computed
+
+        function setCfgStatus(text, variant) {
+            const el = document.getElementById('cfgStatus');
+            el.textContent = text;
+            el.className = 'pill ' + (variant || '');
+        }
+
+        function showAlert(message, type) {
+            const el = document.getElementById('alert');
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function hideAlert() {
+            const el = document.getElementById('alert');
+            el.style.display = 'none';
+        }
+
+        function normalizeName(s) {
+            return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+
+        function normalizeDigits(s) {
+            return String(s || '').replace(/\D/g, '');
+        }
+
+        function escapeHtml(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatMoneyUGX(n) {
+            const num = Number(n);
+            if (!Number.isFinite(num)) return '0 UGX';
+            return num.toLocaleString() + ' UGX';
+        }
+
+        function parseIsoDate(s) {
+            const d = new Date(String(s || ''));
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function startOfWeekMonday(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            const day = dt.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        function weekKeyForDate(d) {
+            const wk = startOfWeekMonday(d);
+            return wk.toISOString().slice(0, 10);
+        }
+
+        function endOfWeekSundayFromMonday(monday) {
+            const d = new Date(monday.getTime());
+            d.setDate(d.getDate() + 6);
+            d.setHours(23,59,59,999);
+            return d;
+        }
+
+        function monthKeyForDate(d) {
+            return new Date(d.getTime()).toISOString().slice(0, 7);
+        }
+
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data() || {};
+                return data.github || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function loadJsonFileFromGitHub(filename) {
+            try {
+                const data = await githubService.readFile(filename);
+                if (!data || !data.content) return null;
+                return JSON.parse(atob(data.content));
+            } catch (e) {
+                const msg = String(e?.message || e);
+                if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+                throw e;
+            }
+        }
+
+        async function loadJsonFileFromPublicRaw(filename) {
+            const cfg = (githubService && githubService.config) ? githubService.config : null;
+            const owner = cfg?.repoOwner;
+            const repo = cfg?.repoName;
+            const branch = cfg?.branchName || 'main';
+            if (!owner || !repo) return null;
+
+            const cacheBust = `t=${Date.now()}`;
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                if (res.status === 404) return null;
+                throw new Error(`Failed to fetch ${filename}: ${res.status} ${res.statusText}`);
+            }
+            return await res.json();
+        }
+
+        async function loadJsonFileBestEffort(filename) {
+            try {
+                const v = await loadJsonFileFromGitHub(filename);
+                if (v !== null) return v;
+            } catch (e) {}
+            return await loadJsonFileFromPublicRaw(filename);
+        }
+
+        function buildPortfolioIndex(rows) {
+            const bySc = new Map();
+            const byName = new Map();
+
+            for (const r of (rows || [])) {
+                const sc = normalizeDigits(r.scCode);
+                if (sc) bySc.set(sc, r);
+
+                const nmMatched = normalizeName(r.matchedClientName);
+                if (nmMatched) byName.set(nmMatched, r);
+
+                const nm = normalizeName(r.agentName);
+                if (nm && !byName.has(nm)) byName.set(nm, r);
+            }
+
+            return { bySc, byName };
+        }
+
+        function getClientPortfolioRow(client, idx) {
+            const nameKey = normalizeName(client.fullName);
+            if (nameKey && idx.byName.has(nameKey)) return idx.byName.get(nameKey);
+            return null;
+        }
+
+        function ensureLedgerShape(obj) {
+            if (!obj || typeof obj !== 'object') {
+                return { version: 1, clients: {}, lastUpdated: null, payments: [] };
+            }
+            if (!obj.clients) obj.clients = {};
+            if (!Array.isArray(obj.payments)) obj.payments = [];
+            if (!obj.version) obj.version = 1;
+            return obj;
+        }
+
+        function ensureFlagsShape(obj) {
+            if (!obj || typeof obj !== 'object') {
+                return { version: 1, clients: {}, lastUpdated: null };
+            }
+            if (!obj.clients) obj.clients = {};
+            if (!obj.version) obj.version = 1;
+            return obj;
+        }
+
+        function computeEligibility(paymentWeekMonday, mode) {
+            const pRows = (portfolio && Array.isArray(portfolio.rows)) ? portfolio.rows : [];
+            const pIdx = buildPortfolioIndex(pRows);
+            const acts = (activations && activations.clients) ? activations.clients : {};
+
+            const monday = new Date(paymentWeekMonday.getTime());
+            monday.setHours(0,0,0,0);
+            const sunday = endOfWeekSundayFromMonday(monday);
+
+            const targetWeekKey = monday.toISOString().slice(0, 10);
+
+            const rows = [];
+            for (const s of (submissions || [])) {
+                const id = String(s.id || '').trim();
+                if (!id) continue;
+
+                const regDate = parseIsoDate(s.submissionDate);
+                if (!regDate) continue;
+
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const agentName = String(submittedBy.agentName || '').trim();
+                const agentId = String(submittedBy.agentId || '').trim();
+                const agentScCode = String(submittedBy.agentScCode || '').trim();
+
+                const c = s.clientInfo || {};
+                const pRow = getClientPortfolioRow(c, pIdx);
+                const clientScCode = pRow ? String(pRow.scCode || '') : '';
+                const txns = pRow && pRow.txnsLastWeek !== undefined && pRow.txnsLastWeek !== null ? Number(pRow.txnsLastWeek) : null;
+
+                const act = acts && id ? acts[id] : null;
+                const isActivated = !!(act && act.activated);
+
+                const regWeekKey = weekKeyForDate(regDate);
+                const hasTenTx = (txns !== null && txns >= 10);
+
+                const already = ledger && ledger.clients ? ledger.clients[id] : null;
+                const alreadyPaid = !!(already && already.status === 'paid');
+
+                if (alreadyPaid) continue;
+
+                let eligible = false;
+                let payType = 'weekly';
+
+                if (mode === 'weekly') {
+                    eligible = (regWeekKey === targetWeekKey) && isActivated && hasTenTx;
+                    payType = 'weekly';
+                }
+
+                if (mode === 'month_end') {
+                    const eligibleWeekKey = hasTenTx ? targetWeekKey : null;
+                    const missedRegistrationWeek = (regWeekKey !== targetWeekKey);
+                    eligible = missedRegistrationWeek && isActivated && hasTenTx;
+                    payType = 'month_end';
+                }
+
+                if (!eligible) {
+                    continue;
+                }
+
+                rows.push({
+                    submissionId: id,
+                    agentName,
+                    agentId,
+                    agentScCode,
+                    clientName: String(c.fullName || ''),
+                    clientPhone: String(c.phoneNumber || ''),
+                    clientScCode,
+                    registeredAt: regDate.toISOString(),
+                    registrationWeekKey: regWeekKey,
+                    eligibleWeekKey: targetWeekKey,
+                    txnsLastWeek: txns,
+                    activated: isActivated,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType
+                });
+            }
+
+            return rows;
+        }
+
+        function updateKpis(rows, mode) {
+            const weeklyRows = mode === 'weekly' ? rows : [];
+            const monthRows = mode === 'month_end' ? rows : [];
+
+            const weeklyCount = weeklyRows.length;
+            const monthCount = monthRows.length;
+
+            const weeklyAmount = weeklyRows.reduce((a, r) => a + (Number(r.amountUGX || 0) || 0), 0);
+            const monthAmount = monthRows.reduce((a, r) => a + (Number(r.amountUGX || 0) || 0), 0);
+
+            document.getElementById('kpiWeeklyPayable').textContent = String(mode === 'weekly' ? weeklyCount : 0);
+            document.getElementById('kpiMonthEndPayable').textContent = String(mode === 'month_end' ? monthCount : 0);
+            document.getElementById('kpiWeeklyAmount').textContent = formatMoneyUGX(mode === 'weekly' ? weeklyAmount : 0);
+            document.getElementById('kpiMonthEndAmount').textContent = formatMoneyUGX(mode === 'month_end' ? monthAmount : 0);
+        }
+
+        function renderBatch(rows) {
+            const tbody = document.getElementById('tbody');
+            const agentFilter = String(document.getElementById('agentFilter').value || '').trim();
+            const search = normalizeName(document.getElementById('search').value || '');
+
+            const filtered = (rows || []).filter(r => {
+                if (agentFilter && String(r.agentId || '') !== agentFilter) return false;
+                if (!search) return true;
+                const key = normalizeName(`${r.agentName} ${r.agentScCode} ${r.clientName} ${r.clientPhone} ${r.clientScCode}`);
+                return key.includes(search);
+            });
+
+            const html = [];
+            for (const r of filtered) {
+                const statusBadge = r.activated ? '<span class="badge ok">Activated</span>' : '<span class="badge bad">Not Activated</span>';
+                const payTypeBadge = r.payType === 'month_end' ? '<span class="badge warn">Month End</span>' : '<span class="badge">Weekly</span>';
+
+                html.push(`
+                    <tr>
+                        <td><input type="checkbox" class="rowChk" data-id="${escapeHtml(r.submissionId)}" /></td>
+                        <td>${escapeHtml(r.agentName)}<div class="muted">${escapeHtml(r.agentScCode)}</div></td>
+                        <td>${escapeHtml(r.clientName)}</td>
+                        <td>${escapeHtml(r.clientPhone)}</td>
+                        <td>${escapeHtml(r.clientScCode)}</td>
+                        <td>${escapeHtml(new Date(r.registeredAt).toLocaleDateString())}</td>
+                        <td class="right">${r.txnsLastWeek === null ? '' : escapeHtml(String(r.txnsLastWeek))}</td>
+                        <td>${statusBadge}</td>
+                        <td>${payTypeBadge}</td>
+                        <td class="right">${escapeHtml(formatMoneyUGX(r.amountUGX))}</td>
+                    </tr>
+                `);
+            }
+
+            tbody.innerHTML = html.length ? html.join('') : '<tr><td colspan="10" class="muted">No rows match the selected filters.</td></tr>';
+
+            document.getElementById('btnMarkPaid').disabled = html.length === 0;
+        }
+
+        function getSelectedIds() {
+            return Array.from(document.querySelectorAll('input.rowChk:checked')).map(i => String(i.getAttribute('data-id') || '').trim()).filter(Boolean);
+        }
+
+        async function saveLedger() {
+            ledger.lastUpdated = new Date().toISOString();
+            const content = btoa(JSON.stringify(ledger, null, 2));
+            await githubService.uploadFile(LEDGER_FILE, content, 'Update field agent payments ledger');
+        }
+
+        async function saveFlags() {
+            flags.lastUpdated = new Date().toISOString();
+            const content = btoa(JSON.stringify(flags, null, 2));
+            await githubService.uploadFile(FLAGS_FILE, content, 'Update field agent payment flags');
+        }
+
+        function ensureWeekStartDefault() {
+            const el = document.getElementById('weekStart');
+            if (el.value) return;
+            const today = new Date();
+            const monday = startOfWeekMonday(today);
+            el.value = monday.toISOString().slice(0, 10);
+        }
+
+        function populateAgentFilter() {
+            const sel = document.getElementById('agentFilter');
+            const current = String(sel.value || '');
+            const opts = ['<option value="">All agents</option>'];
+
+            for (const a of (agents || [])) {
+                const id = String(a.id || '').trim();
+                if (!id) continue;
+                opts.push(`<option value="${escapeHtml(id)}">${escapeHtml(a.fullName || '')} (${escapeHtml(a.scCode || '')})</option>`);
+            }
+
+            sel.innerHTML = opts.join('');
+            sel.value = current;
+        }
+
+        async function loadAll() {
+            hideAlert();
+            setCfgStatus('● Loading...', '');
+
+            const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
+            const role = (localStorage.getItem('adminRole') || '').trim();
+            if (!loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (role !== 'super') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            githubService = new GitHubService();
+
+            const fbCfg = await loadGitConfigFromFirebase();
+            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                githubService.saveConfig({
+                    repoOwner: fbCfg.repoOwner,
+                    repoName: fbCfg.repoName,
+                    branchName: fbCfg.branch || 'main',
+                    token: fbCfg.token
+                });
+                setCfgStatus('● Configured', 'ok');
+            } else if (githubService.config && githubService.config.token) {
+                setCfgStatus('● Configured (Local)', 'warn');
+            } else {
+                setCfgStatus('● Not configured', 'bad');
+                showAlert('GitHub configuration missing. Set it in Admin Dashboard first.', 'error');
+                return;
+            }
+
+            const subsData = await loadJsonFileBestEffort('submissions.json');
+            const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+            submissions = Array.isArray(list) ? list : [];
+
+            activations = await loadJsonFileBestEffort('activations.json');
+            portfolio = await loadJsonFileBestEffort('agent-portfolio.json');
+
+            const agentsData = await loadJsonFileBestEffort('agents.json');
+            agents = (agentsData && agentsData.agents) ? agentsData.agents : (Array.isArray(agentsData) ? agentsData : []);
+
+            ledger = ensureLedgerShape(await loadJsonFileBestEffort(LEDGER_FILE));
+            flags = ensureFlagsShape(await loadJsonFileBestEffort(FLAGS_FILE));
+
+            populateAgentFilter();
+            ensureWeekStartDefault();
+
+            setCfgStatus('● Ready', 'ok');
+        }
+
+        async function generateBatch() {
+            hideAlert();
+
+            const wkVal = String(document.getElementById('weekStart').value || '').trim();
+            if (!wkVal) {
+                showAlert('Please select the payment Monday date.', 'error');
+                return;
+            }
+            const monday = new Date(wkVal + 'T00:00:00');
+            if (isNaN(monday.getTime())) {
+                showAlert('Invalid date.', 'error');
+                return;
+            }
+
+            const mode = String(document.getElementById('batchMode').value || 'weekly');
+
+            batchRows = computeEligibility(monday, mode);
+
+            updateKpis(batchRows, mode);
+            renderBatch(batchRows);
+
+            showAlert(`Batch generated: ${batchRows.length} rows. Select items then click Mark Selected Paid when you have paid.`, 'success');
+        }
+
+        async function markSelectedPaid() {
+            hideAlert();
+            const ids = getSelectedIds();
+            if (!ids.length) {
+                showAlert('Select at least one row.', 'error');
+                return;
+            }
+
+            const mode = String(document.getElementById('batchMode').value || 'weekly');
+            const wkVal = String(document.getElementById('weekStart').value || '').trim();
+            const monday = new Date(wkVal + 'T00:00:00');
+            const weekKey = monday.toISOString().slice(0, 10);
+
+            const now = new Date().toISOString();
+
+            for (const id of ids) {
+                const row = (batchRows || []).find(r => String(r.submissionId) === String(id));
+                if (!row) continue;
+
+                if (ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    continue;
+                }
+
+                ledger.clients[id] = {
+                    status: 'paid',
+                    paidAt: now,
+                    amountUGX: row.amountUGX,
+                    payType: row.payType,
+                    registrationWeekKey: row.registrationWeekKey,
+                    eligibleWeekKey: row.eligibleWeekKey,
+                    agentId: row.agentId,
+                    agentName: row.agentName,
+                    agentScCode: row.agentScCode,
+                    clientName: row.clientName,
+                    clientPhone: row.clientPhone,
+                    clientScCode: row.clientScCode
+                };
+
+                ledger.payments.push({
+                    submissionId: id,
+                    paidAt: now,
+                    amountUGX: row.amountUGX,
+                    payType: row.payType,
+                    batchWeekKey: weekKey,
+                    agentId: row.agentId,
+                    agentScCode: row.agentScCode
+                });
+            }
+
+            await saveLedger();
+
+            showAlert('Saved paid items to ledger successfully.', 'success');
+
+            await loadAll();
+            await generateBatch();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = 'dashboard.html';
+            });
+
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminUsername');
+                localStorage.removeItem('adminRole');
+                window.location.href = 'login.html';
+            });
+
+            document.getElementById('btnRefresh').addEventListener('click', async () => {
+                try {
+                    await loadAll();
+                    showAlert('Data refreshed.', 'success');
+                } catch (e) {
+                    showAlert('Refresh failed: ' + (e?.message || String(e)), 'error');
+                }
+            });
+
+            document.getElementById('btnGenerate').addEventListener('click', async () => {
+                try {
+                    await loadAll();
+                    await generateBatch();
+                } catch (e) {
+                    showAlert('Generate failed: ' + (e?.message || String(e)), 'error');
+                }
+            });
+
+            document.getElementById('btnMarkPaid').addEventListener('click', async () => {
+                try {
+                    document.getElementById('btnMarkPaid').disabled = true;
+                    await markSelectedPaid();
+                } catch (e) {
+                    showAlert('Mark paid failed: ' + (e?.message || String(e)), 'error');
+                } finally {
+                    document.getElementById('btnMarkPaid').disabled = false;
+                }
+            });
+
+            document.getElementById('selectAll').addEventListener('change', (e) => {
+                const checked = !!e.target.checked;
+                Array.from(document.querySelectorAll('input.rowChk')).forEach(chk => { chk.checked = checked; });
+            });
+
+            document.getElementById('agentFilter').addEventListener('change', () => renderBatch(batchRows));
+            document.getElementById('search').addEventListener('input', () => renderBatch(batchRows));
+            document.getElementById('batchMode').addEventListener('change', () => {
+                document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="muted">Generate a batch to view results.</td></tr>';
+                hideAlert();
+            });
+
+            ensureWeekStartDefault();
+            loadAll().catch(e => {
+                showAlert('Failed to load: ' + (e?.message || String(e)), 'error');
+            });
+        });
+    </script>
+</body>
+</html>
