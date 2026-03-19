@@ -1380,7 +1380,12 @@
             const digits = (s) => String(s || '').replace(/\D/g, '');
             const isIntToken = (s) => /^\d{1,4}$/.test(digits(s));
             const isScToken = (s) => /^\d{7,}$/.test(digits(s));
-            const isMoneyToken = (s) => /^\d{1,3}(,\d{3})+$/.test(String(s || '').trim()) || /^\d{3,}$/.test(digits(s));
+            const isMoneyToken = (s) => {
+                const txt = String(s || '').trim();
+                const d = digits(txt);
+                if (d === '0') return true;
+                return /^\d{1,3}(,\d{3})+$/.test(txt) || /^\d{3,}$/.test(d);
+            };
 
             const rowHasScCode = (rowObj) => {
                 const toks = (rowObj && rowObj.words) ? rowObj.words.map(w => w.text) : [];
