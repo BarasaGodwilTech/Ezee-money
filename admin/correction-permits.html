@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Correction Permits</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .container{max-width:1100px;margin:0 auto;padding:16px;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827;}
+    .pill.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}
+    .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+    .pill.warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:14px;}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px;}
+    .col-12{grid-column:span 12;}
+    .col-6{grid-column:span 6;}
+    .col-4{grid-column:span 4;}
+    .col-3{grid-column:span 3;}
+    @media (max-width:900px){.col-6,.col-4,.col-3{grid-column:span 12;}}
+    label{display:block;font-size:12px;color:#374151;margin-bottom:6px;font-weight:700;}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb;outline:none;}
+    textarea{min-height:80px;resize:vertical;}
+    .btn{padding:10px 12px;border-radius:12px;border:1px solid #e5e7eb;background:#111827;color:#fff;font-weight:700;cursor:pointer;}
+    .btn-muted{background:#fff;color:#111827;}
+    .btn-danger{background:#b91c1c;border-color:#b91c1c;}
+    .btn:disabled{opacity:.6;cursor:not-allowed;}
+    table{width:100%;border-collapse:separate;border-spacing:0;}
+    th,td{padding:10px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:13px;vertical-align:top;}
+    th{font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+    .right{text-align:right;}
+    .muted{color:#64748b;}
+    .alert{display:none;margin-top:12px;padding:10px 12px;border-radius:12px;font-weight:600;}
+    .alert.success{display:block;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
+    .alert.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #e5e7eb;background:#f8fafc;color:#0f172a;}
+    .badge.on{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}
+    .badge.off{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <div style="font-size:18px;font-weight:900;">Correction Permits</div>
+        <div class="muted" style="margin-top:4px;">Grant an agent permission to fix missing images/coordinates for a submission.</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span class="pill" id="cfgStatus">● Loading...</span>
+        <button class="btn btn-muted" id="btnBack" type="button">Back</button>
+        <button class="btn" id="btnRefresh" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:10px;">Create Permit</div>
+      <div class="grid">
+        <div class="col-6">
+          <label>Submission</label>
+          <select id="submissionSelect"></select>
+          <div class="muted" id="submissionMeta" style="margin-top:6px;"></div>
+        </div>
+        <div class="col-3">
+          <label>Expires in (hours)</label>
+          <input id="expiresHours" type="number" min="1" step="1" value="24" />
+        </div>
+        <div class="col-3">
+          <label>Allow</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:2px;">
+            <label style="display:flex;gap:8px;align-items:center;font-weight:700;margin:0;"><input id="allowImages" type="checkbox" checked style="width:auto;">Images</label>
+            <label style="display:flex;gap:8px;align-items:center;font-weight:700;margin:0;"><input id="allowCoords" type="checkbox" checked style="width:auto;">Coordinates</label>
+          </div>
+        </div>
+        <div class="col-12">
+          <label>Note (optional)</label>
+          <textarea id="note" placeholder="Reason / instructions for the agent"></textarea>
+        </div>
+        <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" id="btnGrant" type="button">Grant Permit</button>
+          <button class="btn btn-muted" id="btnClearExpired" type="button">Remove Expired</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="font-weight:900;">Active Permits</div>
+        <div class="muted" id="permitsMeta"></div>
+      </div>
+      <div style="overflow:auto;margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Submission</th>
+              <th>Allow</th>
+              <th>Expires</th>
+              <th>Note</th>
+              <th class="right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="permitsTbody">
+            <tr><td colspan="6" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="../js/github-service.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+      authDomain: "ezee-git-config.firebaseapp.com",
+      projectId: "ezee-git-config",
+      storageBucket: "ezee-git-config.firebasestorage.app",
+      messagingSenderId: "106776336",
+      appId: "1:106776336:web:91d276bf2bd70d55954795",
+      measurementId: "G-YJGQLTWJ8J"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const firestore = firebase.firestore();
+
+    const PERMITS_FILE = 'agent-correction-permits.json';
+
+    let githubService;
+    let submissions = [];
+    let permits = null;
+
+    function showAlert(message, type) {
+      const el = document.getElementById('alert');
+      el.style.display = 'block';
+      el.className = 'alert ' + (type || '');
+      el.textContent = message;
+    }
+
+    function hideAlert() {
+      const el = document.getElementById('alert');
+      el.style.display = 'none';
+    }
+
+    function setCfgStatus(text, variant) {
+      const el = document.getElementById('cfgStatus');
+      el.textContent = text;
+      el.className = 'pill ' + (variant || '');
+    }
+
+    async function loadGitConfigFromFirebase() {
+      try {
+        const docRef = firestore.collection('ezeeConfig').doc('github');
+        const snap = await docRef.get();
+        if (!snap.exists) return null;
+        const data = snap.data() || {};
+        return data.github || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function loadJsonFileFromGitHub(filename) {
+      try {
+        const data = await githubService.readFile(filename);
+        return data;
+      } catch (e) {
+        const msg = String(e?.message || e);
+        if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+        throw e;
+      }
+    }
+
+    async function loadJsonFileFromPublicRaw(filename) {
+      const cfg = githubService && githubService.config ? githubService.config : null;
+      const owner = cfg?.repoOwner;
+      const repo = cfg?.repoName;
+      const branch = cfg?.branchName || 'main';
+      if (!owner || !repo) return null;
+
+      const cacheBust = `t=${Date.now()}`;
+      const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error(`Failed to fetch ${filename}: ${res.status} ${res.statusText}`);
+      }
+      return await res.json();
+    }
+
+    async function loadJsonFileBestEffort(filename) {
+      try {
+        const v = await loadJsonFileFromGitHub(filename);
+        if (v !== null) return v;
+      } catch (e) {}
+      return await loadJsonFileFromPublicRaw(filename);
+    }
+
+    function ensurePermitsShape(obj) {
+      if (!obj || typeof obj !== 'object') {
+        return { version: 1, updatedAt: null, permits: [] };
+      }
+      if (!Array.isArray(obj.permits)) obj.permits = [];
+      if (!obj.version) obj.version = 1;
+      return obj;
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function parseIso(s) {
+      const t = Date.parse(String(s || ''));
+      return Number.isFinite(t) ? t : NaN;
+    }
+
+    function isExpired(p) {
+      const exp = parseIso(p && p.expiresAt);
+      if (!Number.isFinite(exp)) return true;
+      return exp <= Date.now();
+    }
+
+    function safeText(s) {
+      return String(s || '').trim();
+    }
+
+    function hasMissing(s) {
+      const c = s && s.clientInfo ? s.clientInfo : {};
+      const images = s && s.images ? s.images : {};
+      const coords = safeText(c.businessCoordinates || s.businessCoordinates || s.coordinates);
+      const idFront = safeText(images.idFrontUrl || images.idFront);
+      const idBack = safeText(images.idBackUrl || images.idBack);
+      return {
+        missingCoords: !coords,
+        missingIdFront: !idFront,
+        missingIdBack: !idBack
+      };
+    }
+
+    function optionLabel(s) {
+      const id = safeText(s && s.id);
+      const submittedBy = s && s.submittedBy ? s.submittedBy : (s && s.submitted_by ? s.submitted_by : {});
+      const agent = safeText(submittedBy.agentName) || 'Agent';
+      const c = s && s.clientInfo ? s.clientInfo : {};
+      const name = safeText(c.fullName || s.fullName) || 'Client';
+      const miss = hasMissing(s);
+      const flags = [];
+      if (miss.missingIdFront) flags.push('missing ID front');
+      if (miss.missingIdBack) flags.push('missing ID back');
+      if (miss.missingCoords) flags.push('missing coords');
+      const tag = flags.length ? (' — ' + flags.join(', ')) : '';
+      return `${agent} · ${name} · ${id}${tag}`;
+    }
+
+    function renderSubmissionSelect() {
+      const sel = document.getElementById('submissionSelect');
+      const meta = document.getElementById('submissionMeta');
+      const list = (submissions || []).filter(s => {
+        const miss = hasMissing(s);
+        return miss.missingCoords || miss.missingIdFront || miss.missingIdBack;
+      });
+
+      const opts = ['<option value="">Select a submission…</option>'];
+      for (const s of list) {
+        const id = safeText(s.id);
+        if (!id) continue;
+        opts.push(`<option value="${id.replace(/"/g,'&quot;')}">${optionLabel(s).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`);
+      }
+      sel.innerHTML = opts.join('');
+
+      const updateMeta = () => {
+        const id = safeText(sel.value);
+        if (!id) {
+          meta.textContent = '';
+          return;
+        }
+        const s = (submissions || []).find(x => safeText(x.id) === id);
+        const miss = hasMissing(s);
+        const pieces = [];
+        if (miss.missingIdFront) pieces.push('ID Front missing');
+        if (miss.missingIdBack) pieces.push('ID Back missing');
+        if (miss.missingCoords) pieces.push('Coordinates missing');
+        meta.textContent = pieces.length ? pieces.join(' · ') : 'No missing fields detected.';
+      };
+
+      sel.removeEventListener('change', updateMeta);
+      sel.addEventListener('change', updateMeta);
+      updateMeta();
+    }
+
+    function renderPermits() {
+      const tbody = document.getElementById('permitsTbody');
+      const meta = document.getElementById('permitsMeta');
+
+      const list = (permits && Array.isArray(permits.permits)) ? permits.permits : [];
+      const active = list.filter(p => !isExpired(p));
+
+      meta.textContent = `Active: ${active.length} · Total: ${list.length}`;
+
+      if (!active.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">No active permits.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = active.map(p => {
+        const allow = [
+          p.allowImages ? '<span class="badge on">Images</span>' : '<span class="badge off">Images</span>',
+          p.allowCoords ? '<span class="badge on">Coords</span>' : '<span class="badge off">Coords</span>'
+        ].join(' ');
+
+        const exp = p.expiresAt ? new Date(p.expiresAt).toLocaleString() : '—';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(p.agentName || 'Agent')}</div>
+              <div class="muted">${escapeHtml(p.agentScCode || '')}</div>
+            </td>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(p.submissionId || '')}</div>
+            </td>
+            <td>${allow}</td>
+            <td>${escapeHtml(exp)}</td>
+            <td>${escapeHtml(p.note || '')}</td>
+            <td class="right"><button class="btn btn-danger" type="button" data-action="revoke" data-id="${escapeHtml(p.permitId || '')}">Revoke</button></td>
+          </tr>
+        `;
+      }).join('');
+
+      Array.from(tbody.querySelectorAll('button[data-action="revoke"]')).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = safeText(btn.getAttribute('data-id'));
+          if (!id) return;
+          const ok = window.confirm('Revoke this permit?');
+          if (!ok) return;
+          await revokePermit(id);
+        });
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function computePermitId(agentId, submissionId) {
+      const a = safeText(agentId);
+      const s = safeText(submissionId);
+      return `PERM-${a || 'agent'}-${s || 'sub'}-${Date.now()}`;
+    }
+
+    async function savePermits() {
+      permits.updatedAt = nowIso();
+      const payload = JSON.stringify(permits, null, 2);
+      await githubService.uploadFile(PERMITS_FILE, btoa(payload), 'Update agent correction permits');
+    }
+
+    async function revokePermit(permitId) {
+      hideAlert();
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+      const before = permits.permits.length;
+      permits.permits = (permits.permits || []).filter(p => safeText(p.permitId) !== safeText(permitId));
+      if (permits.permits.length === before) {
+        showAlert('Permit not found.', 'error');
+        return;
+      }
+      await savePermits();
+      showAlert('Permit revoked.', 'success');
+      renderPermits();
+    }
+
+    async function clearExpiredPermits() {
+      hideAlert();
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+      const before = permits.permits.length;
+      permits.permits = (permits.permits || []).filter(p => !isExpired(p));
+      const removed = before - permits.permits.length;
+      if (removed <= 0) {
+        showAlert('No expired permits to remove.', 'success');
+        renderPermits();
+        return;
+      }
+      await savePermits();
+      showAlert(`Removed expired permits: ${removed}.`, 'success');
+      renderPermits();
+    }
+
+    async function grantPermit() {
+      hideAlert();
+
+      const subId = safeText(document.getElementById('submissionSelect').value);
+      if (!subId) {
+        showAlert('Select a submission first.', 'error');
+        return;
+      }
+
+      const hours = Number(document.getElementById('expiresHours').value);
+      if (!Number.isFinite(hours) || hours <= 0) {
+        showAlert('Expires in hours must be a positive number.', 'error');
+        return;
+      }
+
+      const allowImages = !!document.getElementById('allowImages').checked;
+      const allowCoords = !!document.getElementById('allowCoords').checked;
+      if (!allowImages && !allowCoords) {
+        showAlert('Enable at least one permission (Images or Coordinates).', 'error');
+        return;
+      }
+
+      const s = (submissions || []).find(x => safeText(x.id) === subId);
+      if (!s) {
+        showAlert('Submission not found in loaded list.', 'error');
+        return;
+      }
+
+      const submittedBy = s.submittedBy || s.submitted_by || {};
+      const agentId = safeText(submittedBy.agentId || s.agentInfo?.id || '');
+      const agentName = safeText(submittedBy.agentName || s.agentInfo?.fullName || '');
+      const agentScCode = safeText(submittedBy.agentScCode || s.agentInfo?.scCode || '');
+      if (!agentId && !agentName) {
+        showAlert('Cannot grant permit: missing agent identity on this submission.', 'error');
+        return;
+      }
+
+      const exp = new Date(Date.now() + Math.round(hours * 3600 * 1000)).toISOString();
+      const permitId = computePermitId(agentId || agentName, subId);
+      const note = safeText(document.getElementById('note').value);
+
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+      const active = (permits.permits || []).filter(p => !isExpired(p));
+      const dupe = active.find(p => safeText(p.submissionId) === subId && safeText(p.agentId || p.agentName) === safeText(agentId || agentName));
+      if (dupe) {
+        showAlert('A permit already exists for this agent + submission. Revoke it first if you want to change permissions.', 'error');
+        return;
+      }
+
+      permits.permits.push({
+        permitId,
+        createdAt: nowIso(),
+        expiresAt: exp,
+        submissionId: subId,
+        agentId,
+        agentName,
+        agentScCode,
+        allowImages,
+        allowCoords,
+        note
+      });
+
+      await savePermits();
+      showAlert('Permit granted. Agent can now open Corrections from their performance page.', 'success');
+      renderPermits();
+    }
+
+    async function loadAll() {
+      hideAlert();
+      setCfgStatus('● Loading...', '');
+
+      const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
+      const role = (localStorage.getItem('adminRole') || '').trim();
+      if (!loggedIn) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (role !== 'super') {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      githubService = new GitHubService();
+      const fbCfg = await loadGitConfigFromFirebase();
+      if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+        githubService.saveConfig({
+          repoOwner: fbCfg.repoOwner,
+          repoName: fbCfg.repoName,
+          branchName: fbCfg.branch || 'main',
+          token: fbCfg.token
+        });
+        setCfgStatus('● Configured', 'ok');
+      } else if (githubService.config && githubService.config.token) {
+        setCfgStatus('● Configured (Local)', 'warn');
+      } else {
+        setCfgStatus('● Not configured', 'bad');
+        showAlert('GitHub configuration missing. Set it in Admin Dashboard first.', 'error');
+        return;
+      }
+
+      const subsData = await loadJsonFileBestEffort('submissions.json');
+      const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+      submissions = Array.isArray(list) ? list : [];
+
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+
+      renderSubmissionSelect();
+      renderPermits();
+
+      setCfgStatus('● Ready', 'ok');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = 'dashboard.html';
+      });
+      document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
+      document.getElementById('btnGrant').addEventListener('click', () => grantPermit());
+      document.getElementById('btnClearExpired').addEventListener('click', () => clearExpiredPermits());
+      loadAll().catch(e => {
+        console.error(e);
+        setCfgStatus('● Load failed', 'bad');
+        showAlert('Failed to load: ' + (e?.message || String(e)), 'error');
+      });
+    });
+  </script>
+</body>
+</html>

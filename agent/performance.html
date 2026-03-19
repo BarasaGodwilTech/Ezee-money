@@ -278,7 +278,7 @@
         <div class="header">
             <div>
                 <h1>Agent Performance</h1>
-                <div class="sub" id="agentSubtitle">Loading agent...</div>
+                <div class="sub" id="agentSubtitle" style="cursor:pointer; text-decoration:underline;">Loading agent...</div>
             </div>
             <div class="row">
                 <div class="pill" id="cfgStatus">● Loading config...</div>
@@ -876,6 +876,7 @@
                 }
 
                 document.getElementById('agentSubtitle').textContent = `${agentInfo.fullName || 'Agent'} (${agentInfo.scCode || ''})`;
+                document.getElementById('agentSubtitle').setAttribute('title', 'Click to open Corrections (if permitted by Super Admin)');
 
                 // Load submissions
                 try {
@@ -911,6 +912,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btnPayments').addEventListener('click', () => {
                 window.location.href = 'payments.html';
+            });
+
+            document.getElementById('agentSubtitle').addEventListener('click', () => {
+                window.location.href = 'corrections.html';
             });
 
             document.getElementById('btnLogout').addEventListener('click', () => {

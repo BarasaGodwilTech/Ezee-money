@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Corrections</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    .container{max-width:1100px;margin:0 auto;padding:16px;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827;}
+    .pill.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}
+    .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+    .pill.warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:14px;}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px;}
+    .col-12{grid-column:span 12;}
+    .col-6{grid-column:span 6;}
+    .col-4{grid-column:span 4;}
+    .col-3{grid-column:span 3;}
+    @media (max-width:900px){.col-6,.col-4,.col-3{grid-column:span 12;}}
+    label{display:block;font-size:12px;color:#374151;margin-bottom:6px;font-weight:800;}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb;outline:none;}
+    textarea{min-height:80px;resize:vertical;}
+    .btn{padding:10px 12px;border-radius:12px;border:1px solid #e5e7eb;background:#111827;color:#fff;font-weight:800;cursor:pointer;}
+    .btn-muted{background:#fff;color:#111827;}
+    .btn:disabled{opacity:.6;cursor:not-allowed;}
+    .alert{display:none;margin-top:12px;padding:10px 12px;border-radius:12px;font-weight:700;}
+    .alert.success{display:block;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
+    .alert.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+    .muted{color:#64748b;}
+    table{width:100%;border-collapse:separate;border-spacing:0;}
+    th,td{padding:10px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:13px;vertical-align:top;}
+    th{font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+    .right{text-align:right;}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid #e5e7eb;background:#f8fafc;color:#0f172a;}
+    .badge.on{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}
+    .badge.off{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+    .imgGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    @media (max-width:900px){.imgGrid{grid-template-columns:1fr;}}
+    .imgCard{border:1px solid #e5e7eb;border-radius:14px;padding:10px;}
+    .imgCard h4{margin:0 0 8px;font-size:13px;}
+    .imgCard img{width:100%;height:180px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;background:#f8fafc;}
+    .map{height:280px;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <div style="font-size:18px;font-weight:900;">Corrections</div>
+        <div class="muted" id="subtitle">Loading...</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span class="pill" id="cfgStatus">● Loading...</span>
+        <button class="btn btn-muted" id="btnBack" type="button">Back</button>
+        <button class="btn" id="btnRefresh" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:10px;">Permitted Submissions</div>
+      <div class="muted" id="permitsMeta"></div>
+      <div style="overflow:auto;margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Submission</th>
+              <th>Client</th>
+              <th>Missing</th>
+              <th>Expires</th>
+              <th class="right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="permitsTbody">
+            <tr><td colspan="5" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="editCard" style="display:none;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:900;" id="editTitle">Edit Submission</div>
+          <div class="muted" id="editMeta"></div>
+        </div>
+        <button class="btn" id="btnSave" type="button">Save Changes</button>
+      </div>
+
+      <div style="margin-top:12px;" id="editWarnings" class="muted"></div>
+
+      <div class="grid" style="margin-top:10px;">
+        <div class="col-6">
+          <label>ID Front (upload if missing)</label>
+          <input id="idFrontInput" type="file" accept="image/*" capture="environment" />
+        </div>
+        <div class="col-6">
+          <label>ID Back (upload if missing)</label>
+          <input id="idBackInput" type="file" accept="image/*" capture="environment" />
+        </div>
+      </div>
+
+      <div class="imgGrid" style="margin-top:12px;">
+        <div class="imgCard">
+          <h4>ID Front</h4>
+          <img id="idFrontPreview" alt="ID Front" />
+        </div>
+        <div class="imgCard">
+          <h4>ID Back</h4>
+          <img id="idBackPreview" alt="ID Back" />
+        </div>
+        <div class="imgCard">
+          <h4>Agent Photo</h4>
+          <img id="agentPhotoPreview" alt="Agent Photo" />
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label>Business Coordinates (click map to set)</label>
+        <div class="grid">
+          <div class="col-6">
+            <input id="coords" type="text" placeholder="lat, lng" />
+            <div class="muted" style="margin-top:6px;">Example: <span style="font-family:monospace;">1.2833, 32.5000</span></div>
+          </div>
+          <div class="col-6" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <button class="btn btn-muted" id="btnUseMyLocation" type="button">Use my location</button>
+            <a class="btn btn-muted" id="btnOpenMaps" href="#" target="_blank" rel="noopener noreferrer">Open in Maps</a>
+          </div>
+          <div class="col-12">
+            <div class="map" id="map"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="../js/github-service.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+      authDomain: "ezee-git-config.firebaseapp.com",
+      projectId: "ezee-git-config",
+      storageBucket: "ezee-git-config.firebasestorage.app",
+      messagingSenderId: "106776336",
+      appId: "1:106776336:web:91d276bf2bd70d55954795",
+      measurementId: "G-YJGQLTWJ8J"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const firestore = firebase.firestore();
+
+    const PERMITS_FILE = 'agent-correction-permits.json';
+
+    let githubService;
+    let agentInfo;
+    let submissions = [];
+    let permits = null;
+
+    let selectedPermit = null;
+    let selectedSubmission = null;
+
+    let map;
+    let marker;
+
+    function showAlert(message, type) {
+      const el = document.getElementById('alert');
+      el.style.display = 'block';
+      el.className = 'alert ' + (type || '');
+      el.textContent = message;
+    }
+
+    function hideAlert() {
+      const el = document.getElementById('alert');
+      el.style.display = 'none';
+    }
+
+    function setCfgStatus(text, variant) {
+      const el = document.getElementById('cfgStatus');
+      el.textContent = text;
+      el.className = 'pill ' + (variant || '');
+    }
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function safeText(s) {
+      return String(s || '').trim();
+    }
+
+    function parseIso(s) {
+      const t = Date.parse(String(s || ''));
+      return Number.isFinite(t) ? t : NaN;
+    }
+
+    function isExpired(p) {
+      const exp = parseIso(p && p.expiresAt);
+      if (!Number.isFinite(exp)) return true;
+      return exp <= Date.now();
+    }
+
+    async function loadGitConfigFromFirebase() {
+      try {
+        const docRef = firestore.collection('ezeeConfig').doc('github');
+        const snap = await docRef.get();
+        if (!snap.exists) return null;
+        const data = snap.data() || {};
+        return data.github || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function loadJsonFileFromGitHub(filename) {
+      try {
+        return await githubService.readFile(filename);
+      } catch (e) {
+        const msg = String(e?.message || e);
+        if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+        throw e;
+      }
+    }
+
+    async function loadJsonFileFromPublicRaw(filename) {
+      const cfg = githubService && githubService.config ? githubService.config : null;
+      const owner = cfg?.repoOwner;
+      const repo = cfg?.repoName;
+      const branch = cfg?.branchName || 'main';
+      if (!owner || !repo) return null;
+
+      const cacheBust = `t=${Date.now()}`;
+      const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error(`Failed to fetch ${filename}: ${res.status} ${res.statusText}`);
+      }
+      return await res.json();
+    }
+
+    async function loadJsonFileBestEffort(filename) {
+      try {
+        const v = await loadJsonFileFromGitHub(filename);
+        if (v !== null) return v;
+      } catch (e) {}
+      return await loadJsonFileFromPublicRaw(filename);
+    }
+
+    function ensurePermitsShape(obj) {
+      if (!obj || typeof obj !== 'object') return { version: 1, updatedAt: null, permits: [] };
+      if (!Array.isArray(obj.permits)) obj.permits = [];
+      if (!obj.version) obj.version = 1;
+      return obj;
+    }
+
+    function normalizeStrictAgentId(v) {
+      const s = safeText(v);
+      if (!s) return '';
+      return s.replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeStrictAgentName(v) {
+      const s = safeText(v).toLowerCase();
+      if (!s) return '';
+      return s.replace(/\s+/g, ' ').trim();
+    }
+
+    function permitMatchesAgent(p) {
+      const myId = normalizeStrictAgentId(agentInfo && agentInfo.id);
+      const myName = normalizeStrictAgentName(agentInfo && agentInfo.fullName);
+      const mySc = safeText(agentInfo && (agentInfo.scCode || agentInfo.agentScCode));
+
+      const pid = normalizeStrictAgentId(p && p.agentId);
+      if (myId && pid) return myId === pid;
+
+      const pn = normalizeStrictAgentName(p && p.agentName);
+      if (!pn || !myName) return false;
+      if (pn !== myName) return false;
+
+      const psc = safeText(p && p.agentScCode);
+      if (mySc && psc && mySc !== psc) return false;
+      return true;
+    }
+
+    function findSubmission(submissionId) {
+      const id = safeText(submissionId);
+      if (!id) return null;
+      return (submissions || []).find(s => safeText(s && s.id) === id) || null;
+    }
+
+    function getClientInfo(s) {
+      const c = (s && s.clientInfo) ? s.clientInfo : {};
+      return {
+        fullName: safeText(c.fullName || s.fullName),
+        phoneNumber: safeText(c.phoneNumber || s.personalNumber),
+        businessCoordinates: safeText(c.businessCoordinates || s.businessCoordinates || s.coordinates)
+      };
+    }
+
+    function getImages(s) {
+      const imgs = (s && s.images) ? s.images : {};
+      const toSrc = (v) => {
+        if (!v) return '';
+        if (typeof v === 'string') return v;
+        if (typeof v === 'object') {
+          if (typeof v.base64 === 'string') return v.base64;
+          if (typeof v.dataUrl === 'string') return v.dataUrl;
+          if (typeof v.url === 'string') return v.url;
+        }
+        return '';
+      };
+      return {
+        idFrontUrl: toSrc(imgs.idFrontUrl || imgs.idFront),
+        idBackUrl: toSrc(imgs.idBackUrl || imgs.idBack),
+        agentPhotoUrl: toSrc(imgs.agentPhotoUrl || imgs.agentPhoto)
+      };
+    }
+
+    function missingFlags(s) {
+      const c = getClientInfo(s);
+      const imgs = getImages(s);
+      return {
+        missingCoords: !c.businessCoordinates,
+        missingIdFront: !imgs.idFrontUrl,
+        missingIdBack: !imgs.idBackUrl
+      };
+    }
+
+    function renderPermits() {
+      const tbody = document.getElementById('permitsTbody');
+      const meta = document.getElementById('permitsMeta');
+
+      const list = (permits && Array.isArray(permits.permits)) ? permits.permits : [];
+      const active = list.filter(p => !isExpired(p)).filter(p => permitMatchesAgent(p));
+
+      meta.textContent = `Active permits for you: ${active.length}`;
+
+      if (!active.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">No permits found. Ask your super admin to grant a permit.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = active.map(p => {
+        const s = findSubmission(p.submissionId);
+        const c = s ? getClientInfo(s) : { fullName: '', phoneNumber: '' };
+        const miss = s ? missingFlags(s) : { missingCoords: true, missingIdFront: true, missingIdBack: true };
+
+        const bits = [];
+        if (p.allowImages) {
+          if (miss.missingIdFront) bits.push('ID Front');
+          if (miss.missingIdBack) bits.push('ID Back');
+        }
+        if (p.allowCoords && miss.missingCoords) bits.push('Coords');
+        const missing = bits.length ? bits.join(', ') : '—';
+
+        const exp = p.expiresAt ? new Date(p.expiresAt).toLocaleString() : '—';
+
+        return `
+          <tr>
+            <td><div style="font-weight:900;">${escapeHtml(p.submissionId || '')}</div></td>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(c.fullName || '—')}</div>
+              <div class="muted">${escapeHtml(c.phoneNumber || '')}</div>
+            </td>
+            <td>${escapeHtml(missing)}</td>
+            <td>${escapeHtml(exp)}</td>
+            <td class="right"><button class="btn" type="button" data-action="edit" data-id="${escapeHtml(p.permitId || '')}">Open</button></td>
+          </tr>
+        `;
+      }).join('');
+
+      Array.from(tbody.querySelectorAll('button[data-action="edit"]')).forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pid = safeText(btn.getAttribute('data-id'));
+          const p = (permits.permits || []).find(x => safeText(x.permitId) === pid);
+          if (!p) return;
+          openPermit(p);
+        });
+      });
+    }
+
+    function destroyMap() {
+      if (map) {
+        map.off();
+        map.remove();
+      }
+      map = null;
+      marker = null;
+    }
+
+    function parseLatLng(s) {
+      const raw = safeText(s);
+      if (!raw) return null;
+      const parts = raw.split(',').map(x => x.trim());
+      if (parts.length < 2) return null;
+      const lat = Number(parts[0]);
+      const lng = Number(parts[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng };
+    }
+
+    function formatLatLng(lat, lng) {
+      return `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+    }
+
+    function setCoords(lat, lng, pan) {
+      document.getElementById('coords').value = formatLatLng(lat, lng);
+      const a = document.getElementById('btnOpenMaps');
+      a.href = `https://www.google.com/maps?q=${encodeURIComponent(formatLatLng(lat, lng))}`;
+      if (marker) marker.setLatLng([lat, lng]);
+      if (map && pan) map.setView([lat, lng], 16);
+    }
+
+    async function useMyLocation() {
+      if (!navigator.geolocation) {
+        showAlert('Geolocation not supported in this browser.', 'error');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          setCoords(lat, lng, true);
+        },
+        () => {
+          showAlert('Failed to get your location. Please allow location permission or click the map.', 'error');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function openPermit(p) {
+      hideAlert();
+      selectedPermit = p;
+      selectedSubmission = findSubmission(p.submissionId);
+      if (!selectedSubmission) {
+        showAlert('Submission not found. Please refresh.', 'error');
+        return;
+      }
+
+      const c = getClientInfo(selectedSubmission);
+      const imgs = getImages(selectedSubmission);
+      const miss = missingFlags(selectedSubmission);
+
+      document.getElementById('editCard').style.display = 'block';
+      document.getElementById('editTitle').textContent = `Edit: ${c.fullName || 'Client'} · ${safeText(p.submissionId)}`;
+      document.getElementById('editMeta').textContent = `Permit expires: ${p.expiresAt ? new Date(p.expiresAt).toLocaleString() : '—'}`;
+
+      const warn = [];
+      if (!p.allowImages) warn.push('Images are NOT permitted by admin for this submission.');
+      if (!p.allowCoords) warn.push('Coordinates are NOT permitted by admin for this submission.');
+      if (!miss.missingIdFront && !miss.missingIdBack && !miss.missingCoords) warn.push('This submission has no missing items detected.');
+      document.getElementById('editWarnings').textContent = warn.join(' ');
+
+      const idFrontPreview = document.getElementById('idFrontPreview');
+      const idBackPreview = document.getElementById('idBackPreview');
+      const agentPhotoPreview = document.getElementById('agentPhotoPreview');
+
+      idFrontPreview.src = imgs.idFrontUrl || '';
+      idBackPreview.src = imgs.idBackUrl || '';
+      agentPhotoPreview.src = imgs.agentPhotoUrl || '';
+
+      document.getElementById('idFrontInput').disabled = !p.allowImages;
+      document.getElementById('idBackInput').disabled = !p.allowImages;
+      document.getElementById('coords').disabled = !p.allowCoords;
+      document.getElementById('btnUseMyLocation').disabled = !p.allowCoords;
+
+      const existingCoords = c.businessCoordinates;
+      document.getElementById('coords').value = existingCoords;
+      document.getElementById('btnOpenMaps').href = existingCoords ? `https://www.google.com/maps?q=${encodeURIComponent(existingCoords)}` : '#';
+
+      destroyMap();
+      setTimeout(() => {
+        map = L.map('map', { zoomControl: true, attributionControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        const ll = parseLatLng(existingCoords) || { lat: 1.2833, lng: 32.5 };
+        map.setView([ll.lat, ll.lng], parseLatLng(existingCoords) ? 16 : 6);
+        marker = L.marker([ll.lat, ll.lng], { draggable: true }).addTo(map);
+
+        marker.on('dragend', () => {
+          const m = marker.getLatLng();
+          setCoords(m.lat, m.lng, false);
+        });
+
+        map.on('click', (e) => {
+          if (!e || !e.latlng) return;
+          setCoords(e.latlng.lat, e.latlng.lng, false);
+        });
+      }, 0);
+    }
+
+    async function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function saveChanges() {
+      hideAlert();
+
+      if (!selectedPermit || !selectedSubmission) {
+        showAlert('Select a permitted submission first.', 'error');
+        return;
+      }
+
+      if (isExpired(selectedPermit)) {
+        showAlert('This permit has expired. Ask your super admin to grant a new one.', 'error');
+        return;
+      }
+
+      const submissionId = safeText(selectedSubmission.id);
+      if (!submissionId) {
+        showAlert('Invalid submission.', 'error');
+        return;
+      }
+
+      const allowImages = !!selectedPermit.allowImages;
+      const allowCoords = !!selectedPermit.allowCoords;
+
+      const idFrontFile = document.getElementById('idFrontInput').files[0] || null;
+      const idBackFile = document.getElementById('idBackInput').files[0] || null;
+
+      const newCoords = safeText(document.getElementById('coords').value);
+
+      if (allowCoords) {
+        if (newCoords) {
+          const ll = parseLatLng(newCoords);
+          if (!ll) {
+            showAlert('Coordinates format is invalid. Use "lat, lng".', 'error');
+            return;
+          }
+        }
+      }
+
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        // 1) Upload new images (if any)
+        const imgPayload = {};
+        if (allowImages && idFrontFile) imgPayload.idFront = await fileToDataUrl(idFrontFile);
+        if (allowImages && idBackFile) imgPayload.idBack = await fileToDataUrl(idBackFile);
+
+        let uploadResults = null;
+        if (Object.keys(imgPayload).length) {
+          uploadResults = await githubService.uploadSubmissionImages(submissionId, imgPayload);
+        }
+
+        // 2) Load latest submissions.json
+        const data = await loadJsonFileFromGitHub('submissions.json');
+        const list = data && data.submissions ? data.submissions : (Array.isArray(data) ? data : []);
+        if (!Array.isArray(list) || !list.length) {
+          throw new Error('submissions.json could not be loaded or is empty.');
+        }
+
+        const idx = list.findIndex(s => safeText(s && s.id) === submissionId);
+        if (idx === -1) {
+          throw new Error('Submission not found in submissions.json.');
+        }
+
+        const s = list[idx];
+        if (!s.clientInfo) s.clientInfo = {};
+        if (!s.images) s.images = {};
+
+        let changed = 0;
+
+        if (allowImages && uploadResults) {
+          if (uploadResults.idFront && uploadResults.idFront.downloadUrl) {
+            s.images.idFrontUrl = uploadResults.idFront.downloadUrl;
+            changed++;
+          }
+          if (uploadResults.idBack && uploadResults.idBack.downloadUrl) {
+            s.images.idBackUrl = uploadResults.idBack.downloadUrl;
+            changed++;
+          }
+        }
+
+        if (allowCoords && newCoords) {
+          s.clientInfo.businessCoordinates = newCoords;
+          changed++;
+        }
+
+        if (changed <= 0) {
+          showAlert('No changes detected. Upload images and/or set coordinates then try again.', 'error');
+          return;
+        }
+
+        const payload = {
+          submissions: list,
+          lastUpdated: new Date().toISOString(),
+          totalSubmissions: list.length
+        };
+
+        await githubService.uploadFile('submissions.json', btoa(JSON.stringify(payload, null, 2)), `Correction update for ${submissionId}`);
+
+        // Refresh local state
+        const fresh = await loadJsonFileBestEffort('submissions.json');
+        submissions = fresh && fresh.submissions ? fresh.submissions : (Array.isArray(fresh) ? fresh : []);
+
+        showAlert('Saved successfully. Admin can now view the missing data.', 'success');
+        renderPermits();
+
+        // Re-open with fresh submission snapshot
+        selectedSubmission = findSubmission(submissionId);
+        if (selectedSubmission) {
+          openPermit(selectedPermit);
+        }
+      } catch (e) {
+        console.error(e);
+        showAlert('Save failed: ' + (e?.message || String(e)), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+      }
+    }
+
+    async function loadAll() {
+      hideAlert();
+      setCfgStatus('● Loading...', '');
+
+      const loggedIn = (localStorage.getItem('agentLoggedIn') || '').trim() === 'true';
+      if (!loggedIn) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      agentInfo = JSON.parse(localStorage.getItem('agentInfo') || 'null');
+      if (!agentInfo) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      document.getElementById('subtitle').textContent = `${agentInfo.fullName || 'Agent'} (${agentInfo.scCode || ''})`;
+
+      githubService = new GitHubService();
+      const fbCfg = await loadGitConfigFromFirebase();
+      if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+        githubService.saveConfig({
+          repoOwner: fbCfg.repoOwner,
+          repoName: fbCfg.repoName,
+          branchName: fbCfg.branch || 'main',
+          token: fbCfg.token
+        });
+        setCfgStatus('● Configured', 'ok');
+      } else if (githubService.config && githubService.config.token) {
+        setCfgStatus('● Configured (Local)', 'warn');
+      } else {
+        setCfgStatus('● Not configured', 'bad');
+        showAlert('GitHub configuration missing. Contact your admin.', 'error');
+        return;
+      }
+
+      const subsData = await loadJsonFileBestEffort('submissions.json');
+      const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+      submissions = Array.isArray(list) ? list : [];
+
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+
+      selectedPermit = null;
+      selectedSubmission = null;
+      document.getElementById('editCard').style.display = 'none';
+      destroyMap();
+
+      renderPermits();
+      setCfgStatus('● Ready', 'ok');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = 'performance.html';
+      });
+      document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
+      document.getElementById('btnSave').addEventListener('click', () => saveChanges());
+      document.getElementById('btnUseMyLocation').addEventListener('click', () => useMyLocation());
+
+      document.getElementById('idFrontInput').addEventListener('change', () => {
+        const f = document.getElementById('idFrontInput').files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (e) => { document.getElementById('idFrontPreview').src = String(e.target.result || ''); };
+        r.readAsDataURL(f);
+      });
+      document.getElementById('idBackInput').addEventListener('change', () => {
+        const f = document.getElementById('idBackInput').files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (e) => { document.getElementById('idBackPreview').src = String(e.target.result || ''); };
+        r.readAsDataURL(f);
+      });
+
+      loadAll().catch(e => {
+        console.error(e);
+        setCfgStatus('● Load failed', 'bad');
+        showAlert('Failed to load: ' + (e?.message || String(e)), 'error');
+      });
+    });
+  </script>
+</body>
+</html>

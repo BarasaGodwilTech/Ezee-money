@@ -1015,6 +1015,16 @@
                     </div>
                 </div>
 
+                <div class="card" id="correctionPermitsCard" style="margin-top: 20px; display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Correction Permits</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p style="color:#6b7280; font-size: 14px; margin-bottom: 12px;">Allow an agent to upload missing ID images or business coordinates for an existing submission.</p>
+                        <button class="btn btn-primary" id="openCorrectionPermitsBtn" type="button">Open Correction Permits</button>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Recent Activity</h2>
@@ -1285,6 +1295,22 @@
             card.style.display = 'block';
             btn.addEventListener('click', () => {
                 window.location.href = 'field-agent-payments.html';
+            });
+        }
+
+        function initCorrectionPermitsUI() {
+            const card = document.getElementById('correctionPermitsCard');
+            const btn = document.getElementById('openCorrectionPermitsBtn');
+            if (!card || !btn) return;
+
+            if (!isSuperAdmin()) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+            btn.addEventListener('click', () => {
+                window.location.href = 'correction-permits.html';
             });
         }
 
@@ -1877,6 +1903,7 @@
             initManageAdminsUI();
             initPortfolioUploadUI();
             initFieldAgentPaymentsUI();
+            initCorrectionPermitsUI();
 
             if ((localStorage.getItem('adminRole') || '').trim() === 'super') {
                 loadAdmins().catch(() => {});
@@ -2505,6 +2532,53 @@
             }).join('');
         }
 
+        function normalizeSubmissionForView(submission) {
+            const s = submission || {};
+
+            const submittedBy = s.submittedBy || s.submitted_by || {
+                agentName: s.agentInfo?.fullName || s.agentName || '',
+                agentScCode: s.agentInfo?.scCode || s.scCode || '',
+                agentId: s.agentInfo?.id || s.agentId || ''
+            };
+
+            const clientInfo = s.clientInfo || {
+                fullName: s.fullName || s.clientName || '',
+                phoneNumber: s.personalNumber || s.phoneNumber || '',
+                email: s.email || '',
+                nationalId: s.nationalId || '',
+                dob: s.dob || '',
+                gender: s.gender || '',
+                businessAddress: s.businessAddress || '',
+                businessCoordinates: s.businessCoordinates || s.coordinates || '',
+                residentialAddress: s.residentialAddress || '',
+                nextOfKinName: s.nextOfKinName || '',
+                nextOfKinRelationship: s.nextOfKinRelationship || '',
+                nextOfKinPhone: s.nextOfKinPhone || ''
+            };
+
+            const images = s.images || {};
+            const toSrc = (v) => {
+                if (!v) return '';
+                if (typeof v === 'string') return v;
+                if (typeof v === 'object') {
+                    if (typeof v.base64 === 'string') return v.base64;
+                    if (typeof v.dataUrl === 'string') return v.dataUrl;
+                    if (typeof v.url === 'string') return v.url;
+                }
+                return '';
+            };
+
+            return {
+                submittedBy,
+                clientInfo,
+                images: {
+                    idFrontUrl: toSrc(images.idFrontUrl || images.idFront || images.idFrontImage || images.id_front),
+                    idBackUrl: toSrc(images.idBackUrl || images.idBack || images.idBackImage || images.id_back),
+                    agentPhotoUrl: toSrc(images.agentPhotoUrl || images.agentPhoto || images.passport || images.agent_photo)
+                }
+            };
+        }
+
         function viewSubmission(submissionId) {
             const submission = config.submissions.find(s => s.id === submissionId);
             if (!submission) {
@@ -2512,9 +2586,10 @@
                 return;
             }
 
-            const clientInfo = submission.clientInfo || {};
-            const submittedBy = submission.submittedBy || {};
-            const images = submission.images || {};
+            const normalized = normalizeSubmissionForView(submission);
+            const clientInfo = normalized.clientInfo || {};
+            const submittedBy = normalized.submittedBy || {};
+            const images = normalized.images || {};
 
             // Create modal overlay
             const modal = document.createElement('div');
@@ -2834,10 +2909,35 @@
                     return;
                 }
 
-                const images = submission.images || {};
+                const normalized = normalizeSubmissionForView(submission);
+                const images = normalized.images || {};
                 const url = images[imageKey];
                 if (!url) {
                     showAlert('Image not available', 'warning');
+                    return;
+                }
+
+                if (String(url).startsWith('data:image/')) {
+                    const safeClient = String(normalized.clientInfo?.fullName || submission.fullName || 'client')
+                        .replace(/[^a-z0-9\-\_ ]/gi, '')
+                        .trim()
+                        .replace(/\s+/g, '_')
+                        .slice(0, 50) || 'client';
+
+                    const fileStem = imageKey === 'idFrontUrl'
+                        ? 'id_front'
+                        : imageKey === 'idBackUrl'
+                            ? 'id_back'
+                            : 'agent_photo';
+
+                    const filename = `submission_${safeClient}_${fileStem}.jpg`;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showAlert('Downloading image...', 'success');
                     return;
                 }
 

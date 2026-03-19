@@ -1106,6 +1106,18 @@
                     if (formData.agentPhoto) imagePayload.agentPhoto = await processImage(formData.agentPhoto);
 
                     const uploadResults = await githubService.uploadSubmissionImages(submissionId, imagePayload);
+                    const missing = [];
+                    if (!uploadResults?.idFront?.downloadUrl) missing.push('ID Front');
+                    if (!uploadResults?.idBack?.downloadUrl) missing.push('ID Back');
+                    if (!uploadResults?.agentPhoto?.downloadUrl) missing.push('Agent Photo');
+                    if (missing.length) {
+                        const errBits = [];
+                        if (uploadResults?.idFront && uploadResults.idFront.success === false && uploadResults.idFront.error) errBits.push(`ID Front: ${uploadResults.idFront.error}`);
+                        if (uploadResults?.idBack && uploadResults.idBack.success === false && uploadResults.idBack.error) errBits.push(`ID Back: ${uploadResults.idBack.error}`);
+                        if (uploadResults?.agentPhoto && uploadResults.agentPhoto.success === false && uploadResults.agentPhoto.error) errBits.push(`Agent Photo: ${uploadResults.agentPhoto.error}`);
+                        const extra = errBits.length ? ('\n\nDetails:\n' + errBits.join('\n')) : '';
+                        throw new Error('Some required images failed to upload: ' + missing.join(', ') + '. Please check your internet connection and try again.' + extra);
+                    }
                     images = {
                         idFrontUrl: uploadResults.idFront?.downloadUrl || '',
                         idBackUrl: uploadResults.idBack?.downloadUrl || '',
@@ -1228,6 +1240,13 @@
             // Check photos
             if (!formData.idFront || !formData.idBack || !formData.agentPhoto) {
                 alert('Please upload all required photos (ID Front, ID Back, and Agent Photo)');
+                return false;
+            }
+
+            const coordsEl = document.getElementById('businessCoordinates');
+            const coords = coordsEl ? String(coordsEl.value || '').trim() : '';
+            if (!coords || coords.toLowerCase().includes('fetching')) {
+                alert("Please select agent's business location on the map (coordinates are missing). If location permission was denied, click the location button and allow access.");
                 return false;
             }
             
