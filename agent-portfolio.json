@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T10:11:07.474Z",
-  "lastUpdated": "2026-03-19T10:11:07.474Z",
+  "generatedAt": "2026-03-19T11:58:48.181Z",
+  "lastUpdated": "2026-03-19T11:58:48.186Z",
   "reportWeekMonday": "2026-03-08",
   "reportWeekRange": {
     "start": "2026-03-08",
@@ -9,74 +9,14 @@
   "uploadPurpose": "daily_snapshot",
   "rows": [
     {
-      "agentName": "Shibuta Aziz Abdallah",
-      "nameCandidate": "Shibuta Aziz Abdallah",
-      "scCode": "01278593",
-      "txnsLastWeek": 59,
-      "valueLastWeekUGX": 853000,
+      "agentName": "WETAKA MARGARET",
+      "nameCandidate": "WETAKA MARGARET",
+      "scCode": "46500687",
+      "txnsLastWeek": 0,
+      "valueLastWeekUGX": 0,
       "currency": "UGX",
-      "matchedClientName": "Shibuta  Aziz Abdallah",
+      "matchedClientName": "WETAKA MARGARET",
       "matchScore": 1
-    },
-    {
-      "agentName": "OWORI INNOCENT",
-      "nameCandidate": "OWORI INNOCENT",
-      "scCode": "56308178",
-      "txnsLastWeek": 11,
-      "valueLastWeekUGX": 557824,
-      "currency": "UGX",
-      "matchedClientName": "OWORI INNOCENT",
-      "matchScore": 1
-    },
-    {
-      "agentName": "NAMUKONGO FRANCIS",
-      "nameCandidate": "NAMUKONGO FRANCIS",
-      "scCode": "46116222",
-      "txnsLastWeek": 92,
-      "valueLastWeekUGX": 1546100,
-      "currency": "UGX",
-      "matchedClientName": "NAMUKONGO FRANCIS",
-      "matchScore": 1
-    },
-    {
-      "agentName": "Namono Recheal",
-      "nameCandidate": "Namono Recheal",
-      "scCode": "66699714",
-      "txnsLastWeek": 31,
-      "valueLastWeekUGX": 454900,
-      "currency": "UGX",
-      "matchedClientName": "Namono Recheal",
-      "matchScore": 1
-    },
-    {
-      "agentName": "NAMBUYA SHAMILAH",
-      "nameCandidate": "NAMBUYA SHAMILAH",
-      "scCode": "61270903",
-      "txnsLastWeek": 17,
-      "valueLastWeekUGX": 60600,
-      "currency": "UGX",
-      "matchedClientName": "NAMBUYA SHAMILAH",
-      "matchScore": 1
-    },
-    {
-      "agentName": "Mukaaya Moses",
-      "nameCandidate": "Mukaaya Moses",
-      "scCode": "34491785",
-      "txnsLastWeek": 4,
-      "valueLastWeekUGX": 310100,
-      "currency": "UGX",
-      "matchedClientName": "Mukaaya Moses Tenywa",
-      "matchScore": 0.9
-    },
-    {
-      "agentName": "Mr Hirya joshua malwa",
-      "nameCandidate": "Mr Hirya joshua malwa",
-      "scCode": "56084021",
-      "txnsLastWeek": 10,
-      "valueLastWeekUGX": 238000,
-      "currency": "UGX",
-      "matchedClientName": "Hirya joshua malwa",
-      "matchScore": 0.75
     }
   ],
   "source": {
