@@ -1598,15 +1598,30 @@
             // Read existing agent-portfolio.json if present so we merge instead of overwriting.
             // If the file doesn't exist, we'll create it.
             let existingRows = [];
+            let existingLoaded = false;
             try {
                 const existing = await githubService.readFile('agent-portfolio.json');
-                if (existing && existing.content) {
-                    const parsed = JSON.parse(atob(existing.content));
-                    existingRows = Array.isArray(parsed?.rows) ? parsed.rows : [];
+
+                // githubService.readFile returns parsed JSON (or null if 404).
+                if (existing === null) {
+                    existingRows = [];
+                    existingLoaded = true;
+                } else if (existing && typeof existing === 'object') {
+                    existingRows = Array.isArray(existing?.rows) ? existing.rows : [];
+                    existingLoaded = true;
+                } else {
+                    // Unexpected shape (e.g. raw text)
+                    existingLoaded = false;
                 }
             } catch (e) {
-                // 404 or parse error -> treat as empty
-                existingRows = [];
+                existingLoaded = false;
+            }
+
+            // Safety guard: if we couldn't load existing data, do not save.
+            // This prevents overwriting the file with only the current upload.
+            if (!existingLoaded) {
+                showAlert('Failed to load existing agent-portfolio.json from GitHub. Save is blocked to prevent overwriting old data. Please check GitHub config/connection and try again.', 'error');
+                return false;
             }
 
             const mergeStats = computePortfolioMergeStats(existingRows, extracted);
