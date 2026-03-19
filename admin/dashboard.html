@@ -1005,6 +1005,16 @@
                     </div>
                 </div>
 
+                <div class="card" id="fieldAgentPaymentsCard" style="margin-top: 20px; display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Field Agent Payments</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p style="color:#6b7280; font-size: 14px; margin-bottom: 12px;">Generate Monday payment batches, track deferred month-end payments, and mark payments by SC code.</p>
+                        <button class="btn btn-primary" id="openFieldAgentPaymentsBtn" type="button">Open Payments</button>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Recent Activity</h2>
@@ -1259,6 +1269,22 @@
             card.style.display = 'block';
             btn.addEventListener('click', () => {
                 window.location.href = 'portfolio-upload.html';
+            });
+        }
+
+        function initFieldAgentPaymentsUI() {
+            const card = document.getElementById('fieldAgentPaymentsCard');
+            const btn = document.getElementById('openFieldAgentPaymentsBtn');
+            if (!card || !btn) return;
+
+            if (!isSuperAdmin()) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+            btn.addEventListener('click', () => {
+                window.location.href = 'field-agent-payments.html';
             });
         }
 
@@ -1850,6 +1876,7 @@
 
             initManageAdminsUI();
             initPortfolioUploadUI();
+            initFieldAgentPaymentsUI();
 
             if ((localStorage.getItem('adminRole') || '').trim() === 'super') {
                 loadAdmins().catch(() => {});
