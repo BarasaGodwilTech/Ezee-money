@@ -80,6 +80,7 @@
         </div>
         <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn" id="btnGrant" type="button">Grant Permit</button>
+          <button class="btn btn-muted" id="btnSendLocationPrompt" type="button">Send Location Prompt</button>
           <button class="btn btn-muted" id="btnClearExpired" type="button">Remove Expired</button>
         </div>
       </div>
@@ -201,11 +202,105 @@
 
     function ensurePermitsShape(obj) {
       if (!obj || typeof obj !== 'object') {
-        return { version: 1, updatedAt: null, permits: [] };
+        return { version: 1, updatedAt: null, permits: [], locationPrompts: [] };
       }
       if (!Array.isArray(obj.permits)) obj.permits = [];
+      if (!Array.isArray(obj.locationPrompts)) obj.locationPrompts = [];
       if (!obj.version) obj.version = 1;
       return obj;
+    }
+
+    function uuid() {
+      return 'LP-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function getSubmissionAgentInfo(s) {
+      const submittedBy = s && s.submittedBy ? s.submittedBy : (s && s.submitted_by ? s.submitted_by : {});
+      const agentId = safeText(submittedBy.agentId);
+      const agentName = safeText(submittedBy.agentName);
+      const agentScCode = safeText(submittedBy.agentScCode || submittedBy.scCode);
+      return { agentId, agentName, agentScCode };
+    }
+
+    function isExpiredPrompt(p) {
+      const exp = parseIso(p && p.expiresAt);
+      if (!Number.isFinite(exp)) return true;
+      return exp <= Date.now();
+    }
+
+    async function clearLocationPrompt(requestId) {
+      hideAlert();
+      const rid = safeText(requestId);
+      if (!rid) return;
+
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+      const before = (permits.locationPrompts || []).length;
+      permits.locationPrompts = (permits.locationPrompts || []).filter(p => safeText(p && p.requestId) !== rid);
+      const removed = before - permits.locationPrompts.length;
+      if (removed <= 0) {
+        showAlert('Location prompt not found.', 'error');
+        renderPermits();
+        return;
+      }
+      await savePermits();
+      showAlert('Location prompt cleared.', 'success');
+      renderPermits();
+    }
+
+    async function sendLocationPrompt() {
+      hideAlert();
+      const subId = safeText(document.getElementById('submissionSelect').value);
+      if (!subId) {
+        showAlert('Select a submission first.', 'error');
+        return;
+      }
+
+      const s = (submissions || []).find(x => safeText(x.id) === subId);
+      if (!s) {
+        showAlert('Submission not found in loaded list.', 'error');
+        return;
+      }
+
+      const agent = getSubmissionAgentInfo(s);
+      if (!agent.agentId && !agent.agentName) {
+        showAlert('Cannot send prompt: missing agent identity on this submission.', 'error');
+        return;
+      }
+
+      const hours = Number(document.getElementById('expiresHours').value);
+      if (!Number.isFinite(hours) || hours <= 0) {
+        showAlert('Expires in hours must be a positive number.', 'error');
+        return;
+      }
+
+      const note = safeText(document.getElementById('note').value);
+      const ok = confirm(`Send location permission prompt to agent?\n\nAgent: ${agent.agentName || '—'} (${agent.agentScCode || ''})\nExpires in: ${hours} hours`);
+      if (!ok) return;
+
+      const exp = new Date(Date.now() + Math.round(hours * 3600 * 1000)).toISOString();
+
+      permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
+      // De-dupe: keep only expired prompts for this agent
+      permits.locationPrompts = (permits.locationPrompts || []).filter(p => {
+        const sameAgent = safeText(p && p.agentId) && agent.agentId && safeText(p && p.agentId) === safeText(agent.agentId);
+        const sameName = safeText(p && p.agentName) && agent.agentName && safeText(p && p.agentName) === safeText(agent.agentName);
+        if (sameAgent || sameName) return isExpiredPrompt(p);
+        return true;
+      });
+
+      permits.locationPrompts.push({
+        requestId: uuid(),
+        agentId: agent.agentId,
+        agentName: agent.agentName,
+        agentScCode: agent.agentScCode,
+        createdAt: nowIso(),
+        expiresAt: exp,
+        note
+      });
+
+      await savePermits();
+      showAlert('Location prompt request sent. The agent will see a prompt when they next open the app.', 'success');
+      renderPermits();
     }
 
     function nowIso() {
@@ -298,56 +393,73 @@
       const list = (permits && Array.isArray(permits.permits)) ? permits.permits : [];
       const active = list.filter(p => !isExpired(p));
 
-      meta.textContent = `Active: ${active.length} · Total: ${list.length}`;
+      const prompts = (permits && Array.isArray(permits.locationPrompts)) ? permits.locationPrompts : [];
+      const activePrompts = prompts.filter(p => !isExpiredPrompt(p));
 
-      if (!active.length) {
+      meta.textContent = `Active permits: ${active.length} · Location prompts: ${activePrompts.length} · Total: ${list.length}`;
+
+      if (!active.length && !activePrompts.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="muted">No active permits.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = active.map(p => {
-        const allow = [
-          p.allowImages ? '<span class="badge on">Images</span>' : '<span class="badge off">Images</span>',
-          p.allowCoords ? '<span class="badge on">Coords</span>' : '<span class="badge off">Coords</span>'
-        ].join(' ');
-
+      const permitRows = active.map(p => {
         const exp = p.expiresAt ? new Date(p.expiresAt).toLocaleString() : '—';
-
+        const allow = `${p.allowImages ? 'Images' : ''}${p.allowImages && p.allowCoords ? ', ' : ''}${p.allowCoords ? 'Coords' : ''}`;
         return `
           <tr>
             <td>
-              <div style="font-weight:800;">${escapeHtml(p.agentName || 'Agent')}</div>
-              <div class="muted">${escapeHtml(p.agentScCode || '')}</div>
+              <div style="font-weight:900;">${safeText(p.agentName) || '—'}</div>
+              <div class="muted">${safeText(p.agentScCode) || ''}</div>
             </td>
-            <td>
-              <div style="font-weight:800;">${escapeHtml(p.submissionId || '')}</div>
-            </td>
-            <td>${allow}</td>
-            <td>${escapeHtml(exp)}</td>
-            <td>${escapeHtml(p.note || '')}</td>
-            <td class="right"><button class="btn btn-danger" type="button" data-action="revoke" data-id="${escapeHtml(p.permitId || '')}">Revoke</button></td>
+            <td><div style="font-weight:900;">${safeText(p.submissionId) || ''}</div></td>
+            <td>${safeText(allow) || '—'}</td>
+            <td>${safeText(exp) || '—'}</td>
+            <td>${safeText(p.note) || ''}</td>
+            <td class="right"><button class="btn btn-danger" type="button" data-action="revoke" data-id="${safeText(p.permitId)}">Revoke</button></td>
           </tr>
         `;
-      }).join('');
+      });
+
+      const promptRows = activePrompts.map(p => {
+        const exp = p.expiresAt ? new Date(p.expiresAt).toLocaleString() : '—';
+        const note = safeText(p.note) || '—';
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:900;">${safeText(p.agentName) || '—'}</div>
+              <div class="muted">${safeText(p.agentScCode) || ''}</div>
+            </td>
+            <td><div style="font-weight:900;">—</div></td>
+            <td><span class="badge on">Location Prompt</span></td>
+            <td>${safeText(exp) || '—'}</td>
+            <td>${note}</td>
+            <td class="right"><button class="btn btn-danger" type="button" data-action="clearPrompt" data-id="${safeText(p.requestId)}">Clear</button></td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = [...permitRows, ...promptRows].join('');
 
       Array.from(tbody.querySelectorAll('button[data-action="revoke"]')).forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = safeText(btn.getAttribute('data-id'));
           if (!id) return;
-          const ok = window.confirm('Revoke this permit?');
+          const ok = confirm('Revoke this permit?');
           if (!ok) return;
           await revokePermit(id);
         });
       });
-    }
 
-    function escapeHtml(s) {
-      return String(s || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      Array.from(tbody.querySelectorAll('button[data-action="clearPrompt"]')).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = safeText(btn.getAttribute('data-id'));
+          if (!id) return;
+          const ok = confirm('Clear this location prompt request?');
+          if (!ok) return;
+          await clearLocationPrompt(id);
+        });
+      });
     }
 
     function computePermitId(agentId, submissionId) {
@@ -510,6 +622,7 @@
       });
       document.getElementById('btnRefresh').addEventListener('click', () => loadAll());
       document.getElementById('btnGrant').addEventListener('click', () => grantPermit());
+      document.getElementById('btnSendLocationPrompt').addEventListener('click', () => sendLocationPrompt());
       document.getElementById('btnClearExpired').addEventListener('click', () => clearExpiredPermits());
       loadAll().catch(e => {
         console.error(e);

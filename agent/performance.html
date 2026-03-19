@@ -271,6 +271,7 @@
         }
         .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
         .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+        .alert.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
     </style>
 </head>
 <body>
@@ -318,6 +319,7 @@
                 </div>
             </div>
 
+            <div id="locationPromptBanner" class="alert warn" style="display:none;"></div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -820,8 +822,9 @@
         }
 
         function ensurePermitsShape(obj) {
-            if (!obj || typeof obj !== 'object') return { version: 1, updatedAt: null, permits: [] };
+            if (!obj || typeof obj !== 'object') return { version: 1, updatedAt: null, permits: [], locationPrompts: [] };
             if (!Array.isArray(obj.permits)) obj.permits = [];
+            if (!Array.isArray(obj.locationPrompts)) obj.locationPrompts = [];
             if (!obj.version) obj.version = 1;
             return obj;
         }
@@ -863,6 +866,112 @@
             if (isExpiredPermit(p)) return null;
             if (!permitMatchesAgent(p)) return null;
             return p;
+        }
+
+        function isExpiredPrompt(p) {
+            const exp = parseIso(p && p.expiresAt);
+            if (!Number.isFinite(exp)) return true;
+            return exp <= Date.now();
+        }
+
+        function getActiveLocationPromptForAgent() {
+            const prompts = (correctionPermits && Array.isArray(correctionPermits.locationPrompts)) ? correctionPermits.locationPrompts : [];
+            const active = prompts.filter(p => !isExpiredPrompt(p)).filter(p => permitMatchesAgent(p));
+            if (!active.length) return null;
+            active.sort((a, b) => parseIso(b.createdAt) - parseIso(a.createdAt));
+            return active[0];
+        }
+
+        function renderLocationPromptBanner() {
+            const el = document.getElementById('locationPromptBanner');
+            if (!el) return;
+
+            const prompt = getActiveLocationPromptForAgent();
+            if (!prompt) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+
+            const note = String(prompt.note || '').trim();
+            const noteLine = note ? `<div style="margin-top:6px;">${escapeHtml(note)}</div>` : '';
+
+            el.innerHTML = `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div>
+                        <div style="font-weight:800;">Location permission needed</div>
+                        <div style="margin-top:4px;">Tap Enable Location so your browser shows the permission pop-up.</div>
+                        ${noteLine}
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="btnEnableLocation" type="button">Enable Location</button>
+                        <button class="btn btn-muted" id="btnDismissLocationPrompt" type="button">Dismiss</button>
+                    </div>
+                </div>
+            `;
+            el.style.display = 'block';
+
+            const btn = document.getElementById('btnEnableLocation');
+            const dismiss = document.getElementById('btnDismissLocationPrompt');
+            if (btn) {
+                btn.addEventListener('click', async () => {
+                    await requestLocationPermissionAndClear(prompt);
+                });
+            }
+            if (dismiss) {
+                dismiss.addEventListener('click', async () => {
+                    await clearLocationPrompt(prompt.requestId);
+                });
+            }
+        }
+
+        async function clearLocationPrompt(requestId) {
+            const rid = String(requestId || '').trim();
+            if (!rid) return;
+            if (!githubService || !githubService.config || !githubService.config.token) {
+                showAlert('Cannot clear prompt: device is not configured for GitHub writes.', 'error');
+                return;
+            }
+
+            const latest = ensurePermitsShape(await loadOptionalJsonFileBestEffort(PERMITS_FILE));
+            latest.locationPrompts = (latest.locationPrompts || []).filter(p => String(p && p.requestId || '').trim() !== rid);
+            latest.updatedAt = new Date().toISOString();
+            await githubService.uploadFile(PERMITS_FILE, btoa(JSON.stringify(latest, null, 2)), `Clear location prompt ${rid}`);
+
+            correctionPermits = ensurePermitsShape(await loadOptionalJsonFileBestEffort(PERMITS_FILE));
+            renderLocationPromptBanner();
+        }
+
+        async function requestLocationPermissionAndClear(prompt) {
+            if (!navigator.geolocation) {
+                showAlert('Geolocation is not supported on this device/browser.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnEnableLocation');
+            if (btn) btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                async () => {
+                    try {
+                        await clearLocationPrompt(prompt && prompt.requestId);
+                        showAlert('Location permission enabled. Thank you.', 'success');
+                    } catch (e) {
+                        showAlert('Enabled location, but failed to update server: ' + (e?.message || String(e)), 'error');
+                    } finally {
+                        if (btn) btn.disabled = false;
+                    }
+                },
+                async (err) => {
+                    try {
+                        const msg = err && err.message ? err.message : 'Permission denied.';
+                        showAlert('Location permission not granted: ' + msg, 'error');
+                    } finally {
+                        if (btn) btn.disabled = false;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
         async function pollForUpdates() {
@@ -962,6 +1071,7 @@
                 correctionPermits = ensurePermitsShape(await loadOptionalJsonFileBestEffort(PERMITS_FILE));
 
                 render();
+                renderLocationPromptBanner();
                 setCfgStatus('● Ready', 'ok');
             } catch (e) {
                 console.error(e);
