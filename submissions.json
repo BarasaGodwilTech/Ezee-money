@@ -280,8 +280,37 @@
       },
       "submissionDate": "2026-03-19T14:22:13.079Z",
       "status": "verified"
+    },
+    {
+      "id": "SUB-1773938592458-ofbjsjbvk",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Wakhata Isaiah",
+        "phoneNumber": "0788351040",
+        "email": "nadungamargrate@gmail.com",
+        "nationalId": "CM980671015CGL",
+        "dob": "1998-03-19",
+        "gender": "male",
+        "businessAddress": "Mbale",
+        "businessCoordinates": "1.0440235, 34.1805032",
+        "residentialAddress": "Nauyo",
+        "nextOfKinName": "Suzan nabooze",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0779128123"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773938592458-ofbjsjbvk/idFront_1773938592509.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773938592458-ofbjsjbvk/idBack_1773938611700.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773938592458-ofbjsjbvk/agentPhoto_1773938618310.jpg"
+      },
+      "submissionDate": "2026-03-19T16:44:02.419Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-19T16:40:12.617Z",
-  "totalSubmissions": 10
+  "lastUpdated": "2026-03-19T16:44:03.541Z",
+  "totalSubmissions": 11
 }
