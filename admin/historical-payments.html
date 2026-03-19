@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historical Payments Backfill - Super Admin</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+        .title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .title h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-dark);
+        }
+        .title div {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-muted { background: #eef2ff; color: #1e40af; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+        .pill {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: #f9fafb;
+        }
+        .pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .pill.warn { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .pill.bad { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .help {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        input[type="text"], input[type="date"], textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        textarea { resize: vertical; }
+
+        .alert {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--muted);
+        }
+        .alert.success { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+        .alert.error { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+        .small { font-size: 12px; color: var(--muted); }
+        .actions {
+            display:flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        table { width:100%; border-collapse: collapse; }
+        th, td { text-align:left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f9fafb; font-weight: 800; }
+        .muted { color: var(--muted); font-size: 12px; }
+        .table-container { overflow-x:auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <h1>Historical Payments Backfill</h1>
+                <div>Super Admin: record past payments (done before the system) into the ledger to prevent double-paying.</div>
+            </div>
+            <div class="row">
+                <div class="pill" id="cfgStatus">● Loading...</div>
+                <button class="btn btn-muted" id="btnBack" type="button">Back</button>
+                <button class="btn btn-danger" id="btnLogout" type="button">Logout</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="help">Choose the paid date, then either paste IDs/phones or select from existing submissions. This page writes <code>payType: historical</code> into <code>field-agent-payments-ledger.json</code>.</div>
+
+            <div style="margin-top: 12px;">
+                <label for="historicalPaidDate">Paid Date</label>
+                <input type="date" id="historicalPaidDate" />
+                <div class="small" style="margin-top:6px;">Date you actually paid (from your manual records).</div>
+            </div>
+
+            <div style="margin-top: 12px;">
+                <label for="historicalInput">Submission IDs or Phone Numbers (one per line)</label>
+                <textarea id="historicalInput" rows="5" placeholder="Example:\nSUB12345\n256701234567\n0701234567"></textarea>
+                <div class="small" style="margin-top:6px;">Phone matching uses digits only (070... and 25670... match).</div>
+            </div>
+
+            <div class="actions" style="margin-top: 12px;">
+                <button class="btn btn-primary" id="btnImportHistorical" type="button">Import Historical Paid</button>
+                <div class="small" id="historicalMeta"></div>
+            </div>
+
+            <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px;">
+                <label for="historicalSearch">Select from Existing Data</label>
+                <input type="text" id="historicalSearch" placeholder="Search by client, phone, agent, submission id" />
+                <div class="small" style="margin-top:6px;">This list is built from submissions.json. Paid items already in the ledger are hidden.</div>
+
+                <div class="table-container" style="margin-top: 10px; max-height: 360px; overflow:auto; border: 1px solid var(--border); border-radius: 12px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:48px;"><input type="checkbox" id="historicalSelectAll" /></th>
+                                <th>Client</th>
+                                <th>Phone</th>
+                                <th>Agent</th>
+                                <th>Submission ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historicalTbody">
+                            <tr><td colspan="5" class="muted">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="actions" style="margin-top: 12px;">
+                    <button class="btn btn-primary" id="btnMarkHistoricalSelected" type="button">Mark Selected as Historical Paid</button>
+                </div>
+            </div>
+
+            <div id="alert" class="alert" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="../js/github-service.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBb9XPvVQ9nnLwRf6UYTVCnL3dabLY-B7I",
+          authDomain: "ezee-git-config.firebaseapp.com",
+          projectId: "ezee-git-config",
+          storageBucket: "ezee-git-config.firebasestorage.app",
+          messagingSenderId: "106776336",
+          appId: "1:106776336:web:91d276bf2bd70d55954795",
+          measurementId: "G-YJGQLTWJ8J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        const LEDGER_FILE = 'field-agent-payments-ledger.json';
+        const AMOUNT_PER_CLIENT_UGX = 5000;
+
+        let githubService;
+        let submissions = [];
+        let ledger = null;
+
+        function setCfgStatus(text, variant) {
+            const el = document.getElementById('cfgStatus');
+            el.textContent = text;
+            el.className = 'pill ' + (variant || '');
+        }
+
+        function showAlert(message, type) {
+            const el = document.getElementById('alert');
+            el.style.display = 'block';
+            el.className = 'alert ' + (type || '');
+            el.textContent = message;
+        }
+
+        function hideAlert() {
+            const el = document.getElementById('alert');
+            el.style.display = 'none';
+        }
+
+        function normalizeName(s) {
+            return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+
+        function normalizeDigits(s) {
+            return String(s || '').replace(/\D/g, '');
+        }
+
+        function escapeHtml(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function parseIsoDate(s) {
+            const d = new Date(String(s || ''));
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function parseDateInputValue(val) {
+            const v = String(val || '').trim();
+            if (!v) return null;
+            const d = new Date(v + 'T00:00:00');
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function startOfWeekMonday(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            const day = dt.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        function weekKeyForDate(d) {
+            const wk = startOfWeekMonday(d);
+            return wk.toISOString().slice(0, 10);
+        }
+
+        function ensureLedgerShape(obj) {
+            if (!obj || typeof obj !== 'object') {
+                return { version: 1, clients: {}, lastUpdated: null, payments: [] };
+            }
+            if (!obj.clients) obj.clients = {};
+            if (!Array.isArray(obj.payments)) obj.payments = [];
+            if (!obj.version) obj.version = 1;
+            return obj;
+        }
+
+        async function loadGitConfigFromFirebase() {
+            try {
+                const docRef = firestore.collection('ezeeConfig').doc('github');
+                const snap = await docRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data() || {};
+                return data.github || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function loadJsonFileFromGitHub(filename) {
+            try {
+                const data = await githubService.readFile(filename);
+                if (!data || !data.content) return null;
+                return JSON.parse(atob(data.content));
+            } catch (e) {
+                const msg = String(e?.message || e);
+                if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+                throw e;
+            }
+        }
+
+        async function loadJsonFileFromPublicRaw(filename) {
+            const cfg = (githubService && githubService.config) ? githubService.config : null;
+            const owner = cfg?.repoOwner;
+            const repo = cfg?.repoName;
+            const branch = cfg?.branchName || 'main';
+            if (!owner || !repo) return null;
+
+            const cacheBust = `t=${Date.now()}`;
+            const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filename}?${cacheBust}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                if (res.status === 404) return null;
+                throw new Error(`Failed to fetch ${filename}: ${res.status} ${res.statusText}`);
+            }
+            return await res.json();
+        }
+
+        async function loadJsonFileBestEffort(filename) {
+            try {
+                const v = await loadJsonFileFromGitHub(filename);
+                if (v !== null) return v;
+            } catch (e) {}
+            return await loadJsonFileFromPublicRaw(filename);
+        }
+
+        async function saveLedger() {
+            ledger.lastUpdated = new Date().toISOString();
+            const content = btoa(JSON.stringify(ledger, null, 2));
+            await githubService.uploadFile(LEDGER_FILE, content, 'Update field agent payments ledger');
+        }
+
+        function uniq(arr) {
+            const out = [];
+            const seen = new Set();
+            for (const v of (arr || [])) {
+                const k = String(v || '');
+                if (!k) continue;
+                if (seen.has(k)) continue;
+                seen.add(k);
+                out.push(v);
+            }
+            return out;
+        }
+
+        function normalizeSearchKey(s) {
+            return normalizeName(String(s || '')).replace(/\s+/g, ' ').trim();
+        }
+
+        function historicalCandidates() {
+            const search = normalizeSearchKey(document.getElementById('historicalSearch')?.value || '');
+            const rows = [];
+
+            for (const s of (submissions || [])) {
+                const id = String(s && s.id || '').trim();
+                if (!id) continue;
+                if (ledger && ledger.clients && ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    continue;
+                }
+                const c = s.clientInfo || {};
+                const sb = s.submittedBy || s.submitted_by || {};
+                const clientName = String(c.fullName || '').trim();
+                const phone = String(c.phoneNumber || '').trim();
+                const agentName = String(sb.agentName || '').trim();
+
+                const key = normalizeSearchKey(`${clientName} ${phone} ${agentName} ${id}`);
+                if (search && !key.includes(search)) continue;
+
+                rows.push({
+                    submissionId: id,
+                    clientName,
+                    clientPhone: phone,
+                    agentName
+                });
+            }
+
+            rows.sort((a, b) => normalizeSearchKey(a.clientName).localeCompare(normalizeSearchKey(b.clientName)));
+            return rows;
+        }
+
+        function renderHistoricalTable() {
+            const tbody = document.getElementById('historicalTbody');
+            if (!tbody) return;
+            const items = historicalCandidates();
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="muted">No matching unpaid submissions.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(r => {
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="historicalRowChk" data-id="${escapeHtml(r.submissionId)}" /></td>
+                        <td>${escapeHtml(r.clientName)}</td>
+                        <td>${escapeHtml(r.clientPhone)}</td>
+                        <td>${escapeHtml(r.agentName)}</td>
+                        <td>${escapeHtml(r.submissionId)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getSelectedHistoricalIds() {
+            return Array.from(document.querySelectorAll('input.historicalRowChk:checked'))
+                .map(i => String(i.getAttribute('data-id') || '').trim())
+                .filter(Boolean);
+        }
+
+        function findSubmissionByIdOrPhone(token) {
+            const raw = String(token || '').trim();
+            if (!raw) return null;
+
+            const byId = (submissions || []).find(s => String(s && s.id || '').trim() === raw);
+            if (byId) return byId;
+
+            const digits = normalizeDigits(raw);
+            if (!digits) return null;
+
+            const matches = (submissions || []).filter(s => {
+                const phone = normalizeDigits((s && s.clientInfo && s.clientInfo.phoneNumber) ? s.clientInfo.phoneNumber : '');
+                if (!phone) return false;
+                return phone.endsWith(digits) || digits.endsWith(phone);
+            });
+            if (!matches.length) return null;
+            if (matches.length === 1) return matches[0];
+
+            matches.sort((a, b) => {
+                const da = parseIsoDate(a && a.submissionDate);
+                const db = parseIsoDate(b && b.submissionDate);
+                const ta = da ? da.getTime() : 0;
+                const tb = db ? db.getTime() : 0;
+                return tb - ta;
+            });
+            return matches[0];
+        }
+
+        async function importHistoricalPaid() {
+            hideAlert();
+            const metaEl = document.getElementById('historicalMeta');
+            if (metaEl) metaEl.textContent = '';
+
+            const paidDate = parseDateInputValue(document.getElementById('historicalPaidDate')?.value);
+            if (!paidDate) {
+                showAlert('Please select the Paid Date for historical import.', 'error');
+                return;
+            }
+
+            const input = String(document.getElementById('historicalInput')?.value || '').trim();
+            if (!input) {
+                showAlert('Paste at least one submission ID or phone number.', 'error');
+                return;
+            }
+
+            const tokens = uniq(
+                input
+                    .split(/\r?\n/)
+                    .map(s => String(s || '').trim())
+                    .filter(Boolean)
+            );
+
+            const paidAtIso = new Date(paidDate.getTime()).toISOString();
+            const batchWeekKey = weekKeyForDate(paidDate);
+
+            let imported = 0;
+            let skippedAlready = 0;
+            let notFound = 0;
+
+            for (const t of tokens) {
+                const s = findSubmissionByIdOrPhone(t);
+                if (!s) {
+                    notFound++;
+                    continue;
+                }
+
+                const id = String(s.id || '').trim();
+                if (!id) {
+                    notFound++;
+                    continue;
+                }
+
+                if (ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    skippedAlready++;
+                    continue;
+                }
+
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const agentName = String(submittedBy.agentName || '').trim();
+                const agentId = String(submittedBy.agentId || '').trim();
+                const agentScCode = String(submittedBy.agentScCode || '').trim();
+                const c = s.clientInfo || {};
+
+                const regDate = parseIsoDate(s.submissionDate);
+                const regWeekKey = regDate ? weekKeyForDate(regDate) : null;
+
+                ledger.clients[id] = {
+                    status: 'paid',
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    registrationWeekKey: regWeekKey,
+                    eligibleWeekKey: null,
+                    agentId,
+                    agentName,
+                    agentScCode,
+                    clientName: String(c.fullName || ''),
+                    clientPhone: String(c.phoneNumber || ''),
+                    clientScCode: ''
+                };
+
+                ledger.payments.push({
+                    submissionId: id,
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    batchWeekKey,
+                    agentId,
+                    agentScCode
+                });
+
+                imported++;
+            }
+
+            if (imported === 0 && notFound > 0) {
+                showAlert(`No historical payments imported. Not found: ${notFound}.`, 'error');
+                if (metaEl) metaEl.textContent = `Not found: ${notFound}. Already paid: ${skippedAlready}.`;
+                return;
+            }
+
+            await saveLedger();
+
+            showAlert(`Historical import complete. Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`, 'success');
+            if (metaEl) metaEl.textContent = `Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`;
+
+            renderHistoricalTable();
+        }
+
+        async function markHistoricalPaidByIds(ids, paidDate) {
+            const metaEl = document.getElementById('historicalMeta');
+            if (metaEl) metaEl.textContent = '';
+
+            if (!ids || !ids.length) {
+                showAlert('Select at least one row from the list.', 'error');
+                return;
+            }
+
+            const paidAtIso = new Date(paidDate.getTime()).toISOString();
+            const batchWeekKey = weekKeyForDate(paidDate);
+
+            let imported = 0;
+            let skippedAlready = 0;
+            let notFound = 0;
+
+            for (const id of ids) {
+                const s = (submissions || []).find(x => String(x && x.id || '').trim() === String(id));
+                if (!s) {
+                    notFound++;
+                    continue;
+                }
+
+                if (ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    skippedAlready++;
+                    continue;
+                }
+
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const agentName = String(submittedBy.agentName || '').trim();
+                const agentId = String(submittedBy.agentId || '').trim();
+                const agentScCode = String(submittedBy.agentScCode || '').trim();
+                const c = s.clientInfo || {};
+
+                const regDate = parseIsoDate(s.submissionDate);
+                const regWeekKey = regDate ? weekKeyForDate(regDate) : null;
+
+                ledger.clients[id] = {
+                    status: 'paid',
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    registrationWeekKey: regWeekKey,
+                    eligibleWeekKey: null,
+                    agentId,
+                    agentName,
+                    agentScCode,
+                    clientName: String(c.fullName || ''),
+                    clientPhone: String(c.phoneNumber || ''),
+                    clientScCode: ''
+                };
+
+                ledger.payments.push({
+                    submissionId: id,
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    batchWeekKey,
+                    agentId,
+                    agentScCode
+                });
+
+                imported++;
+            }
+
+            if (imported === 0 && notFound > 0) {
+                showAlert(`No historical payments imported. Not found: ${notFound}.`, 'error');
+                if (metaEl) metaEl.textContent = `Not found: ${notFound}. Already paid: ${skippedAlready}.`;
+                return;
+            }
+
+            await saveLedger();
+            showAlert(`Historical update complete. Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`, 'success');
+            if (metaEl) metaEl.textContent = `Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`;
+
+            renderHistoricalTable();
+        }
+
+        async function loadAll() {
+            hideAlert();
+            setCfgStatus('● Loading...', '');
+
+            const loggedIn = (localStorage.getItem('adminLoggedIn') || '').trim() === 'true';
+            const role = (localStorage.getItem('adminRole') || '').trim();
+            if (!loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (role !== 'super') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            githubService = new GitHubService();
+
+            const fbCfg = await loadGitConfigFromFirebase();
+            if (fbCfg && fbCfg.repoOwner && fbCfg.repoName && fbCfg.token) {
+                githubService.saveConfig({
+                    repoOwner: fbCfg.repoOwner,
+                    repoName: fbCfg.repoName,
+                    branchName: fbCfg.branch || 'main',
+                    token: fbCfg.token
+                });
+                setCfgStatus('● Configured', 'ok');
+            } else if (githubService.config && githubService.config.token) {
+                setCfgStatus('● Configured (Local)', 'warn');
+            } else {
+                setCfgStatus('● Not configured', 'bad');
+                showAlert('GitHub configuration missing. Set it in Admin Dashboard first.', 'error');
+                return;
+            }
+
+            const subsData = await loadJsonFileBestEffort('submissions.json');
+            const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+            submissions = Array.isArray(list) ? list : [];
+
+            ledger = ensureLedgerShape(await loadJsonFileBestEffort(LEDGER_FILE));
+
+            renderHistoricalTable();
+            setCfgStatus('● Ready', 'ok');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = 'field-agent-payments.html';
+            });
+
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminUsername');
+                localStorage.removeItem('adminRole');
+                window.location.href = 'login.html';
+            });
+
+            document.getElementById('historicalSearch').addEventListener('input', () => renderHistoricalTable());
+
+            document.getElementById('historicalSelectAll').addEventListener('change', (e) => {
+                const checked = !!e.target.checked;
+                Array.from(document.querySelectorAll('input.historicalRowChk')).forEach(chk => { chk.checked = checked; });
+            });
+
+            document.getElementById('btnImportHistorical').addEventListener('click', async () => {
+                try {
+                    document.getElementById('btnImportHistorical').disabled = true;
+                    await loadAll();
+                    await importHistoricalPaid();
+                } catch (e) {
+                    showAlert('Historical import failed: ' + (e?.message || String(e)), 'error');
+                } finally {
+                    document.getElementById('btnImportHistorical').disabled = false;
+                }
+            });
+
+            document.getElementById('btnMarkHistoricalSelected').addEventListener('click', async () => {
+                try {
+                    document.getElementById('btnMarkHistoricalSelected').disabled = true;
+                    const paidDate = parseDateInputValue(document.getElementById('historicalPaidDate')?.value);
+                    if (!paidDate) {
+                        showAlert('Please select the Paid Date for historical update.', 'error');
+                        return;
+                    }
+                    await loadAll();
+                    const ids = getSelectedHistoricalIds();
+                    await markHistoricalPaidByIds(ids, paidDate);
+                } catch (e) {
+                    showAlert('Historical selection failed: ' + (e?.message || String(e)), 'error');
+                } finally {
+                    document.getElementById('btnMarkHistoricalSelected').disabled = false;
+                }
+            });
+
+            const paidEl = document.getElementById('historicalPaidDate');
+            if (paidEl && !String(paidEl.value || '').trim()) {
+                paidEl.value = new Date().toISOString().slice(0, 10);
+            }
+
+            loadAll().catch(e => {
+                showAlert('Failed to load: ' + (e?.message || String(e)), 'error');
+            });
+        });
+    </script>
+</body>
+</html>

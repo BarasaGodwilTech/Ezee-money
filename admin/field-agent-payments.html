@@ -248,6 +248,7 @@
                     <button class="btn btn-muted" id="btnRefresh" type="button">Refresh Data</button>
                     <button class="btn btn-primary" id="btnGenerate" type="button">Generate Batch</button>
                     <button class="btn btn-primary" id="btnMarkPaid" type="button" disabled>Mark Selected Paid</button>
+                    <button class="btn btn-muted" id="btnOpenHistorical" type="button">Historical Backfill</button>
                 </div>
 
                 <div id="alert" class="alert" style="display:none;"></div>
@@ -359,6 +360,14 @@
 
         function parseIsoDate(s) {
             const d = new Date(String(s || ''));
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function parseDateInputValue(val) {
+            const v = String(val || '').trim();
+            if (!v) return null;
+            const d = new Date(v + 'T00:00:00');
             if (isNaN(d.getTime())) return null;
             return d;
         }
@@ -697,6 +706,290 @@
             return Array.from(document.querySelectorAll('input.rowChk:checked')).map(i => String(i.getAttribute('data-id') || '').trim()).filter(Boolean);
         }
 
+        function uniq(arr) {
+            const out = [];
+            const seen = new Set();
+            for (const v of (arr || [])) {
+                const k = String(v || '');
+                if (!k) continue;
+                if (seen.has(k)) continue;
+                seen.add(k);
+                out.push(v);
+            }
+            return out;
+        }
+
+        function normalizeSearchKey(s) {
+            return normalizeName(String(s || '')).replace(/\s+/g, ' ').trim();
+        }
+
+        function historicalCandidates() {
+            const search = normalizeSearchKey(document.getElementById('historicalSearch')?.value || '');
+            const rows = [];
+
+            for (const s of (submissions || [])) {
+                const id = String(s && s.id || '').trim();
+                if (!id) continue;
+                if (ledger && ledger.clients && ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    continue;
+                }
+                const c = s.clientInfo || {};
+                const sb = s.submittedBy || s.submitted_by || {};
+                const clientName = String(c.fullName || '').trim();
+                const phone = String(c.phoneNumber || '').trim();
+                const agentName = String(sb.agentName || '').trim();
+
+                const key = normalizeSearchKey(`${clientName} ${phone} ${agentName} ${id}`);
+                if (search && !key.includes(search)) continue;
+
+                rows.push({
+                    submissionId: id,
+                    clientName,
+                    clientPhone: phone,
+                    agentName
+                });
+            }
+
+            rows.sort((a, b) => normalizeSearchKey(a.clientName).localeCompare(normalizeSearchKey(b.clientName)));
+            return rows;
+        }
+
+        function renderHistoricalTable() {
+            const tbody = document.getElementById('historicalTbody');
+            if (!tbody) return;
+            const items = historicalCandidates();
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="muted">No matching unpaid submissions.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(r => {
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="historicalRowChk" data-id="${escapeHtml(r.submissionId)}" /></td>
+                        <td>${escapeHtml(r.clientName)}</td>
+                        <td>${escapeHtml(r.clientPhone)}</td>
+                        <td>${escapeHtml(r.agentName)}</td>
+                        <td>${escapeHtml(r.submissionId)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getSelectedHistoricalIds() {
+            return Array.from(document.querySelectorAll('input.historicalRowChk:checked'))
+                .map(i => String(i.getAttribute('data-id') || '').trim())
+                .filter(Boolean);
+        }
+
+        async function markHistoricalPaidByIds(ids, paidDate) {
+            const metaEl = document.getElementById('historicalMeta');
+            if (metaEl) metaEl.textContent = '';
+
+            if (!ids || !ids.length) {
+                showAlert('Select at least one row from the historical list.', 'error');
+                return;
+            }
+
+            const paidAtIso = new Date(paidDate.getTime()).toISOString();
+            const batchWeekKey = weekKeyForDate(paidDate);
+
+            let imported = 0;
+            let skippedAlready = 0;
+            let notFound = 0;
+
+            for (const id of ids) {
+                const s = (submissions || []).find(x => String(x && x.id || '').trim() === String(id));
+                if (!s) {
+                    notFound++;
+                    continue;
+                }
+
+                if (ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    skippedAlready++;
+                    continue;
+                }
+
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const agentName = String(submittedBy.agentName || '').trim();
+                const agentId = String(submittedBy.agentId || '').trim();
+                const agentScCode = String(submittedBy.agentScCode || '').trim();
+                const c = s.clientInfo || {};
+
+                const regDate = parseIsoDate(s.submissionDate);
+                const regWeekKey = regDate ? weekKeyForDate(regDate) : null;
+
+                ledger.clients[id] = {
+                    status: 'paid',
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    registrationWeekKey: regWeekKey,
+                    eligibleWeekKey: null,
+                    agentId,
+                    agentName,
+                    agentScCode,
+                    clientName: String(c.fullName || ''),
+                    clientPhone: String(c.phoneNumber || ''),
+                    clientScCode: ''
+                };
+
+                ledger.payments.push({
+                    submissionId: id,
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    batchWeekKey,
+                    agentId,
+                    agentScCode
+                });
+
+                imported++;
+            }
+
+            if (imported === 0 && notFound > 0) {
+                showAlert(`No historical payments imported. Not found: ${notFound}.`, 'error');
+                if (metaEl) metaEl.textContent = `Not found: ${notFound}. Already paid: ${skippedAlready}.`;
+                return;
+            }
+
+            await saveLedger();
+            showAlert(`Historical update complete. Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`, 'success');
+            if (metaEl) metaEl.textContent = `Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`;
+
+            renderHistoricalTable();
+        }
+
+        function findSubmissionByIdOrPhone(token) {
+            const raw = String(token || '').trim();
+            if (!raw) return null;
+
+            const byId = (submissions || []).find(s => String(s && s.id || '').trim() === raw);
+            if (byId) return byId;
+
+            const digits = normalizeDigits(raw);
+            if (!digits) return null;
+
+            const matches = (submissions || []).filter(s => {
+                const phone = normalizeDigits((s && s.clientInfo && s.clientInfo.phoneNumber) ? s.clientInfo.phoneNumber : '');
+                if (!phone) return false;
+                return phone.endsWith(digits) || digits.endsWith(phone);
+            });
+            if (!matches.length) return null;
+            if (matches.length === 1) return matches[0];
+
+            matches.sort((a, b) => {
+                const da = parseIsoDate(a && a.submissionDate);
+                const db = parseIsoDate(b && b.submissionDate);
+                const ta = da ? da.getTime() : 0;
+                const tb = db ? db.getTime() : 0;
+                return tb - ta;
+            });
+            return matches[0];
+        }
+
+        async function importHistoricalPaid() {
+            hideAlert();
+            const metaEl = document.getElementById('historicalMeta');
+            if (metaEl) metaEl.textContent = '';
+
+            const paidDate = parseDateInputValue(document.getElementById('historicalPaidDate')?.value);
+            if (!paidDate) {
+                showAlert('Please select the Paid Date for historical import.', 'error');
+                return;
+            }
+
+            const input = String(document.getElementById('historicalInput')?.value || '').trim();
+            if (!input) {
+                showAlert('Paste at least one submission ID or phone number.', 'error');
+                return;
+            }
+
+            await loadAll();
+
+            const tokens = uniq(
+                input
+                    .split(/\r?\n/)
+                    .map(s => String(s || '').trim())
+                    .filter(Boolean)
+            );
+
+            const paidAtIso = new Date(paidDate.getTime()).toISOString();
+            const batchWeekKey = weekKeyForDate(paidDate);
+
+            let imported = 0;
+            let skippedAlready = 0;
+            let notFound = 0;
+
+            for (const t of tokens) {
+                const s = findSubmissionByIdOrPhone(t);
+                if (!s) {
+                    notFound++;
+                    continue;
+                }
+
+                const id = String(s.id || '').trim();
+                if (!id) {
+                    notFound++;
+                    continue;
+                }
+
+                if (ledger.clients[id] && ledger.clients[id].status === 'paid') {
+                    skippedAlready++;
+                    continue;
+                }
+
+                const submittedBy = s.submittedBy || s.submitted_by || {};
+                const agentName = String(submittedBy.agentName || '').trim();
+                const agentId = String(submittedBy.agentId || '').trim();
+                const agentScCode = String(submittedBy.agentScCode || '').trim();
+                const c = s.clientInfo || {};
+
+                const regDate = parseIsoDate(s.submissionDate);
+                const regWeekKey = regDate ? weekKeyForDate(regDate) : null;
+
+                ledger.clients[id] = {
+                    status: 'paid',
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    registrationWeekKey: regWeekKey,
+                    eligibleWeekKey: null,
+                    agentId,
+                    agentName,
+                    agentScCode,
+                    clientName: String(c.fullName || ''),
+                    clientPhone: String(c.phoneNumber || ''),
+                    clientScCode: ''
+                };
+
+                ledger.payments.push({
+                    submissionId: id,
+                    paidAt: paidAtIso,
+                    amountUGX: AMOUNT_PER_CLIENT_UGX,
+                    payType: 'historical',
+                    batchWeekKey,
+                    agentId,
+                    agentScCode
+                });
+
+                imported++;
+            }
+
+            if (imported === 0 && notFound > 0) {
+                showAlert(`No historical payments imported. Not found: ${notFound}.`, 'error');
+                if (metaEl) metaEl.textContent = `Not found: ${notFound}. Already paid: ${skippedAlready}.`;
+                return;
+            }
+
+            await saveLedger();
+
+            showAlert(`Historical import complete. Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`, 'success');
+            if (metaEl) metaEl.textContent = `Imported: ${imported}. Already paid: ${skippedAlready}. Not found: ${notFound}.`;
+
+            renderHistoricalTable();
+        }
+
         async function saveLedger() {
             ledger.lastUpdated = new Date().toISOString();
             const content = btoa(JSON.stringify(ledger, null, 2));
@@ -782,6 +1075,8 @@
 
             populateAgentFilter();
             ensureWeekStartDefault();
+
+            renderHistoricalTable();
 
             setCfgStatus('● Ready', 'ok');
         }
@@ -879,6 +1174,10 @@
                 window.location.href = 'dashboard.html';
             });
 
+            document.getElementById('btnOpenHistorical').addEventListener('click', () => {
+                window.location.href = 'historical-payments.html';
+            });
+
             document.getElementById('btnLogout').addEventListener('click', () => {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminUsername');
@@ -903,6 +1202,7 @@
                     showAlert('Generate failed: ' + (e?.message || String(e)), 'error');
                 }
             });
+
 
             document.getElementById('btnMarkPaid').addEventListener('click', async () => {
                 try {
@@ -930,6 +1230,61 @@
             document.getElementById('weekStart').addEventListener('change', () => {
                 coerceInputDateToMonday();
             });
+
+
+            // Historical backfill moved to its own page. Keep these guards for backwards compatibility.
+            const histImportBtn = document.getElementById('btnImportHistorical');
+            if (histImportBtn) {
+                histImportBtn.addEventListener('click', async () => {
+                    try {
+                        histImportBtn.disabled = true;
+                        await importHistoricalPaid();
+                    } catch (e) {
+                        showAlert('Historical import failed: ' + (e?.message || String(e)), 'error');
+                    } finally {
+                        histImportBtn.disabled = false;
+                    }
+                });
+            }
+
+            const histSelectedBtn = document.getElementById('btnMarkHistoricalSelected');
+            if (histSelectedBtn) {
+                histSelectedBtn.addEventListener('click', async () => {
+                    try {
+                        histSelectedBtn.disabled = true;
+                        const paidDate = parseDateInputValue(document.getElementById('historicalPaidDate')?.value);
+                        if (!paidDate) {
+                            showAlert('Please select the Paid Date for historical update.', 'error');
+                            return;
+                        }
+                        await loadAll();
+                        const ids = getSelectedHistoricalIds();
+                        await markHistoricalPaidByIds(ids, paidDate);
+                    } catch (e) {
+                        showAlert('Historical selection failed: ' + (e?.message || String(e)), 'error');
+                    } finally {
+                        histSelectedBtn.disabled = false;
+                    }
+                });
+            }
+
+            const histSearchEl = document.getElementById('historicalSearch');
+            if (histSearchEl) {
+                histSearchEl.addEventListener('input', () => renderHistoricalTable());
+            }
+
+            const histSelectAllEl = document.getElementById('historicalSelectAll');
+            if (histSelectAllEl) {
+                histSelectAllEl.addEventListener('change', (e) => {
+                    const checked = !!e.target.checked;
+                    Array.from(document.querySelectorAll('input.historicalRowChk')).forEach(chk => { chk.checked = checked; });
+                });
+            }
+
+            const paidEl = document.getElementById('historicalPaidDate');
+            if (paidEl && !String(paidEl.value || '').trim()) {
+                paidEl.value = new Date().toISOString().slice(0, 10);
+            }
 
             ensureWeekStartDefault();
             loadAll().catch(e => {
