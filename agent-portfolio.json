@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T10:11:07.474Z",
-  "lastUpdated": "2026-03-19T10:11:07.474Z",
+  "generatedAt": "2026-03-19T12:39:11.575Z",
+  "lastUpdated": "2026-03-19T12:39:11.580Z",
   "reportWeekMonday": "2026-03-08",
   "reportWeekRange": {
     "start": "2026-03-08",
@@ -77,6 +77,16 @@
       "currency": "UGX",
       "matchedClientName": "Hirya joshua malwa",
       "matchScore": 0.75
+    },
+    {
+      "agentName": "WETAKA MARGARET",
+      "nameCandidate": "WETAKA MARGARET",
+      "scCode": "46500687",
+      "txnsLastWeek": 0,
+      "valueLastWeekUGX": 0,
+      "currency": "UGX",
+      "matchedClientName": "WETAKA MARGARET",
+      "matchScore": 1
     }
   ],
   "source": {
