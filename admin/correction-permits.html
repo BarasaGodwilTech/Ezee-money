@@ -80,8 +80,31 @@
         </div>
         <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn" id="btnGrant" type="button">Grant Permit</button>
-          <button class="btn btn-muted" id="btnSendLocationPrompt" type="button">Send Location Prompt</button>
           <button class="btn btn-muted" id="btnClearExpired" type="button">Remove Expired</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:10px;">Send Location Prompt</div>
+      <div class="muted" style="margin-top:-6px;margin-bottom:10px;">Use this when an agent denied location permission and needs the browser pop-up again. The agent will see a banner and can tap to trigger the permission prompt.</div>
+      <div class="grid">
+        <div class="col-6">
+          <label>Field Agent</label>
+          <select id="agentSelect"></select>
+          <div class="muted" id="agentMeta" style="margin-top:6px;"></div>
+        </div>
+        <div class="col-3">
+          <label>Expires in (hours)</label>
+          <input id="locationPromptExpiresHours" type="number" min="1" step="1" value="24" />
+        </div>
+        <div class="col-3">
+          <label>&nbsp;</label>
+          <button class="btn btn-muted" id="btnSendLocationPrompt" type="button" style="width:100%;">Send Location Prompt</button>
+        </div>
+        <div class="col-12">
+          <label>Note (optional)</label>
+          <textarea id="locationPromptNote" placeholder="Instructions for the agent (e.g. tap Enable Location and allow permission)"></textarea>
         </div>
       </div>
     </div>
@@ -249,31 +272,33 @@
 
     async function sendLocationPrompt() {
       hideAlert();
-      const subId = safeText(document.getElementById('submissionSelect').value);
-      if (!subId) {
-        showAlert('Select a submission first.', 'error');
+      const rawAgent = safeText(document.getElementById('agentSelect').value);
+      if (!rawAgent) {
+        showAlert('Select an agent first.', 'error');
         return;
       }
 
-      const s = (submissions || []).find(x => safeText(x.id) === subId);
-      if (!s) {
-        showAlert('Submission not found in loaded list.', 'error');
+      let agent = null;
+      try {
+        const decoded = decodeURIComponent(escape(atob(rawAgent)));
+        agent = JSON.parse(decoded);
+      } catch (e) {
+        showAlert('Invalid agent selection. Refresh the page and try again.', 'error');
         return;
       }
 
-      const agent = getSubmissionAgentInfo(s);
       if (!agent.agentId && !agent.agentName) {
         showAlert('Cannot send prompt: missing agent identity on this submission.', 'error');
         return;
       }
 
-      const hours = Number(document.getElementById('expiresHours').value);
+      const hours = Number(document.getElementById('locationPromptExpiresHours').value);
       if (!Number.isFinite(hours) || hours <= 0) {
         showAlert('Expires in hours must be a positive number.', 'error');
         return;
       }
 
-      const note = safeText(document.getElementById('note').value);
+      const note = safeText(document.getElementById('locationPromptNote').value);
       const ok = confirm(`Send location permission prompt to agent?\n\nAgent: ${agent.agentName || '—'} (${agent.agentScCode || ''})\nExpires in: ${hours} hours`);
       if (!ok) return;
 
@@ -379,6 +404,65 @@
         if (miss.missingIdBack) pieces.push('ID Back missing');
         if (miss.missingCoords) pieces.push('Coordinates missing');
         meta.textContent = pieces.length ? pieces.join(' · ') : 'No missing fields detected.';
+      };
+
+      sel.removeEventListener('change', updateMeta);
+      sel.addEventListener('change', updateMeta);
+      updateMeta();
+    }
+
+    function renderAgentSelect() {
+      const sel = document.getElementById('agentSelect');
+      const meta = document.getElementById('agentMeta');
+      if (!sel) return;
+
+      const map = new Map();
+      for (const s of (submissions || [])) {
+        const submittedBy = s.submittedBy || s.submitted_by || {};
+        const agentId = safeText(submittedBy.agentId || s.agentInfo?.id);
+        const agentName = safeText(submittedBy.agentName || s.agentInfo?.fullName);
+        const agentScCode = safeText(submittedBy.agentScCode || s.agentInfo?.scCode);
+        const key = agentId || (agentName ? ('name:' + agentName) : '');
+        if (!key) continue;
+        if (!map.has(key)) {
+          map.set(key, { agentId, agentName, agentScCode, count: 0 });
+        }
+        map.get(key).count++;
+      }
+
+      const agents = Array.from(map.values()).sort((a, b) => {
+        const an = (a.agentName || '').toLowerCase();
+        const bn = (b.agentName || '').toLowerCase();
+        if (an < bn) return -1;
+        if (an > bn) return 1;
+        return (a.agentScCode || '').localeCompare(b.agentScCode || '');
+      });
+
+      const opts = ['<option value="">Select an agent…</option>'];
+      for (const a of agents) {
+        const json = JSON.stringify({ agentId: a.agentId, agentName: a.agentName, agentScCode: a.agentScCode });
+        const val = btoa(unescape(encodeURIComponent(json)));
+        const label = `${a.agentName || 'Agent'}${a.agentScCode ? ' (' + a.agentScCode + ')' : ''} — ${a.count} submissions`;
+        opts.push(`<option value="${val}">${label.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`);
+      }
+      sel.innerHTML = opts.join('');
+
+      const updateMeta = () => {
+        const raw = safeText(sel.value);
+        if (!raw) {
+          if (meta) meta.textContent = '';
+          return;
+        }
+        try {
+          const decoded = decodeURIComponent(escape(atob(raw)));
+          const a = JSON.parse(decoded);
+          const bits = [];
+          if (a.agentId) bits.push('ID: ' + a.agentId);
+          if (a.agentScCode) bits.push('SC: ' + a.agentScCode);
+          if (meta) meta.textContent = bits.join(' · ');
+        } catch {
+          if (meta) meta.textContent = '';
+        }
       };
 
       sel.removeEventListener('change', updateMeta);
@@ -611,6 +695,7 @@
       permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
 
       renderSubmissionSelect();
+      renderAgentSelect();
       renderPermits();
 
       setCfgStatus('● Ready', 'ok');
