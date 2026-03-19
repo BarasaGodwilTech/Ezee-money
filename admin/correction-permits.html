@@ -576,15 +576,18 @@
       hideAlert();
       permits = ensurePermitsShape(await loadJsonFileBestEffort(PERMITS_FILE));
       const before = permits.permits.length;
+      const beforePrompts = (permits.locationPrompts || []).length;
       permits.permits = (permits.permits || []).filter(p => !isExpired(p));
+      permits.locationPrompts = (permits.locationPrompts || []).filter(p => !isExpiredPrompt(p));
       const removed = before - permits.permits.length;
-      if (removed <= 0) {
-        showAlert('No expired permits to remove.', 'success');
+      const removedPrompts = beforePrompts - (permits.locationPrompts || []).length;
+      if (removed <= 0 && removedPrompts <= 0) {
+        showAlert('No expired permits/prompts to remove.', 'success');
         renderPermits();
         return;
       }
       await savePermits();
-      showAlert(`Removed expired permits: ${removed}.`, 'success');
+      showAlert(`Removed expired permits: ${removed}. Expired location prompts: ${removedPrompts}.`, 'success');
       renderPermits();
     }
 
