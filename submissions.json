@@ -267,19 +267,22 @@
         "dob": "1993-03-19",
         "gender": "female",
         "businessAddress": "Mbale",
-        "businessCoordinates": "",
+        "businessCoordinates": "1.0440235, 34.1805032",
         "residentialAddress": "Mbale",
         "nextOfKinName": "YASIN MATEEKA",
         "nextOfKinRelationship": "spouse",
         "nextOfKinPhone": "0704173409"
       },
       "images": {
-        "idFrontUrl": "",
-        "idBackUrl": "",
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/idFront_1773939461333.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/idBack_1773939482363.jpg",
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/agentPhoto_1773930105619.jpg"
       },
       "submissionDate": "2026-03-19T14:22:13.079Z",
-      "status": "verified"
+      "status": "verified",
+      "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/idFront_1773939461333.jpg",
+      "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/idBack_1773939482363.jpg",
+      "businessCoordinates": "1.0440235, 34.1805032"
     },
     {
       "id": "SUB-1773938592458-ofbjsjbvk",
@@ -311,6 +314,6 @@
       "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-19T16:44:03.541Z",
+  "lastUpdated": "2026-03-19T16:58:44.438Z",
   "totalSubmissions": 11
 }
