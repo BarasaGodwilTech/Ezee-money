@@ -1602,6 +1602,27 @@
                 existingRows = [];
             }
 
+            const mergeStats = computePortfolioMergeStats(existingRows, extracted);
+            const existingCount = mergeStats.existingCount;
+            const extractedCount = mergeStats.extractedCount;
+            const updateCount = mergeStats.updateCount;
+            const unchangedCount = mergeStats.unchangedCount;
+            const createCount = mergeStats.createCount;
+            const removedCount = mergeStats.removedCount;
+
+            const ok = window.confirm(
+                `You are about to save portfolio updates.\n\n` +
+                `Existing SC codes: ${existingCount}\n` +
+                `In this upload (extracted): ${extractedCount}\n\n` +
+                `Will update existing: ${updateCount}\n` +
+                `Will add new: ${createCount}\n` +
+                `Will remain unchanged (old data): ${unchangedCount}\n\n` +
+                `Proceed to save?`
+            );
+            if (!ok) {
+                return false;
+            }
+
             // Merge by scCode (prefer the new extracted row)
             const merged = new Map();
             for (const r of (existingRows || [])) {
@@ -1629,6 +1650,40 @@
 
             const content = btoa(JSON.stringify(payload, null, 2));
             await githubService.uploadFile('agent-portfolio.json', content, 'Update agent portfolio metrics');
+
+            return { ...mergeStats, saved: true };
+        }
+
+        function computePortfolioMergeStats(existingRows, extractedRows) {
+            const existing = Array.isArray(existingRows) ? existingRows : [];
+            const extracted = Array.isArray(extractedRows) ? extractedRows : [];
+
+            const existingKeys = new Set(existing.map(r => String(r?.scCode || '').trim()).filter(Boolean));
+            const extractedKeys = new Set(extracted.map(r => String(r?.scCode || '').trim()).filter(Boolean));
+
+            let updateCount = 0;
+            let createCount = 0;
+            for (const k of extractedKeys) {
+                if (existingKeys.has(k)) updateCount++;
+                else createCount++;
+            }
+
+            let unchangedCount = 0;
+            for (const k of existingKeys) {
+                if (!extractedKeys.has(k)) unchangedCount++;
+            }
+
+            // We do not remove keys by design (merge keeps existing rows).
+            const removedCount = 0;
+
+            return {
+                existingCount: existingKeys.size,
+                extractedCount: extractedKeys.size,
+                updateCount,
+                createCount,
+                unchangedCount,
+                removedCount
+            };
         }
 
         function mergeExtractedRowsByScCode(rows) {
@@ -1953,7 +2008,11 @@
                     }
                     document.getElementById('btnSave').disabled = true;
                     showAlert('Saving agent-portfolio.json to GitHub...', '');
-                    await saveExtractedToGitHub();
+                    const res = await saveExtractedToGitHub();
+                    if (res === false) {
+                        showAlert('Save cancelled.', 'error');
+                        return;
+                    }
                     showAlert('Saved successfully to agent-portfolio.json.', 'success');
                 } catch (e) {
                     showAlert('Save failed: ' + e.message, 'error');

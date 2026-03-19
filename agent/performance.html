@@ -140,9 +140,11 @@
         }
         .badge.active { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
         .badge.inactive { border-color:#fde68a; background:#fffbeb; color:#92400e; }
+        .badge.paid { border-color:#bbf7d0; background:#ecfdf5; color:#065f46; }
 
         tr.clickable-row { cursor: pointer; }
         tr.clickable-row:hover { background: #f9fafb; }
+        tr.paid-row { background: #f0fdf4; }
 
         .modal-overlay {
             position: fixed;
@@ -378,6 +380,9 @@
         let portfolio = null; // { generatedAt, rows: [...] }
         let activations = null; // { clients: { [submissionId]: {activated, floatAmount,...}} }
         let submissions = [];
+
+        const LEDGER_FILE = 'field-agent-payments-ledger.json';
+        let paymentLedger = null;
 
         let autoPollTimer = null;
         let lastPortfolioGeneratedAt = null;
@@ -698,17 +703,20 @@
                     ? '<span class="badge active">Active</span>'
                     : '<span class="badge inactive">Inactive</span>';
 
+                const paid = !!(paymentLedger && paymentLedger.clients && paymentLedger.clients[item.submissionId] && paymentLedger.clients[item.submissionId].status === 'paid');
+                const paidBadge = paid ? '<span class="badge paid" style="margin-left:6px;">Paid</span>' : '';
+
                 const key = normalizeName(name + ' ' + phone);
                 if (search && !key.includes(search)) continue;
 
                 rows.push(`
-                    <tr class="clickable-row" data-submission-id="${item.submissionId}">
+                    <tr class="clickable-row ${paid ? 'paid-row' : ''}" data-submission-id="${item.submissionId}">
                         <td>${phone}</td>
                         <td>${name}</td>
                         <td>${escapeHtml(scCode)}</td>
                         <td class="right">${escapeHtml(txns)}</td>
                         <td class="right">${escapeHtml(formatMoneyUGX(value))}</td>
-                        <td>${statusBadge}</td>
+                        <td>${statusBadge}${paidBadge}</td>
                     </tr>
                 `);
             }
@@ -888,12 +896,15 @@
                 // Load activations
                 activations = await loadOptionalJsonFileBestEffort('activations.json');
 
-                render();
+                // Load payment ledger (optional)
+                paymentLedger = await loadOptionalJsonFileBestEffort('field-agent-payments-ledger.json');
 
-                startAutoPolling();
+                render();
+                setCfgStatus('● Ready', 'ok');
             } catch (e) {
                 console.error(e);
-                showAlert('Failed to load performance data: ' + e.message, 'error');
+                setCfgStatus('● Load failed', 'bad');
+                showAlert('Failed to load: ' + e.message, 'error');
             }
         }
 
