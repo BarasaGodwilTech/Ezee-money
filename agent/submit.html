@@ -691,6 +691,17 @@
         // Services
         let realTimeService;
         let githubService;
+
+        const PERMITS_FILE = 'agent-correction-permits.json';
+        let correctionPermits = null;
+
+        const editContext = {
+            enabled: false,
+            submissionId: '',
+            permit: null,
+            existingSubmission: null,
+            existingImages: { idFrontUrl: '', idBackUrl: '', agentPhotoUrl: '' }
+        };
         
         // Form data and photo storage
         let formData = {
@@ -713,6 +724,17 @@
         document.addEventListener('DOMContentLoaded', async function() {
             loadAgentInfo();
             githubService = new GitHubService();
+
+            try {
+                const qs = new URLSearchParams(window.location.search || '');
+                const id = String(qs.get('editSubmissionId') || '').trim();
+                if (id) {
+                    editContext.enabled = true;
+                    editContext.submissionId = id;
+                }
+            } catch (e) {
+                // ignore
+            }
 
             // Prefer shared GitHub config from Firebase
             try {
@@ -760,7 +782,214 @@
             initBusinessLocationPicker();
             setupFormSubmission();
             initializeRealTimeService();
+
+            if (editContext.enabled) {
+                try {
+                    await initEditMode();
+                } catch (e) {
+                    alert('Failed to open correction mode: ' + (e?.message || String(e)));
+                    window.location.href = 'performance.html';
+                    return;
+                }
+            }
         });
+
+        function safeText(s) {
+            return String(s || '').trim();
+        }
+
+        function parseIso(s) {
+            const t = Date.parse(String(s || ''));
+            return Number.isFinite(t) ? t : NaN;
+        }
+
+        function ensurePermitsShape(obj) {
+            if (!obj || typeof obj !== 'object') return { version: 1, updatedAt: null, permits: [] };
+            if (!Array.isArray(obj.permits)) obj.permits = [];
+            if (!obj.version) obj.version = 1;
+            return obj;
+        }
+
+        function isExpiredPermit(p) {
+            const exp = parseIso(p && p.expiresAt);
+            if (!Number.isFinite(exp)) return true;
+            return exp <= Date.now();
+        }
+
+        function normalizeStrictAgentId(v) {
+            return safeText(v);
+        }
+
+        function normalizeStrictAgentName(v) {
+            return safeText(v).toLowerCase().replace(/\s+/g, ' ');
+        }
+
+        function permitMatchesAgent(p) {
+            const myId = normalizeStrictAgentId(agentInfo && agentInfo.id);
+            const myName = normalizeStrictAgentName(agentInfo && agentInfo.fullName);
+            const mySc = safeText(agentInfo && (agentInfo.scCode || agentInfo.agentScCode));
+
+            const pid = normalizeStrictAgentId(p && p.agentId);
+            if (myId && pid) return myId === pid;
+
+            const pn = normalizeStrictAgentName(p && p.agentName);
+            if (!pn || !myName) return false;
+            if (pn !== myName) return false;
+
+            const psc = safeText(p && p.agentScCode);
+            if (mySc && psc && mySc !== psc) return false;
+            return true;
+        }
+
+        function getClientInfoFromSubmission(s) {
+            const c = (s && s.clientInfo) ? s.clientInfo : {};
+            return {
+                fullName: safeText(c.fullName || s.fullName),
+                personalNumber: safeText(c.phoneNumber || s.personalNumber),
+                email: safeText(c.email || s.email),
+                nationalId: safeText(c.nationalId || s.nationalId),
+                dob: safeText(c.dob || s.dob),
+                gender: safeText(c.gender || s.gender),
+                businessAddress: safeText(c.businessAddress || s.businessAddress),
+                businessCoordinates: safeText(c.businessCoordinates || s.businessCoordinates || s.coordinates),
+                residentialAddress: safeText(c.residentialAddress || s.residentialAddress),
+                nextOfKinName: safeText(c.nextOfKinName || s.nextOfKinName),
+                nextOfKinRelationship: safeText(c.nextOfKinRelationship || s.nextOfKinRelationship),
+                nextOfKinPhone: safeText(c.nextOfKinPhone || s.nextOfKinPhone)
+            };
+        }
+
+        function getImagesFromSubmission(s) {
+            const imgs = (s && s.images) ? s.images : (s || {});
+            const toSrc = (v) => {
+                if (!v) return '';
+                if (typeof v === 'string') return v;
+                if (typeof v === 'object') {
+                    if (typeof v.base64 === 'string') return v.base64;
+                    if (typeof v.dataUrl === 'string') return v.dataUrl;
+                    if (typeof v.url === 'string') return v.url;
+                }
+                return '';
+            };
+            return {
+                idFrontUrl: toSrc(imgs.idFrontUrl || imgs.idFront),
+                idBackUrl: toSrc(imgs.idBackUrl || imgs.idBack),
+                agentPhotoUrl: toSrc(imgs.agentPhotoUrl || imgs.agentPhoto)
+            };
+        }
+
+        function setEditUiState() {
+            const btn = document.getElementById('submitBtn');
+            if (btn) btn.textContent = 'Save Corrections';
+
+            const lockIds = [
+                'fullName','personalNumber','email','nationalId','dob','gender','businessAddress','residentialAddress','nextOfKinName','nextOfKinRelationship','nextOfKinPhone'
+            ];
+            for (const id of lockIds) {
+                const el = document.getElementById(id);
+                if (el) el.disabled = true;
+            }
+        }
+
+        async function initEditMode() {
+            if (!agentInfo || !agentInfo.fullName) {
+                throw new Error('Agent information not loaded. Please login again.');
+            }
+
+            const permits = ensurePermitsShape(await githubService.readFile(PERMITS_FILE));
+            correctionPermits = permits;
+
+            const list = (correctionPermits && Array.isArray(correctionPermits.permits)) ? correctionPermits.permits : [];
+            const permit = list.find(p => safeText(p && p.submissionId) === safeText(editContext.submissionId)) || null;
+            if (!permit) {
+                throw new Error('No active correction permit found for this submission.');
+            }
+            if (isExpiredPermit(permit)) {
+                throw new Error('This correction permit has expired.');
+            }
+            if (!permitMatchesAgent(permit)) {
+                throw new Error('This correction permit is not for your account.');
+            }
+
+            editContext.permit = permit;
+
+            const subsData = await githubService.readFile('submissions.json');
+            const listSubs = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+            if (!Array.isArray(listSubs)) {
+                throw new Error('submissions.json is invalid.');
+            }
+            const existing = listSubs.find(s => safeText(s && s.id) === safeText(editContext.submissionId)) || null;
+            if (!existing) {
+                throw new Error('Submission not found.');
+            }
+            editContext.existingSubmission = existing;
+            editContext.existingImages = getImagesFromSubmission(existing);
+
+            const c = getClientInfoFromSubmission(existing);
+            document.getElementById('fullName').value = c.fullName;
+            document.getElementById('personalNumber').value = c.personalNumber;
+            document.getElementById('email').value = c.email;
+            document.getElementById('nationalId').value = c.nationalId;
+            document.getElementById('dob').value = c.dob;
+            document.getElementById('gender').value = c.gender;
+            document.getElementById('businessAddress').value = c.businessAddress;
+            document.getElementById('residentialAddress').value = c.residentialAddress;
+            document.getElementById('nextOfKinName').value = c.nextOfKinName;
+            document.getElementById('nextOfKinRelationship').value = c.nextOfKinRelationship;
+            document.getElementById('nextOfKinPhone').value = c.nextOfKinPhone;
+
+            if (c.businessCoordinates) {
+                document.getElementById('businessCoordinates').value = c.businessCoordinates;
+                const ll = parseLatLng(c.businessCoordinates);
+                if (ll) setBusinessLatLng(ll.lat, ll.lng, true);
+            }
+
+            if (editContext.existingImages.idFrontUrl) {
+                const img = document.getElementById('idFrontImage');
+                if (img) img.src = editContext.existingImages.idFrontUrl;
+                const prev = document.getElementById('idFrontPreview');
+                if (prev) prev.classList.remove('hidden');
+                const up = document.getElementById('idFrontUpload');
+                if (up) up.classList.add('has-image');
+            }
+            if (editContext.existingImages.idBackUrl) {
+                const img = document.getElementById('idBackImage');
+                if (img) img.src = editContext.existingImages.idBackUrl;
+                const prev = document.getElementById('idBackPreview');
+                if (prev) prev.classList.remove('hidden');
+                const up = document.getElementById('idBackUpload');
+                if (up) up.classList.add('has-image');
+            }
+            if (editContext.existingImages.agentPhotoUrl) {
+                const img = document.getElementById('agentPhotoImage');
+                if (img) img.src = editContext.existingImages.agentPhotoUrl;
+                const prev = document.getElementById('agentPhotoPreview');
+                if (prev) prev.classList.remove('hidden');
+                const up = document.getElementById('agentPhotoUpload');
+                if (up) up.classList.add('has-image');
+            }
+
+            document.getElementById('idFrontInput').disabled = !permit.allowImages;
+            document.getElementById('idBackInput').disabled = !permit.allowImages;
+            document.getElementById('agentPhotoInput').disabled = true;
+
+            document.getElementById('btnUseMyLocation').disabled = !permit.allowCoords;
+            document.getElementById('btnSearchPlace').disabled = !permit.allowCoords;
+            document.getElementById('placeSearch').disabled = !permit.allowCoords;
+
+            setEditUiState();
+        }
+
+        function parseLatLng(raw) {
+            const s = safeText(raw);
+            if (!s) return null;
+            const parts = s.split(',').map(x => x.trim());
+            if (parts.length < 2) return null;
+            const lat = Number(parts[0]);
+            const lng = Number(parts[1]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+            return { lat, lng };
+        }
 
         async function bootstrapNotificationConfigIfMissing() {
             try {
@@ -1051,6 +1280,10 @@
         
         async function handleSubmit() {
             try {
+                if (editContext.enabled) {
+                    await handleEditSubmit();
+                    return;
+                }
                 // Validate form
                 if (!validateForm()) {
                     return;
@@ -1172,6 +1405,124 @@
             }
         }
 
+        async function handleEditSubmit() {
+            if (!editContext.enabled || !editContext.permit || !editContext.submissionId) {
+                throw new Error('Correction mode is not initialized.');
+            }
+            if (isExpiredPermit(editContext.permit)) {
+                throw new Error('This correction permit has expired.');
+            }
+
+            // Only validate what the permit allows.
+            if (editContext.permit.allowCoords) {
+                const coordsEl = document.getElementById('businessCoordinates');
+                const coords = coordsEl ? String(coordsEl.value || '').trim() : '';
+                if (!coords || coords.toLowerCase().includes('fetching')) {
+                    alert("Please select agent's business location on the map (coordinates are missing). If location permission was denied, click the location button and allow access.");
+                    return;
+                }
+                const ll = parseLatLng(coords);
+                if (!ll) {
+                    alert('Coordinates format is invalid. Use "lat, lng"');
+                    return;
+                }
+            }
+
+            const btn = submitBtn;
+            btn.disabled = true;
+            uploadProgress.classList.remove('hidden');
+            progressFill.style.width = '20%';
+            uploadStatus.textContent = 'Preparing correction...';
+
+            try {
+                let uploadResults = null;
+                const imagePayload = {};
+
+                if (editContext.permit.allowImages) {
+                    if (formData.idFront) imagePayload.idFront = await processImage(formData.idFront);
+                    if (formData.idBack) imagePayload.idBack = await processImage(formData.idBack);
+                }
+
+                progressFill.style.width = '40%';
+                uploadStatus.textContent = 'Uploading images...';
+
+                if (Object.keys(imagePayload).length) {
+                    uploadResults = await githubService.uploadSubmissionImages(editContext.submissionId, imagePayload);
+                }
+
+                progressFill.style.width = '70%';
+                uploadStatus.textContent = 'Saving correction...';
+
+                const subsData = await githubService.readFile('submissions.json');
+                const list = subsData && subsData.submissions ? subsData.submissions : (Array.isArray(subsData) ? subsData : []);
+                if (!Array.isArray(list) || !list.length) {
+                    throw new Error('submissions.json could not be loaded or is empty.');
+                }
+
+                const idx = list.findIndex(s => safeText(s && s.id) === safeText(editContext.submissionId));
+                if (idx === -1) {
+                    throw new Error('Submission not found in submissions.json.');
+                }
+
+                const s = list[idx];
+                if (!s.images) s.images = {};
+                if (!s.clientInfo) s.clientInfo = {};
+
+                let changed = 0;
+
+                if (editContext.permit.allowImages && uploadResults) {
+                    if (uploadResults.idFront && uploadResults.idFront.downloadUrl) {
+                        s.images.idFrontUrl = uploadResults.idFront.downloadUrl;
+                        s.idFrontUrl = uploadResults.idFront.downloadUrl;
+                        changed++;
+                    }
+                    if (uploadResults.idBack && uploadResults.idBack.downloadUrl) {
+                        s.images.idBackUrl = uploadResults.idBack.downloadUrl;
+                        s.idBackUrl = uploadResults.idBack.downloadUrl;
+                        changed++;
+                    }
+                }
+
+                if (editContext.permit.allowCoords) {
+                    const coords = safeText(document.getElementById('businessCoordinates').value);
+                    if (coords) {
+                        s.clientInfo.businessCoordinates = coords;
+                        s.businessCoordinates = coords;
+                        changed++;
+                    }
+                }
+
+                if (changed <= 0) {
+                    alert('No changes detected. Upload images and/or set coordinates then try again.');
+                    return;
+                }
+
+                const payload = {
+                    submissions: list,
+                    lastUpdated: new Date().toISOString(),
+                    totalSubmissions: list.length
+                };
+
+                await githubService.uploadFile('submissions.json', btoa(JSON.stringify(payload, null, 2)), `Correction update for ${editContext.submissionId}`);
+
+                progressFill.style.width = '100%';
+                uploadStatus.textContent = 'Correction saved!';
+
+                alert('Saved successfully. Admin can now view the updated data.');
+                window.location.href = 'performance.html';
+            } catch (e) {
+                console.error('Correction error:', e);
+                uploadStatus.textContent = 'Error: ' + (e?.message || String(e));
+                alert('Save failed: ' + (e?.message || String(e)));
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => {
+                    uploadProgress.classList.add('hidden');
+                    progressFill.style.width = '0%';
+                }, 1200);
+            }
+        }
+
         async function processImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1222,6 +1573,10 @@
         }
         
         function validateForm() {
+            if (editContext.enabled) {
+                // In correction mode, validation is handled by handleEditSubmit based on permit.
+                return true;
+            }
             const required = [
                 'fullName', 'personalNumber', 'email', 'nationalId',
                 'dob', 'gender', 'businessAddress', 'residentialAddress',

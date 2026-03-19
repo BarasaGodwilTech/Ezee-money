@@ -381,6 +381,9 @@
         let activations = null; // { clients: { [submissionId]: {activated, floatAmount,...}} }
         let submissions = [];
 
+        const PERMITS_FILE = 'agent-correction-permits.json';
+        let correctionPermits = null;
+
         const LEDGER_FILE = 'field-agent-payments-ledger.json';
         let paymentLedger = null;
 
@@ -742,6 +745,15 @@
                     const mySubs = getMyClientSubmissions();
                     const found = (mySubs || []).find(s => String(s.id || '') === String(id || ''));
                     if (!found) return;
+
+                    const permit = hasActiveCorrectionPermit(found.id);
+                    if (permit) {
+                        const qs = new URLSearchParams();
+                        qs.set('editSubmissionId', String(found.id || ''));
+                        window.location.href = `submit.html?${qs.toString()}`;
+                        return;
+                    }
+
                     openDetailsModal({ submission: found });
                 });
             });
@@ -805,6 +817,52 @@
                 console.warn(`Failed to load optional file best-effort ${filename} (continuing):`, e);
                 return null;
             }
+        }
+
+        function ensurePermitsShape(obj) {
+            if (!obj || typeof obj !== 'object') return { version: 1, updatedAt: null, permits: [] };
+            if (!Array.isArray(obj.permits)) obj.permits = [];
+            if (!obj.version) obj.version = 1;
+            return obj;
+        }
+
+        function parseIso(s) {
+            const t = Date.parse(String(s || ''));
+            return Number.isFinite(t) ? t : NaN;
+        }
+
+        function isExpiredPermit(p) {
+            const exp = parseIso(p && p.expiresAt);
+            if (!Number.isFinite(exp)) return true;
+            return exp <= Date.now();
+        }
+
+        function permitMatchesAgent(p) {
+            const myId = normalizeStrictAgentId(agentInfo && agentInfo.id);
+            const myName = normalizeStrictAgentName(agentInfo && agentInfo.fullName);
+            const mySc = String(agentInfo && (agentInfo.scCode || agentInfo.agentScCode) || '').trim();
+
+            const pid = normalizeStrictAgentId(p && p.agentId);
+            if (myId && pid) return myId === pid;
+
+            const pn = normalizeStrictAgentName(p && p.agentName);
+            if (!pn || !myName) return false;
+            if (pn !== myName) return false;
+
+            const psc = String(p && p.agentScCode || '').trim();
+            if (mySc && psc && mySc !== psc) return false;
+            return true;
+        }
+
+        function hasActiveCorrectionPermit(submissionId) {
+            const sid = String(submissionId || '').trim();
+            if (!sid) return null;
+            const list = (correctionPermits && Array.isArray(correctionPermits.permits)) ? correctionPermits.permits : [];
+            const p = list.find(x => String(x && x.submissionId || '').trim() === sid);
+            if (!p) return null;
+            if (isExpiredPermit(p)) return null;
+            if (!permitMatchesAgent(p)) return null;
+            return p;
         }
 
         async function pollForUpdates() {
@@ -899,6 +957,9 @@
 
                 // Load payment ledger (optional)
                 paymentLedger = await loadOptionalJsonFileBestEffort('field-agent-payments-ledger.json');
+
+                // Load correction permits (optional)
+                correctionPermits = ensurePermitsShape(await loadOptionalJsonFileBestEffort(PERMITS_FILE));
 
                 render();
                 setCfgStatus('● Ready', 'ok');
