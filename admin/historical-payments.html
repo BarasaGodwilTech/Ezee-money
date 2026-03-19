@@ -718,8 +718,12 @@
                         showAlert('Please select the Paid Date for historical update.', 'error');
                         return;
                     }
-                    await loadAll();
                     const ids = getSelectedHistoricalIds();
+                    if (!ids.length) {
+                        showAlert('Select at least one row from the list.', 'error');
+                        return;
+                    }
+                    await loadAll();
                     await markHistoricalPaidByIds(ids, paidDate);
                 } catch (e) {
                     showAlert('Historical selection failed: ' + (e?.message || String(e)), 'error');
