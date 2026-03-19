@@ -251,8 +251,37 @@
       },
       "submissionDate": "2026-03-15T15:28:07.494Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1773930056124-0ei8sbo0o",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "SEERA DIANA",
+        "phoneNumber": "0708011669",
+        "email": "matekayasin7@gmail.com",
+        "nationalId": "CF93078101ER0C",
+        "dob": "1993-03-19",
+        "gender": "female",
+        "businessAddress": "Mbale",
+        "businessCoordinates": "",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "YASIN MATEEKA",
+        "nextOfKinRelationship": "spouse",
+        "nextOfKinPhone": "0704173409"
+      },
+      "images": {
+        "idFrontUrl": "",
+        "idBackUrl": "",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773930056124-0ei8sbo0o/agentPhoto_1773930105619.jpg"
+      },
+      "submissionDate": "2026-03-19T14:22:13.079Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-16T18:42:21.525Z",
-  "totalSubmissions": 9
+  "lastUpdated": "2026-03-19T14:22:13.602Z",
+  "totalSubmissions": 10
 }
