@@ -257,6 +257,7 @@
                     <button class="btn btn-primary" id="btnGenerate" type="button">Generate Batch</button>
                     <button class="btn btn-primary" id="btnMarkPaid" type="button" disabled>Mark Selected Paid</button>
                     <button class="btn btn-muted" id="btnOpenHistorical" type="button">Historical Backfill</button>
+                    <button class="btn btn-muted" id="btnOpenOverview" type="button">All Clients Overview</button>
                 </div>
 
                 <div id="alert" class="alert" style="display:none;"></div>
@@ -284,69 +285,6 @@
                         </thead>
                         <tbody id="tbody">
                             <tr><td colspan="10" class="muted">Generate a batch to view results.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>All Clients Overview</h2>
-                <div class="help">View every client across all agents with current portfolio/activation and payment status. Active = 15+ transactions.</div>
-
-                <div class="filters">
-                    <div style="min-width: 220px; flex: 1;">
-                        <label for="overviewSearch">Search</label>
-                        <input type="text" id="overviewSearch" placeholder="Search client, phone, agent, SC code, submission id" />
-                    </div>
-
-                    <div style="min-width: 180px;">
-                        <label for="overviewPaid">Paid Filter</label>
-                        <select id="overviewPaid">
-                            <option value="">All</option>
-                            <option value="paid">Paid</option>
-                            <option value="unpaid">Unpaid</option>
-                        </select>
-                    </div>
-
-                    <div style="min-width: 180px;">
-                        <label for="overviewActivated">Activation Filter</label>
-                        <select id="overviewActivated">
-                            <option value="">All</option>
-                            <option value="activated">Activated</option>
-                            <option value="not_activated">Not Activated</option>
-                        </select>
-                    </div>
-
-                    <div style="min-width: 180px;">
-                        <label for="overviewActive">Active Filter</label>
-                        <select id="overviewActive">
-                            <option value="">All</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="small" style="margin-top: 10px;" id="overviewMeta">Loading...</div>
-
-                <div class="table-container" style="margin-top: 10px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Field Agent</th>
-                                <th>Client</th>
-                                <th>Phone</th>
-                                <th>SC Code</th>
-                                <th>Registered</th>
-                                <th class="right">Txns</th>
-                                <th>Status</th>
-                                <th>Activation</th>
-                                <th>Payment</th>
-                                <th>Eligibility</th>
-                            </tr>
-                        </thead>
-                        <tbody id="overviewTbody">
-                            <tr><td colspan="10" class="muted">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -724,139 +662,6 @@
             return rows;
         }
 
-        function computeAllClientOverviewRows(paymentWeekMonday, mode) {
-            const pRows = (portfolio && Array.isArray(portfolio.rows)) ? portfolio.rows : [];
-            const pIdx = buildPortfolioIndex(pRows);
-            const acts = (activations && activations.clients) ? activations.clients : {};
-            const monday = paymentWeekMonday ? new Date(paymentWeekMonday.getTime()) : startOfWeekMonday(new Date());
-            monday.setHours(0,0,0,0);
-            const targetWeekKey = monday.toISOString().slice(0, 10);
-
-            const out = [];
-            for (const s of (submissions || [])) {
-                const id = String(s && s.id || '').trim();
-                if (!id) continue;
-                const regDate = parseIsoDate(s.submissionDate);
-                if (!regDate) continue;
-
-                const submittedBy = s.submittedBy || s.submitted_by || {};
-                const agentName = String(submittedBy.agentName || '').trim();
-                const agentId = String(submittedBy.agentId || '').trim();
-                const agentScCode = String(submittedBy.agentScCode || '').trim();
-
-                const c = s.clientInfo || {};
-                const pRow = getClientPortfolioRow(c, pIdx);
-                const clientScCode = pRow ? String(pRow.scCode || '') : '';
-                const txns = pRow && pRow.txnsLastWeek !== undefined && pRow.txnsLastWeek !== null ? Number(pRow.txnsLastWeek) : null;
-
-                const act = acts && id ? acts[id] : null;
-                const activated = !!(act && act.activated);
-                const active = isClientActiveByTxns(txns);
-                const hasTenTx = (txns !== null && txns >= 10);
-                const regWeekKey = weekKeyForDate(regDate);
-
-                const already = ledger && ledger.clients ? ledger.clients[id] : null;
-                const paid = !!(already && already.status === 'paid');
-                const payType = already && already.payType ? String(already.payType) : '';
-
-                let eligible = false;
-                let eligibleLabel = '';
-                if (!paid) {
-                    if (mode === 'weekly') {
-                        eligible = (regWeekKey === targetWeekKey) && activated && hasTenTx;
-                        eligibleLabel = eligible ? 'Weekly payable' : '';
-                    } else {
-                        const missedRegistrationWeek = (regWeekKey !== targetWeekKey);
-                        eligible = missedRegistrationWeek && activated && hasTenTx;
-                        eligibleLabel = eligible ? 'Month-end payable' : '';
-                    }
-                }
-
-                out.push({
-                    submissionId: id,
-                    agentName,
-                    agentId,
-                    agentScCode,
-                    clientName: String(c.fullName || ''),
-                    clientPhone: String(c.phoneNumber || ''),
-                    clientScCode,
-                    registeredAt: regDate.toISOString(),
-                    txnsLastWeek: txns,
-                    active,
-                    activated,
-                    paid,
-                    paidPayType: payType,
-                    registrationWeekKey: regWeekKey,
-                    eligible,
-                    eligibleLabel
-                });
-            }
-
-            out.sort((a, b) => normalizeName(a.agentName).localeCompare(normalizeName(b.agentName)) || normalizeName(a.clientName).localeCompare(normalizeName(b.clientName)));
-            return out;
-        }
-
-        function renderAllClientsOverview() {
-            const tbody = document.getElementById('overviewTbody');
-            const meta = document.getElementById('overviewMeta');
-            if (!tbody || !meta) return;
-
-            const wkVal = String(document.getElementById('weekStart')?.value || '').trim();
-            const monday = wkVal ? new Date(wkVal + 'T00:00:00') : startOfWeekMonday(new Date());
-            const mode = String(document.getElementById('batchMode')?.value || 'weekly');
-
-            const rows = computeAllClientOverviewRows(monday, mode);
-
-            const search = normalizeName(document.getElementById('overviewSearch')?.value || '');
-            const paidFilter = String(document.getElementById('overviewPaid')?.value || '').trim();
-            const actFilter = String(document.getElementById('overviewActivated')?.value || '').trim();
-            const activeFilter = String(document.getElementById('overviewActive')?.value || '').trim();
-
-            const filtered = rows.filter(r => {
-                if (paidFilter === 'paid' && !r.paid) return false;
-                if (paidFilter === 'unpaid' && r.paid) return false;
-                if (actFilter === 'activated' && !r.activated) return false;
-                if (actFilter === 'not_activated' && r.activated) return false;
-                if (activeFilter === 'active' && !r.active) return false;
-                if (activeFilter === 'inactive' && r.active) return false;
-
-                if (!search) return true;
-                const key = normalizeName(`${r.agentName} ${r.agentScCode} ${r.clientName} ${r.clientPhone} ${r.clientScCode} ${r.submissionId}`);
-                return key.includes(search);
-            });
-
-            const eligibleCount = filtered.filter(r => r.eligible).length;
-            const paidCount = filtered.filter(r => r.paid).length;
-            meta.textContent = `Showing ${filtered.length} clients. Eligible (based on selected week/mode): ${eligibleCount}. Paid: ${paidCount}.`;
-
-            if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="10" class="muted">No rows match your filters.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(r => {
-                const statusBadge = r.active ? '<span class="badge ok">Active</span>' : '<span class="badge warn">Inactive</span>';
-                const actBadge = r.activated ? '<span class="badge ok">Activated</span>' : '<span class="badge bad">Not Activated</span>';
-                const payBadge = r.paid ? `<span class="badge ok">Paid</span><div class="muted">${escapeHtml(r.paidPayType || '')}</div>` : '<span class="badge">Unpaid</span>';
-                const eligBadge = r.eligible ? '<span class="badge ok">Yes</span>' : '<span class="badge">No</span>';
-                const eligText = r.eligible ? `<div class="muted">${escapeHtml(r.eligibleLabel)}</div>` : `<div class="muted">Reg wk: ${escapeHtml(String(r.registrationWeekKey || ''))}</div>`;
-
-                return `
-                    <tr>
-                        <td>${escapeHtml(r.agentName)}<div class="muted">${escapeHtml(r.agentScCode)}</div></td>
-                        <td>${escapeHtml(r.clientName)}<div class="muted">${escapeHtml(r.submissionId)}</div></td>
-                        <td>${escapeHtml(r.clientPhone)}</td>
-                        <td>${escapeHtml(r.clientScCode)}</td>
-                        <td>${escapeHtml(new Date(r.registeredAt).toLocaleDateString())}</td>
-                        <td class="right">${r.txnsLastWeek === null ? '' : escapeHtml(String(r.txnsLastWeek))}</td>
-                        <td>${statusBadge}</td>
-                        <td>${actBadge}</td>
-                        <td>${payBadge}</td>
-                        <td>${eligBadge}${eligText}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
 
         function updateKpis(rows, mode) {
             const weeklyRows = mode === 'weekly' ? rows : [];
@@ -1286,8 +1091,6 @@
             populateAgentFilter();
             ensureWeekStartDefault();
 
-            renderAllClientsOverview();
-
             setCfgStatus('● Ready', 'ok');
         }
 
@@ -1388,6 +1191,10 @@
                 window.location.href = 'historical-payments.html';
             });
 
+            document.getElementById('btnOpenOverview').addEventListener('click', () => {
+                window.location.href = 'all-clients-overview.html';
+            });
+
             document.getElementById('btnLogout').addEventListener('click', () => {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminUsername');
@@ -1435,18 +1242,11 @@
             document.getElementById('batchMode').addEventListener('change', () => {
                 document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="muted">Generate a batch to view results.</td></tr>';
                 hideAlert();
-                renderAllClientsOverview();
             });
 
             document.getElementById('weekStart').addEventListener('change', () => {
                 coerceInputDateToMonday();
-                renderAllClientsOverview();
             });
-
-            document.getElementById('overviewSearch').addEventListener('input', () => renderAllClientsOverview());
-            document.getElementById('overviewPaid').addEventListener('change', () => renderAllClientsOverview());
-            document.getElementById('overviewActivated').addEventListener('change', () => renderAllClientsOverview());
-            document.getElementById('overviewActive').addEventListener('change', () => renderAllClientsOverview());
 
 
             // Historical backfill moved to its own page. Keep these guards for backwards compatibility.
