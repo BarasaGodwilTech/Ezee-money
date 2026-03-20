@@ -113,34 +113,6 @@
       "status": "pending"
     },
     {
-      "id": "SUB-1773074150582-bw0b0cb1h",
-      "submittedBy": {
-        "agentName": "Barasa Godwill",
-        "agentScCode": "SC001",
-        "agentId": "1771597985946"
-      },
-      "clientInfo": {
-        "fullName": "g",
-        "phoneNumber": "537838",
-        "email": "barasagodwil@livingstone.ac.ug",
-        "nationalId": "sfjsfgjjsfh",
-        "dob": "2026-03-14",
-        "gender": "female",
-        "businessAddress": "shfjsj",
-        "residentialAddress": "sfhjsfj",
-        "nextOfKinName": "fhjsfjh",
-        "nextOfKinRelationship": "parent",
-        "nextOfKinPhone": "46772"
-      },
-      "images": {
-        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773074150582-bw0b0cb1h/idFront_1773074150586.jpg",
-        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773074150582-bw0b0cb1h/idBack_1773074154276.jpg",
-        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773074150582-bw0b0cb1h/agentPhoto_1773074157652.jpg"
-      },
-      "submissionDate": "2026-03-09T16:36:05.018Z",
-      "status": "pending"
-    },
-    {
       "id": "SUB-1773482609876-oywyqlcyw",
       "submittedBy": {
         "agentName": "TIMOTHY KIBUKUNA",
@@ -314,6 +286,6 @@
       "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-19T16:58:44.438Z",
-  "totalSubmissions": 11
+  "lastUpdated": "2026-03-20T07:38:00.545Z",
+  "totalSubmissions": 10
 }
