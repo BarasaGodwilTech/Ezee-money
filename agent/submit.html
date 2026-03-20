@@ -150,24 +150,70 @@
             border-radius: 10px;
             padding: 20px;
             text-align: center;
-            background-color: #f8fafc;
+            background: white;
             cursor: pointer;
-            transition: all 0.3s;
-            height: 200px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 220px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
         
-        .photo-upload-area:hover {
-            border-color: #1e3c72;
-            background-color: #e6f3ff;
-        }
-        
         .photo-upload-area.has-image {
             border-color: #28a745;
             background-color: #d4edda;
+        }
+
+        .photo-upload-area.has-image .photo-icon,
+        .photo-upload-area.has-image p {
+            display: none;
+        }
+
+        .photo-thumb {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            background: #fff;
+        }
+
+        .photo-upload-area.has-image .photo-thumb {
+            display: block;
+        }
+
+        .photo-actions {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .photo-action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(42, 82, 152, 0.14);
+            backdrop-filter: blur(2px);
+            color: #1e3c72;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .photo-action-btn:active {
+            transform: scale(0.98);
         }
         
         .photo-icon {
@@ -568,44 +614,40 @@
                     <div>
                         <div class="photo-label">National ID Front *</div>
                         <div class="photo-upload-area" id="idFrontUpload">
+                            <img class="photo-thumb" id="idFrontThumb" src="" alt="ID Front" />
                             <div class="photo-icon">
                                 <i class="fas fa-id-card"></i>
                             </div>
                             <p><strong>Tap to upload ID front</strong></p>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
-                                <button class="btn btn-primary" type="button" id="idFrontCameraBtn" style="padding:10px 12px;font-size:13px;">Camera</button>
-                                <button class="btn btn-muted" type="button" id="idFrontGalleryBtn" style="padding:10px 12px;font-size:13px;">Gallery</button>
-                            </div>
-                            <input type="file" id="idFrontInput" accept="image/*" capture="environment" style="display: none;">
-                            <input type="file" id="idFrontGalleryInput" accept="image/*" style="display: none;">
-                        </div>
-                        <div class="photo-preview hidden" id="idFrontPreview">
-                            <img id="idFrontImage" src="" alt="ID Front">
                             <div class="remove-photo" data-target="idFront">
                                 <i class="fas fa-times"></i>
                             </div>
+                            <div class="photo-actions">
+                                <button class="photo-action-btn" id="idFrontGalleryBtn" type="button" aria-label="Upload from gallery"><i class="fas fa-images"></i></button>
+                                <button class="photo-action-btn" id="idFrontCameraBtn" type="button" aria-label="Take photo"><i class="fas fa-camera"></i></button>
+                            </div>
+                            <input type="file" id="idFrontCameraInput" accept="image/*" capture="environment" style="display: none;">
+                            <input type="file" id="idFrontGalleryInput" accept="image/*" style="display: none;">
                         </div>
                     </div>
                     
                     <div>
                         <div class="photo-label">National ID Back *</div>
                         <div class="photo-upload-area" id="idBackUpload">
+                            <img class="photo-thumb" id="idBackThumb" src="" alt="ID Back" />
                             <div class="photo-icon">
                                 <i class="fas fa-id-card"></i>
                             </div>
                             <p><strong>Tap to upload ID back</strong></p>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
-                                <button class="btn btn-primary" type="button" id="idBackCameraBtn" style="padding:10px 12px;font-size:13px;">Camera</button>
-                                <button class="btn btn-muted" type="button" id="idBackGalleryBtn" style="padding:10px 12px;font-size:13px;">Gallery</button>
-                            </div>
-                            <input type="file" id="idBackInput" accept="image/*" capture="environment" style="display: none;">
-                            <input type="file" id="idBackGalleryInput" accept="image/*" style="display: none;">
-                        </div>
-                        <div class="photo-preview hidden" id="idBackPreview">
-                            <img id="idBackImage" src="" alt="ID Back">
                             <div class="remove-photo" data-target="idBack">
                                 <i class="fas fa-times"></i>
                             </div>
+                            <div class="photo-actions">
+                                <button class="photo-action-btn" id="idBackGalleryBtn" type="button" aria-label="Upload from gallery"><i class="fas fa-images"></i></button>
+                                <button class="photo-action-btn" id="idBackCameraBtn" type="button" aria-label="Take photo"><i class="fas fa-camera"></i></button>
+                            </div>
+                            <input type="file" id="idBackCameraInput" accept="image/*" capture="environment" style="display: none;">
+                            <input type="file" id="idBackGalleryInput" accept="image/*" style="display: none;">
                         </div>
                     </div>
                 </div>
@@ -613,23 +655,21 @@
                 <div style="margin-top: 30px;">
                     <div class="photo-label">Agent Passport Photo *</div>
                     <div class="photo-upload-area" id="agentPhotoUpload">
+                        <img class="photo-thumb" id="agentPhotoThumb" src="" alt="Agent Photo" />
                         <div class="photo-icon">
                             <i class="fas fa-user-circle"></i>
                         </div>
                         <p><strong>Tap to upload agent photo</strong></p>
                         <p style="color: #666; font-size: 14px;">Clear face photo for identification</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;">
-                            <button class="btn btn-primary" type="button" id="agentPhotoCameraBtn" style="padding:10px 12px;font-size:13px;">Camera</button>
-                            <button class="btn btn-muted" type="button" id="agentPhotoGalleryBtn" style="padding:10px 12px;font-size:13px;">Gallery</button>
-                        </div>
-                        <input type="file" id="agentPhotoInput" accept="image/*" capture="environment" style="display: none;">
-                        <input type="file" id="agentPhotoGalleryInput" accept="image/*" style="display: none;">
-                    </div>
-                    <div class="photo-preview hidden" id="agentPhotoPreview">
-                        <img id="agentPhotoImage" src="" alt="Agent Photo">
                         <div class="remove-photo" data-target="agentPhoto">
                             <i class="fas fa-times"></i>
                         </div>
+                        <div class="photo-actions">
+                            <button class="photo-action-btn" id="agentPhotoGalleryBtn" type="button" aria-label="Upload from gallery"><i class="fas fa-images"></i></button>
+                            <button class="photo-action-btn" id="agentPhotoCameraBtn" type="button" aria-label="Take photo"><i class="fas fa-camera"></i></button>
+                        </div>
+                        <input type="file" id="agentPhotoCameraInput" accept="image/*" capture="environment" style="display: none;">
+                        <input type="file" id="agentPhotoGalleryInput" accept="image/*" style="display: none;">
                     </div>
                 </div>
             </div>
@@ -960,33 +1000,30 @@
             }
 
             if (editContext.existingImages.idFrontUrl) {
-                const img = document.getElementById('idFrontImage');
+                const img = document.getElementById('idFrontThumb');
                 if (img) img.src = editContext.existingImages.idFrontUrl;
-                const prev = document.getElementById('idFrontPreview');
-                if (prev) prev.classList.remove('hidden');
                 const up = document.getElementById('idFrontUpload');
                 if (up) up.classList.add('has-image');
             }
             if (editContext.existingImages.idBackUrl) {
-                const img = document.getElementById('idBackImage');
+                const img = document.getElementById('idBackThumb');
                 if (img) img.src = editContext.existingImages.idBackUrl;
-                const prev = document.getElementById('idBackPreview');
-                if (prev) prev.classList.remove('hidden');
                 const up = document.getElementById('idBackUpload');
                 if (up) up.classList.add('has-image');
             }
             if (editContext.existingImages.agentPhotoUrl) {
-                const img = document.getElementById('agentPhotoImage');
+                const img = document.getElementById('agentPhotoThumb');
                 if (img) img.src = editContext.existingImages.agentPhotoUrl;
-                const prev = document.getElementById('agentPhotoPreview');
-                if (prev) prev.classList.remove('hidden');
                 const up = document.getElementById('agentPhotoUpload');
                 if (up) up.classList.add('has-image');
             }
 
-            document.getElementById('idFrontInput').disabled = !permit.allowImages;
-            document.getElementById('idBackInput').disabled = !permit.allowImages;
-            document.getElementById('agentPhotoInput').disabled = true;
+            document.getElementById('idFrontCameraInput').disabled = !permit.allowImages;
+            document.getElementById('idFrontGalleryInput').disabled = !permit.allowImages;
+            document.getElementById('idBackCameraInput').disabled = !permit.allowImages;
+            document.getElementById('idBackGalleryInput').disabled = !permit.allowImages;
+            document.getElementById('agentPhotoCameraInput').disabled = true;
+            document.getElementById('agentPhotoGalleryInput').disabled = true;
 
             document.getElementById('btnUseMyLocation').disabled = !permit.allowCoords;
             document.getElementById('btnSearchPlace').disabled = !permit.allowCoords;
@@ -1044,110 +1081,42 @@
         }
         
         function setupPhotoUploads() {
-            // ID Front Upload
-            const idFrontUpload = document.getElementById('idFrontUpload');
-            const idFrontInput = document.getElementById('idFrontInput');
-            const idFrontGalleryInput = document.getElementById('idFrontGalleryInput');
-            const idFrontPreview = document.getElementById('idFrontPreview');
-            const idFrontImage = document.getElementById('idFrontImage');
-            const idFrontCameraBtn = document.getElementById('idFrontCameraBtn');
-            const idFrontGalleryBtn = document.getElementById('idFrontGalleryBtn');
-            
-            if (idFrontUpload) idFrontUpload.addEventListener('click', () => idFrontInput.click());
-            if (idFrontCameraBtn) idFrontCameraBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); idFrontInput.click(); });
-            if (idFrontGalleryBtn) idFrontGalleryBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); idFrontGalleryInput.click(); });
+            function setupOnePhoto(key, uploadId, thumbId, cameraInputId, galleryInputId, cameraBtnId, galleryBtnId) {
+                const upload = document.getElementById(uploadId);
+                const thumb = document.getElementById(thumbId);
+                const camInput = document.getElementById(cameraInputId);
+                const galInput = document.getElementById(galleryInputId);
+                const camBtn = document.getElementById(cameraBtnId);
+                const galBtn = document.getElementById(galleryBtnId);
+                if (!upload || !thumb || !camInput || !galInput) return;
 
-            const handleIdFrontFile = (file) => {
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    idFrontImage.src = e.target.result;
-                    idFrontPreview.classList.remove('hidden');
-                    idFrontUpload.classList.add('has-image');
-                    formData.idFront = file;
+                const onPick = (input) => {
+                    const file = input && input.files && input.files[0] ? input.files[0] : null;
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        thumb.src = ev.target.result;
+                        upload.classList.add('has-image');
+                        formData[key] = file;
+                    };
+                    reader.readAsDataURL(file);
                 };
-                reader.readAsDataURL(file);
-            };
-            
-            idFrontInput.addEventListener('change', (e) => {
-                handleIdFrontFile(e.target.files && e.target.files[0]);
-            });
 
-            if (idFrontGalleryInput) {
-                idFrontGalleryInput.addEventListener('change', (e) => {
-                    handleIdFrontFile(e.target.files && e.target.files[0]);
+                upload.addEventListener('click', (e) => {
+                    const t = e && e.target ? e.target : null;
+                    if (t && (t.closest && (t.closest('button') || t.closest('.remove-photo')))) return;
+                    camInput.click();
                 });
+                if (camBtn) camBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); camInput.click(); });
+                if (galBtn) galBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); galInput.click(); });
+
+                camInput.addEventListener('change', () => onPick(camInput));
+                galInput.addEventListener('change', () => onPick(galInput));
             }
-            
-            // ID Back Upload
-            const idBackUpload = document.getElementById('idBackUpload');
-            const idBackInput = document.getElementById('idBackInput');
-            const idBackGalleryInput = document.getElementById('idBackGalleryInput');
-            const idBackPreview = document.getElementById('idBackPreview');
-            const idBackImage = document.getElementById('idBackImage');
-            const idBackCameraBtn = document.getElementById('idBackCameraBtn');
-            const idBackGalleryBtn = document.getElementById('idBackGalleryBtn');
-            
-            if (idBackUpload) idBackUpload.addEventListener('click', () => idBackInput.click());
-            if (idBackCameraBtn) idBackCameraBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); idBackInput.click(); });
-            if (idBackGalleryBtn) idBackGalleryBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); idBackGalleryInput.click(); });
 
-            const handleIdBackFile = (file) => {
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    idBackImage.src = e.target.result;
-                    idBackPreview.classList.remove('hidden');
-                    idBackUpload.classList.add('has-image');
-                    formData.idBack = file;
-                };
-                reader.readAsDataURL(file);
-            };
-            
-            idBackInput.addEventListener('change', (e) => {
-                handleIdBackFile(e.target.files && e.target.files[0]);
-            });
-
-            if (idBackGalleryInput) {
-                idBackGalleryInput.addEventListener('change', (e) => {
-                    handleIdBackFile(e.target.files && e.target.files[0]);
-                });
-            }
-            
-            // Agent Photo Upload
-            const agentPhotoUpload = document.getElementById('agentPhotoUpload');
-            const agentPhotoInput = document.getElementById('agentPhotoInput');
-            const agentPhotoGalleryInput = document.getElementById('agentPhotoGalleryInput');
-            const agentPhotoPreview = document.getElementById('agentPhotoPreview');
-            const agentPhotoImage = document.getElementById('agentPhotoImage');
-            const agentPhotoCameraBtn = document.getElementById('agentPhotoCameraBtn');
-            const agentPhotoGalleryBtn = document.getElementById('agentPhotoGalleryBtn');
-            
-            if (agentPhotoUpload) agentPhotoUpload.addEventListener('click', () => agentPhotoInput.click());
-            if (agentPhotoCameraBtn) agentPhotoCameraBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); agentPhotoInput.click(); });
-            if (agentPhotoGalleryBtn) agentPhotoGalleryBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); agentPhotoGalleryInput.click(); });
-
-            const handleAgentPhotoFile = (file) => {
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    agentPhotoImage.src = e.target.result;
-                    agentPhotoPreview.classList.remove('hidden');
-                    agentPhotoUpload.classList.add('has-image');
-                    formData.agentPhoto = file;
-                };
-                reader.readAsDataURL(file);
-            };
-            
-            agentPhotoInput.addEventListener('change', (e) => {
-                handleAgentPhotoFile(e.target.files && e.target.files[0]);
-            });
-
-            if (agentPhotoGalleryInput) {
-                agentPhotoGalleryInput.addEventListener('change', (e) => {
-                    handleAgentPhotoFile(e.target.files && e.target.files[0]);
-                });
-            }
+            setupOnePhoto('idFront', 'idFrontUpload', 'idFrontThumb', 'idFrontCameraInput', 'idFrontGalleryInput', 'idFrontCameraBtn', 'idFrontGalleryBtn');
+            setupOnePhoto('idBack', 'idBackUpload', 'idBackThumb', 'idBackCameraInput', 'idBackGalleryInput', 'idBackCameraBtn', 'idBackGalleryBtn');
+            setupOnePhoto('agentPhoto', 'agentPhotoUpload', 'agentPhotoThumb', 'agentPhotoCameraInput', 'agentPhotoGalleryInput', 'agentPhotoCameraBtn', 'agentPhotoGalleryBtn');
             
             // Remove photo buttons
             document.querySelectorAll('.remove-photo').forEach(btn => {
@@ -1155,22 +1124,34 @@
                     const target = e.currentTarget.dataset.target;
                     if (target === 'idFront') {
                         formData.idFront = null;
-                        idFrontPreview.classList.add('hidden');
-                        idFrontUpload.classList.remove('has-image');
-                        idFrontInput.value = '';
-                        if (idFrontGalleryInput) idFrontGalleryInput.value = '';
+                        const up = document.getElementById('idFrontUpload');
+                        const img = document.getElementById('idFrontThumb');
+                        if (img) img.src = '';
+                        if (up) up.classList.remove('has-image');
+                        const cam = document.getElementById('idFrontCameraInput');
+                        const gal = document.getElementById('idFrontGalleryInput');
+                        if (cam) cam.value = '';
+                        if (gal) gal.value = '';
                     } else if (target === 'idBack') {
                         formData.idBack = null;
-                        idBackPreview.classList.add('hidden');
-                        idBackUpload.classList.remove('has-image');
-                        idBackInput.value = '';
-                        if (idBackGalleryInput) idBackGalleryInput.value = '';
+                        const up = document.getElementById('idBackUpload');
+                        const img = document.getElementById('idBackThumb');
+                        if (img) img.src = '';
+                        if (up) up.classList.remove('has-image');
+                        const cam = document.getElementById('idBackCameraInput');
+                        const gal = document.getElementById('idBackGalleryInput');
+                        if (cam) cam.value = '';
+                        if (gal) gal.value = '';
                     } else if (target === 'agentPhoto') {
                         formData.agentPhoto = null;
-                        agentPhotoPreview.classList.add('hidden');
-                        agentPhotoUpload.classList.remove('has-image');
-                        agentPhotoInput.value = '';
-                        if (agentPhotoGalleryInput) agentPhotoGalleryInput.value = '';
+                        const up = document.getElementById('agentPhotoUpload');
+                        const img = document.getElementById('agentPhotoThumb');
+                        if (img) img.src = '';
+                        if (up) up.classList.remove('has-image');
+                        const cam = document.getElementById('agentPhotoCameraInput');
+                        const gal = document.getElementById('agentPhotoGalleryInput');
+                        if (cam) cam.value = '';
+                        if (gal) gal.value = '';
                     }
                 });
             });
@@ -1763,40 +1744,37 @@
         function resetForm() {
             // Reset form fields
             document.getElementById('fullName').value = '';
-            document.getElementById('personalNumber').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('nationalId').value = '';
-            document.getElementById('dob').value = '';
-            document.getElementById('gender').value = '';
-            document.getElementById('businessAddress').value = '';
-            document.getElementById('residentialAddress').value = '';
-            document.getElementById('nextOfKinName').value = '';
-            document.getElementById('nextOfKinRelationship').value = '';
-            document.getElementById('nextOfKinPhone').value = '';
             
             // Reset photos
             formData = { idFront: null, idBack: null, agentPhoto: null };
-            document.getElementById('idFrontPreview').classList.add('hidden');
-            document.getElementById('idBackPreview').classList.add('hidden');
-            document.getElementById('agentPhotoPreview').classList.add('hidden');
             document.getElementById('idFrontUpload').classList.remove('has-image');
             document.getElementById('idBackUpload').classList.remove('has-image');
             document.getElementById('agentPhotoUpload').classList.remove('has-image');
+
+            const idFrontThumb = document.getElementById('idFrontThumb');
+            const idBackThumb = document.getElementById('idBackThumb');
+            const agentPhotoThumb = document.getElementById('agentPhotoThumb');
+            if (idFrontThumb) idFrontThumb.src = '';
+            if (idBackThumb) idBackThumb.src = '';
+            if (agentPhotoThumb) agentPhotoThumb.src = '';
             
             // Reset file inputs
-            document.getElementById('idFrontInput').value = '';
-            const idFrontGalleryInput = document.getElementById('idFrontGalleryInput');
-            if (idFrontGalleryInput) idFrontGalleryInput.value = '';
-            document.getElementById('idBackInput').value = '';
-            const idBackGalleryInput = document.getElementById('idBackGalleryInput');
-            if (idBackGalleryInput) idBackGalleryInput.value = '';
-            document.getElementById('agentPhotoInput').value = '';
-            const agentPhotoGalleryInput = document.getElementById('agentPhotoGalleryInput');
-            if (agentPhotoGalleryInput) agentPhotoGalleryInput.value = '';
+            const idFrontCam = document.getElementById('idFrontCameraInput');
+            const idFrontGal = document.getElementById('idFrontGalleryInput');
+            const idBackCam = document.getElementById('idBackCameraInput');
+            const idBackGal = document.getElementById('idBackGalleryInput');
+            const agentCam = document.getElementById('agentPhotoCameraInput');
+            const agentGal = document.getElementById('agentPhotoGalleryInput');
+            if (idFrontCam) idFrontCam.value = '';
+            if (idFrontGal) idFrontGal.value = '';
+            if (idBackCam) idBackCam.value = '';
+            if (idBackGal) idBackGal.value = '';
+            if (agentCam) agentCam.value = '';
+            if (agentGal) agentGal.value = '';
             
             // Show form, hide success
             document.querySelector('.form-container').classList.remove('hidden');
-            document.getElementById('successMessage').classList.add('hidden');
+            submitBtn.disabled = false;
             uploadProgress.classList.add('hidden');
             submitBtn.disabled = false;
         }
