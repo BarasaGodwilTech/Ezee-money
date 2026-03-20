@@ -182,6 +182,13 @@
                 </div>
 
                 <div style="min-width: 220px;">
+                    <label for="overviewAgent">Field Agent</label>
+                    <select id="overviewAgent">
+                        <option value="">All agents</option>
+                    </select>
+                </div>
+
+                <div style="min-width: 220px;">
                     <label for="weekStart">Payment Week (Monday)</label>
                     <input type="date" id="weekStart" />
                     <div class="small" style="margin-top:6px;" id="weekRangeHint">Week: —</div>
@@ -219,6 +226,15 @@
                         <option value="">All</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="min-width: 180px;">
+                    <label for="overviewEligibility">Eligibility Filter</label>
+                    <select id="overviewEligibility">
+                        <option value="">All</option>
+                        <option value="eligible">Eligible</option>
+                        <option value="not_eligible">Not Eligible</option>
                     </select>
                 </div>
             </div>
@@ -550,6 +566,39 @@
             return out;
         }
 
+        function populateAgentFilterFromRows(rows) {
+            const sel = document.getElementById('overviewAgent');
+            if (!sel) return;
+
+            const prev = String(sel.value || '');
+
+            const map = new Map();
+            for (const r of (rows || [])) {
+                const sc = String(r.agentScCode || '').trim();
+                const name = String(r.agentName || '').trim();
+                const key = sc ? ('sc:' + sc) : (name ? ('name:' + normalizeName(name)) : '');
+                if (!key) continue;
+                if (!map.has(key)) {
+                    map.set(key, { agentName: name, agentScCode: sc, count: 0 });
+                }
+                map.get(key).count++;
+            }
+
+            const agents = Array.from(map.values()).sort((a, b) => normalizeName(a.agentName).localeCompare(normalizeName(b.agentName)) || String(a.agentScCode || '').localeCompare(String(b.agentScCode || '')));
+
+            const opts = ['<option value="">All agents</option>'];
+            for (const a of agents) {
+                const label = `${a.agentName || 'Agent'}${a.agentScCode ? ' (' + a.agentScCode + ')' : ''} — ${a.count}`;
+                const val = escapeHtml(String(a.agentScCode || a.agentName || ''));
+                opts.push(`<option value="${val}">${label.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`);
+            }
+            sel.innerHTML = opts.join('');
+
+            if (prev && Array.from(sel.options).some(o => String(o.value) === prev)) {
+                sel.value = prev;
+            }
+        }
+
         function renderAllClientsOverview() {
             const tbody = document.getElementById('overviewTbody');
             const meta = document.getElementById('overviewMeta');
@@ -560,10 +609,14 @@
 
             const rows = computeAllClientOverviewRows(monday, mode);
 
+            populateAgentFilterFromRows(rows);
+
             const search = normalizeName(document.getElementById('overviewSearch')?.value || '');
             const paidFilter = String(document.getElementById('overviewPaid')?.value || '').trim();
             const actFilter = String(document.getElementById('overviewActivated')?.value || '').trim();
             const activeFilter = String(document.getElementById('overviewActive')?.value || '').trim();
+            const eligFilter = String(document.getElementById('overviewEligibility')?.value || '').trim();
+            const agentFilter = String(document.getElementById('overviewAgent')?.value || '').trim();
 
             const filtered = rows.filter(r => {
                 if (paidFilter === 'paid' && !r.paid) return false;
@@ -572,6 +625,15 @@
                 if (actFilter === 'not_activated' && r.activated) return false;
                 if (activeFilter === 'active' && !r.active) return false;
                 if (activeFilter === 'inactive' && r.active) return false;
+
+                if (eligFilter === 'eligible' && !r.eligible) return false;
+                if (eligFilter === 'not_eligible' && r.eligible) return false;
+
+                if (agentFilter) {
+                    const sc = String(r.agentScCode || '').trim();
+                    const nm = String(r.agentName || '').trim();
+                    if (agentFilter !== sc && normalizeName(agentFilter) !== normalizeName(nm)) return false;
+                }
 
                 if (!search) return true;
                 const key = normalizeName(`${r.agentName} ${r.agentScCode} ${r.clientName} ${r.clientPhone} ${r.clientScCode} ${r.submissionId}`);
@@ -683,6 +745,8 @@
             document.getElementById('overviewPaid').addEventListener('change', () => renderAllClientsOverview());
             document.getElementById('overviewActivated').addEventListener('change', () => renderAllClientsOverview());
             document.getElementById('overviewActive').addEventListener('change', () => renderAllClientsOverview());
+            document.getElementById('overviewEligibility').addEventListener('change', () => renderAllClientsOverview());
+            document.getElementById('overviewAgent').addEventListener('change', () => renderAllClientsOverview());
             document.getElementById('batchMode').addEventListener('change', () => renderAllClientsOverview());
             document.getElementById('weekStart').addEventListener('change', () => {
                 coerceInputDateToMonday();

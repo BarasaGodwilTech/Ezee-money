@@ -378,7 +378,25 @@
             if (!v) return null;
             const d = new Date(v + 'T00:00:00');
             if (isNaN(d.getTime())) return null;
+            d.setHours(0,0,0,0);
             return d;
+        }
+
+        function applyUrlParams() {
+            const sp = new URLSearchParams(window.location.search || '');
+            const mode = String(sp.get('mode') || '').trim();
+            const weekStart = String(sp.get('weekStart') || '').trim();
+
+            const modeEl = document.getElementById('batchMode');
+            if (modeEl && (mode === 'weekly' || mode === 'month_end')) {
+                modeEl.value = mode;
+            }
+
+            const wkEl = document.getElementById('weekStart');
+            if (wkEl && /^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+                wkEl.value = weekStart;
+                coerceInputDateToMonday();
+            }
         }
 
         function startOfWeekMonday(d) {
@@ -1397,6 +1415,7 @@
                 paidEl.value = new Date().toISOString().slice(0, 10);
             }
 
+            applyUrlParams();
             ensureWeekStartDefault();
             loadAll().catch(e => {
                 showAlert('Failed to load: ' + (e?.message || String(e)), 'error');

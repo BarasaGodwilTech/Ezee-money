@@ -411,6 +411,47 @@
             text-align: center;
         }
 
+        .sidebar-section-title {
+            padding: 0 2rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .sidebar-actions {
+            padding: 0 2rem 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255,255,255,0.10);
+        }
+
+        .sidebar-btn-sub {
+            display: block;
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 4px;
+            color: rgba(255,255,255,0.75);
+        }
+
         .main-content {
             flex: 1;
             margin-left: 280px;
@@ -951,6 +992,27 @@
                 <li><a href="#" class="nav-item" data-section="submissions">📋 Submissions</a></li>
                 <li><a href="#" class="nav-item" data-section="settings">🔧 Settings</a></li>
             </ul>
+
+            <div id="sidebarSuperActions" style="display:none;">
+                <div class="sidebar-section-title">Super Admin</div>
+                <div class="sidebar-actions">
+                    <button class="sidebar-btn" id="sbOpenPayments" type="button">💸 Payments
+                        <span class="sidebar-btn-sub">Generate batches, mark paid</span>
+                    </button>
+                    <button class="sidebar-btn" id="sbOpenAllClients" type="button">🧾 All Clients Overview
+                        <span class="sidebar-btn-sub">Filter by agent + eligibility</span>
+                    </button>
+                    <button class="sidebar-btn" id="sbOpenCorrectionPermits" type="button">🛠️ Correction Permits
+                        <span class="sidebar-btn-sub">Grant correction access</span>
+                    </button>
+                    <button class="sidebar-btn" id="sbOpenPortfolioUpload" type="button">📤 Portfolio Upload
+                        <span class="sidebar-btn-sub">Upload report + generate data</span>
+                    </button>
+                    <button class="sidebar-btn" id="sbOpenHistorical" type="button">🕓 Historical Backfill
+                        <span class="sidebar-btn-sub">Import old paid items</span>
+                    </button>
+                </div>
+            </div>
         </nav>
 
         <main class="main-content">
@@ -1012,6 +1074,21 @@
                     <div style="padding: 20px;">
                         <p style="color:#6b7280; font-size: 14px; margin-bottom: 12px;">Generate Monday payment batches, track deferred month-end payments, and mark payments by SC code.</p>
                         <button class="btn btn-primary" id="openFieldAgentPaymentsBtn" type="button">Open Payments</button>
+                    </div>
+                </div>
+
+                <div class="card" id="paymentRemindersCard" style="margin-top: 20px; display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Payment Reminders</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p style="color:#6b7280; font-size: 14px; margin-bottom: 12px;">Get reminders on Mondays (weekly pay) and on the 1st (month-end catch-up). If notifications are blocked, you will still see reminders here.</p>
+                        <div id="paymentRemindersBody" style="display:none;"></div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                            <button class="btn btn-primary" id="btnEnableAdminNotifications" type="button">Enable Notifications</button>
+                            <button class="btn btn-muted" id="btnOpenWeeklyPay" type="button">Open Weekly Pay</button>
+                            <button class="btn btn-muted" id="btnOpenMonthEndPay" type="button">Open Month End</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1298,6 +1375,160 @@
             });
         }
 
+        function startOfWeekMonday(d) {
+            const dt = new Date(d.getTime());
+            dt.setHours(0,0,0,0);
+            const day = dt.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        function formatYmd(d) {
+            return new Date(d.getTime()).toISOString().slice(0, 10);
+        }
+
+        function openPaymentsDeepLink(mode, date) {
+            const monday = startOfWeekMonday(date || new Date());
+            const weekStart = formatYmd(monday);
+            const url = `field-agent-payments.html?mode=${encodeURIComponent(mode)}&weekStart=${encodeURIComponent(weekStart)}`;
+            window.location.href = url;
+        }
+
+        function shouldShowMondayReminder(now) {
+            const d = now || new Date();
+            return d.getDay() === 1;
+        }
+
+        function shouldShowFirstOfMonthReminder(now) {
+            const d = now || new Date();
+            return d.getDate() === 1;
+        }
+
+        function notificationKeyForToday(kind) {
+            const d = new Date();
+            const ymd = d.toISOString().slice(0, 10);
+            return `adminReminderNotified:${kind}:${ymd}`;
+        }
+
+        function showAdminNotificationOnce(kind, title, body) {
+            try {
+                if (!('Notification' in window)) return;
+                if (Notification.permission !== 'granted') return;
+                const k = notificationKeyForToday(kind);
+                if (localStorage.getItem(k) === '1') return;
+                new Notification(title, { body });
+                localStorage.setItem(k, '1');
+            } catch (e) {
+            }
+        }
+
+        function renderPaymentReminders() {
+            const card = document.getElementById('paymentRemindersCard');
+            const body = document.getElementById('paymentRemindersBody');
+            if (!card || !body) return;
+            if (!isSuperAdmin()) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'block';
+
+            const now = new Date();
+            const reminders = [];
+
+            if (shouldShowMondayReminder(now)) {
+                reminders.push({
+                    kind: 'monday',
+                    title: 'Monday Payment Reminder',
+                    text: 'Today is Monday. Generate the weekly batch and pay eligible agents.'
+                });
+            }
+
+            if (shouldShowFirstOfMonthReminder(now)) {
+                reminders.push({
+                    kind: 'first',
+                    title: 'Month-End Payment Reminder',
+                    text: 'Today is the 1st. Run month-end catch-up for deferred eligible clients.'
+                });
+            }
+
+            if (!reminders.length) {
+                body.style.display = 'none';
+                body.innerHTML = '';
+                return;
+            }
+
+            body.style.display = 'block';
+            body.innerHTML = reminders.map(r => {
+                return `<div style="border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;padding:12px;margin-top:10px;">
+                    <div style="font-weight:800;color:#1e40af;">${r.title}</div>
+                    <div style="margin-top:6px;color:#6b7280;font-size:13px;">${r.text}</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                        <button class="btn btn-primary" type="button" data-reminder-open="${r.kind}">Go to Payments</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            Array.from(body.querySelectorAll('button[data-reminder-open]')).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const kind = String(btn.getAttribute('data-reminder-open') || '');
+                    if (kind === 'first') {
+                        openPaymentsDeepLink('month_end', now);
+                    } else {
+                        openPaymentsDeepLink('weekly', now);
+                    }
+                });
+            });
+
+            for (const r of reminders) {
+                const mode = (r.kind === 'first') ? 'month_end' : 'weekly';
+                showAdminNotificationOnce(r.kind, r.title, r.text + ' Tap to open Payments.');
+            }
+        }
+
+        function initPaymentRemindersUI() {
+            const card = document.getElementById('paymentRemindersCard');
+            if (!card) return;
+            if (!isSuperAdmin()) {
+                card.style.display = 'none';
+                return;
+            }
+
+            const enableBtn = document.getElementById('btnEnableAdminNotifications');
+            const weeklyBtn = document.getElementById('btnOpenWeeklyPay');
+            const monthEndBtn = document.getElementById('btnOpenMonthEndPay');
+
+            if (enableBtn) {
+                enableBtn.addEventListener('click', async () => {
+                    try {
+                        if (!('Notification' in window)) {
+                            showAlert('This browser does not support notifications.', 'warning');
+                            return;
+                        }
+                        const perm = await Notification.requestPermission();
+                        if (perm === 'granted') {
+                            showAlert('Notifications enabled. You will get reminders on payment dates.', 'success');
+                            renderPaymentReminders();
+                        } else {
+                            showAlert('Notifications not enabled. Reminders will still show inside the dashboard.', 'warning');
+                        }
+                    } catch (e) {
+                        showAlert('Failed to enable notifications: ' + (e?.message || String(e)), 'warning');
+                    }
+                });
+            }
+
+            if (weeklyBtn) {
+                weeklyBtn.addEventListener('click', () => openPaymentsDeepLink('weekly', new Date()));
+            }
+            if (monthEndBtn) {
+                monthEndBtn.addEventListener('click', () => openPaymentsDeepLink('month_end', new Date()));
+            }
+
+            renderPaymentReminders();
+            setInterval(() => renderPaymentReminders(), 60000);
+        }
+
         function initCorrectionPermitsUI() {
             const card = document.getElementById('correctionPermitsCard');
             const btn = document.getElementById('openCorrectionPermitsBtn');
@@ -1312,6 +1543,30 @@
             btn.addEventListener('click', () => {
                 window.location.href = 'correction-permits.html';
             });
+        }
+
+        function initSidebarSuperActionsUI() {
+            const wrap = document.getElementById('sidebarSuperActions');
+            if (!wrap) return;
+
+            if (!isSuperAdmin()) {
+                wrap.style.display = 'none';
+                return;
+            }
+
+            wrap.style.display = 'block';
+
+            const btnPayments = document.getElementById('sbOpenPayments');
+            const btnAllClients = document.getElementById('sbOpenAllClients');
+            const btnPermits = document.getElementById('sbOpenCorrectionPermits');
+            const btnPortfolio = document.getElementById('sbOpenPortfolioUpload');
+            const btnHist = document.getElementById('sbOpenHistorical');
+
+            if (btnPayments) btnPayments.addEventListener('click', () => { window.location.href = 'field-agent-payments.html'; });
+            if (btnAllClients) btnAllClients.addEventListener('click', () => { window.location.href = 'all-clients-overview.html'; });
+            if (btnPermits) btnPermits.addEventListener('click', () => { window.location.href = 'correction-permits.html'; });
+            if (btnPortfolio) btnPortfolio.addEventListener('click', () => { window.location.href = 'portfolio-upload.html'; });
+            if (btnHist) btnHist.addEventListener('click', () => { window.location.href = 'historical-payments.html'; });
         }
 
         function clearAdminForm() {
@@ -1904,6 +2159,8 @@
             initPortfolioUploadUI();
             initFieldAgentPaymentsUI();
             initCorrectionPermitsUI();
+            initPaymentRemindersUI();
+            initSidebarSuperActionsUI();
 
             if ((localStorage.getItem('adminRole') || '').trim() === 'super') {
                 loadAdmins().catch(() => {});
