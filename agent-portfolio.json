@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T12:39:11.575Z",
-  "lastUpdated": "2026-03-19T12:39:11.580Z",
+  "generatedAt": "2026-03-21T02:39:56.872Z",
+  "lastUpdated": "2026-03-21T02:39:56.872Z",
   "reportWeekMonday": "2026-03-08",
   "reportWeekRange": {
     "start": "2026-03-08",
@@ -12,8 +12,8 @@
       "agentName": "Shibuta Aziz Abdallah",
       "nameCandidate": "Shibuta Aziz Abdallah",
       "scCode": "01278593",
-      "txnsLastWeek": 59,
-      "valueLastWeekUGX": 853000,
+      "txnsLastWeek": 67,
+      "valueLastWeekUGX": 1049000,
       "currency": "UGX",
       "matchedClientName": "Shibuta  Aziz Abdallah",
       "matchScore": 1
@@ -22,8 +22,8 @@
       "agentName": "OWORI INNOCENT",
       "nameCandidate": "OWORI INNOCENT",
       "scCode": "56308178",
-      "txnsLastWeek": 11,
-      "valueLastWeekUGX": 557824,
+      "txnsLastWeek": 1,
+      "valueLastWeekUGX": 1824,
       "currency": "UGX",
       "matchedClientName": "OWORI INNOCENT",
       "matchScore": 1
@@ -86,6 +86,26 @@
       "valueLastWeekUGX": 0,
       "currency": "UGX",
       "matchedClientName": "WETAKA MARGARET",
+      "matchScore": 1
+    },
+    {
+      "agentName": "Wakhata Isaiah",
+      "nameCandidate": "Wakhata Isaiah",
+      "scCode": "85439780",
+      "txnsLastWeek": 9,
+      "valueLastWeekUGX": 82000,
+      "currency": "UGX",
+      "matchedClientName": "Wakhata Isaiah",
+      "matchScore": 1
+    },
+    {
+      "agentName": "SEERA DIANA",
+      "nameCandidate": "SEERA DIANA",
+      "scCode": "87770099",
+      "txnsLastWeek": 12,
+      "valueLastWeekUGX": 54000,
+      "currency": "UGX",
+      "matchedClientName": "SEERA DIANA",
       "matchScore": 1
     }
   ],
