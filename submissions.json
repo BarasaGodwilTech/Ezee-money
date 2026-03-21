@@ -342,8 +342,37 @@
       },
       "submissionDate": "2026-03-21T15:25:16.137Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1774109157799-9j5bu9ucp",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "NAMUDOSI SUMAYA",
+        "phoneNumber": "0745469839",
+        "email": "wandohobilari@gmail.com",
+        "nationalId": "CF980261041G8F",
+        "dob": "1998-02-23",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "businessCoordinates": "1.047498362505565, 34.17975566992596",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Bilali wadoho",
+        "nextOfKinRelationship": "other_relative",
+        "nextOfKinPhone": "0742669056"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774109157799-9j5bu9ucp/idFront_1774109157839.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774109157799-9j5bu9ucp/idBack_1774109177917.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774109157799-9j5bu9ucp/agentPhoto_1774109190832.jpg"
+      },
+      "submissionDate": "2026-03-21T16:06:46.655Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-21T15:25:16.617Z",
-  "totalSubmissions": 12
+  "lastUpdated": "2026-03-21T16:06:47.581Z",
+  "totalSubmissions": 13
 }
