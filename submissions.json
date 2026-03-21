@@ -284,8 +284,37 @@
       },
       "submissionDate": "2026-03-19T16:44:02.419Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1774093296684-1eo48t7uc",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Kakai Mirriam Bukoma",
+        "phoneNumber": "0744849049",
+        "email": "kakaimirriam50@gmail.com",
+        "nationalId": "CF0108910672DH",
+        "dob": "2001-04-21",
+        "gender": "female",
+        "businessAddress": "Nauyo",
+        "businessCoordinates": "1.0587627319150072, 34.17545063044367",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Catherine wamukota",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0781120293"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774093296684-1eo48t7uc/idFront_1774093296759.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774093296684-1eo48t7uc/idBack_1774093305015.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774093296684-1eo48t7uc/agentPhoto_1774093317289.jpg"
+      },
+      "submissionDate": "2026-03-21T11:42:43.973Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-21T06:22:45.323Z",
-  "totalSubmissions": 10
+  "lastUpdated": "2026-03-21T11:42:45.853Z",
+  "totalSubmissions": 11
 }
