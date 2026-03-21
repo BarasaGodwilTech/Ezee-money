@@ -180,6 +180,7 @@
             object-fit: cover;
             display: none;
             background: #fff;
+            z-index: 1;
         }
 
         .photo-upload-area.has-image .photo-thumb {
@@ -194,7 +195,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            pointer-events: none;
+            z-index: 3;
+            pointer-events: auto;
         }
 
         .photo-action-btn {
