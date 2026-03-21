@@ -152,7 +152,7 @@
             padding-bottom: 92px;
             text-align: center;
             background: white;
-            cursor: pointer;
+            cursor: default;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -626,7 +626,7 @@
                             <div class="photo-icon">
                                 <i class="fas fa-id-card"></i>
                             </div>
-                            <p><strong>Tap to upload ID front</strong></p>
+                            <p><strong>Use the buttons below</strong></p>
                             <div class="remove-photo" data-target="idFront">
                                 <i class="fas fa-times"></i>
                             </div>
@@ -646,7 +646,7 @@
                             <div class="photo-icon">
                                 <i class="fas fa-id-card"></i>
                             </div>
-                            <p><strong>Tap to upload ID back</strong></p>
+                            <p><strong>Use the buttons below</strong></p>
                             <div class="remove-photo" data-target="idBack">
                                 <i class="fas fa-times"></i>
                             </div>
@@ -667,7 +667,7 @@
                         <div class="photo-icon">
                             <i class="fas fa-user-circle"></i>
                         </div>
-                        <p><strong>Tap to upload agent photo</strong></p>
+                        <p><strong>Use the buttons below</strong></p>
                         <p style="color: #666; font-size: 14px;">Clear face photo for identification</p>
                         <div class="remove-photo" data-target="agentPhoto">
                             <i class="fas fa-times"></i>
@@ -1111,9 +1111,7 @@
                 };
 
                 upload.addEventListener('click', (e) => {
-                    const t = e && e.target ? e.target : null;
-                    if (t && (t.closest && (t.closest('button') || t.closest('.remove-photo') || t.closest('.photo-actions')))) return;
-                    camInput.click();
+                    return;
                 });
                 if (camBtn) camBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); camInput.click(); });
                 if (galBtn) galBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); galInput.click(); });
