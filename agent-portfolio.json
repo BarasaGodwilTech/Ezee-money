@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-03-21T02:39:56.872Z",
-  "lastUpdated": "2026-03-21T02:39:56.872Z",
+  "generatedAt": "2026-03-22T20:09:56.648Z",
+  "lastUpdated": "2026-03-22T20:09:56.648Z",
   "reportWeekMonday": "2026-03-08",
   "reportWeekRange": {
     "start": "2026-03-08",
     "end": "2026-03-15"
   },
-  "uploadPurpose": "daily_snapshot",
+  "uploadPurpose": "pay_week",
   "rows": [
     {
       "agentName": "Shibuta Aziz Abdallah",
       "nameCandidate": "Shibuta Aziz Abdallah",
       "scCode": "01278593",
-      "txnsLastWeek": 67,
-      "valueLastWeekUGX": 1049000,
+      "txnsLastWeek": 60,
+      "valueLastWeekUGX": 962300,
       "currency": "UGX",
       "matchedClientName": "Shibuta  Aziz Abdallah",
       "matchScore": 1
@@ -32,8 +32,8 @@
       "agentName": "NAMUKONGO FRANCIS",
       "nameCandidate": "NAMUKONGO FRANCIS",
       "scCode": "46116222",
-      "txnsLastWeek": 92,
-      "valueLastWeekUGX": 1546100,
+      "txnsLastWeek": 48,
+      "valueLastWeekUGX": 44000,
       "currency": "UGX",
       "matchedClientName": "NAMUKONGO FRANCIS",
       "matchScore": 1
@@ -42,8 +42,8 @@
       "agentName": "Namono Recheal",
       "nameCandidate": "Namono Recheal",
       "scCode": "66699714",
-      "txnsLastWeek": 31,
-      "valueLastWeekUGX": 454900,
+      "txnsLastWeek": 85,
+      "valueLastWeekUGX": 1136200,
       "currency": "UGX",
       "matchedClientName": "Namono Recheal",
       "matchScore": 1
@@ -52,8 +52,8 @@
       "agentName": "NAMBUYA SHAMILAH",
       "nameCandidate": "NAMBUYA SHAMILAH",
       "scCode": "61270903",
-      "txnsLastWeek": 17,
-      "valueLastWeekUGX": 60600,
+      "txnsLastWeek": 0,
+      "valueLastWeekUGX": 0,
       "currency": "UGX",
       "matchedClientName": "NAMBUYA SHAMILAH",
       "matchScore": 1
@@ -72,8 +72,8 @@
       "agentName": "Mr Hirya joshua malwa",
       "nameCandidate": "Mr Hirya joshua malwa",
       "scCode": "56084021",
-      "txnsLastWeek": 10,
-      "valueLastWeekUGX": 238000,
+      "txnsLastWeek": 9,
+      "valueLastWeekUGX": 237000,
       "currency": "UGX",
       "matchedClientName": "Hirya joshua malwa",
       "matchScore": 0.75
@@ -82,8 +82,8 @@
       "agentName": "WETAKA MARGARET",
       "nameCandidate": "WETAKA MARGARET",
       "scCode": "46500687",
-      "txnsLastWeek": 0,
-      "valueLastWeekUGX": 0,
+      "txnsLastWeek": 2,
+      "valueLastWeekUGX": 3000,
       "currency": "UGX",
       "matchedClientName": "WETAKA MARGARET",
       "matchScore": 1
@@ -92,8 +92,8 @@
       "agentName": "Wakhata Isaiah",
       "nameCandidate": "Wakhata Isaiah",
       "scCode": "85439780",
-      "txnsLastWeek": 9,
-      "valueLastWeekUGX": 82000,
+      "txnsLastWeek": 21,
+      "valueLastWeekUGX": 109500,
       "currency": "UGX",
       "matchedClientName": "Wakhata Isaiah",
       "matchScore": 1
@@ -102,10 +102,30 @@
       "agentName": "SEERA DIANA",
       "nameCandidate": "SEERA DIANA",
       "scCode": "87770099",
-      "txnsLastWeek": 12,
-      "valueLastWeekUGX": 54000,
+      "txnsLastWeek": 20,
+      "valueLastWeekUGX": 90500,
       "currency": "UGX",
       "matchedClientName": "SEERA DIANA",
+      "matchScore": 1
+    },
+    {
+      "agentName": "Kakai Mirriam Bukoma",
+      "nameCandidate": "Kakai Mirriam Bukoma",
+      "scCode": "54848978",
+      "txnsLastWeek": 2,
+      "valueLastWeekUGX": 11000,
+      "currency": "UGX",
+      "matchedClientName": "Kakai Mirriam Bukoma",
+      "matchScore": 1
+    },
+    {
+      "agentName": "Sulwa eve",
+      "nameCandidate": "Sulwa eve",
+      "scCode": "50754160",
+      "txnsLastWeek": 0,
+      "valueLastWeekUGX": 0,
+      "currency": "UGX",
+      "matchedClientName": "Sulwa eve",
       "matchScore": 1
     }
   ],
