@@ -166,7 +166,7 @@
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773483739344-sgz193wyg/agentPhoto_1773483783258.jpg"
       },
       "submissionDate": "2026-03-14T10:23:13.617Z",
-      "status": "pending"
+      "status": "verified"
     },
     {
       "id": "SUB-1773499715066-ltkmquaei",
@@ -431,6 +431,6 @@
       "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-22T20:44:07.580Z",
+  "lastUpdated": "2026-03-22T20:44:13.590Z",
   "totalSubmissions": 15
 }
