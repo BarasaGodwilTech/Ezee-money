@@ -194,7 +194,7 @@
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773499715066-ltkmquaei/agentPhoto_1773499741035.jpg"
       },
       "submissionDate": "2026-03-14T14:49:09.269Z",
-      "status": "pending"
+      "status": "verified"
     },
     {
       "id": "SUB-1773588449437-db2u6yudy",
@@ -222,7 +222,7 @@
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1773588449437-db2u6yudy/agentPhoto_1773588477604.jpg"
       },
       "submissionDate": "2026-03-15T15:28:07.494Z",
-      "status": "verified"
+      "status": "pending"
     },
     {
       "id": "SUB-1773930056124-0ei8sbo0o",
@@ -341,7 +341,7 @@
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774106654909-y2uvn9kq1/agentPhoto_1774106698692.jpg"
       },
       "submissionDate": "2026-03-21T15:25:16.137Z",
-      "status": "verified"
+      "status": "pending"
     },
     {
       "id": "SUB-1774109157799-9j5bu9ucp",
@@ -370,7 +370,7 @@
         "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774109157799-9j5bu9ucp/agentPhoto_1774109190832.jpg"
       },
       "submissionDate": "2026-03-21T16:06:46.655Z",
-      "status": "pending"
+      "status": "verified"
     },
     {
       "id": "SUB-1774192225299-356bw890h",
@@ -431,6 +431,6 @@
       "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-22T20:44:25.864Z",
+  "lastUpdated": "2026-03-22T20:44:28.733Z",
   "totalSubmissions": 15
 }
