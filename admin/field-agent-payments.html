@@ -432,6 +432,43 @@
             return `${y}-${m}-${day}`;
         }
 
+        function formatYm(d) {
+            const dt = new Date(d.getTime());
+            const y = dt.getFullYear();
+            const m = pad2(dt.getMonth() + 1);
+            return `${y}-${m}`;
+        }
+
+        function parseYmdLocal(ymd) {
+            const v = String(ymd || '').trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+            const d = new Date(v + 'T00:00:00');
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function parseYmLocal(ym) {
+            const v = String(ym || '').trim();
+            if (!/^\d{4}-\d{2}$/.test(v)) return null;
+            const d = new Date(v + '-01T00:00:00');
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function monthDiff(aYm, bYm) {
+            const a = parseYmLocal(aYm);
+            const b = parseYmLocal(bYm);
+            if (!a || !b) return null;
+            return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+        }
+
+        function compareWeekKeys(a, b) {
+            const da = parseYmdLocal(a);
+            const db = parseYmdLocal(b);
+            if (!da || !db) return 0;
+            const ta = da.getTime();
+            const tb = db.getTime();
+            return ta === tb ? 0 : (ta < tb ? -1 : 1);
+        }
+
         function updateWeekRangeHint(monday) {
             const hint = document.getElementById('weekRangeHint');
             if (!hint) return;
@@ -443,6 +480,22 @@
             mon.setHours(0,0,0,0);
             const sun = endOfWeekSundayFromMonday(mon);
             hint.textContent = `Week: ${formatYmd(mon)} to ${formatYmd(sun)}`;
+        }
+
+        function updateMonthRangeHint(anchorDate) {
+            const hint = document.getElementById('weekRangeHint');
+            if (!hint) return;
+            if (!anchorDate || isNaN(anchorDate.getTime())) {
+                hint.textContent = 'Month: —';
+                return;
+            }
+            const anchor = new Date(anchorDate.getTime());
+            anchor.setHours(0,0,0,0);
+            const monthStart = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
+            monthStart.setHours(0,0,0,0);
+            const monthEnd = new Date(anchor.getFullYear(), anchor.getMonth(), 0);
+            monthEnd.setHours(23,59,59,999);
+            hint.textContent = `Month: ${formatYmd(monthStart)} to ${formatYmd(monthEnd)}`;
         }
 
         function coerceInputDateToMonday() {
@@ -459,6 +512,26 @@
             if (el.value !== coerced) {
                 el.value = coerced;
             }
+            updateWeekRangeHint(monday);
+            return monday;
+        }
+
+        function getSelectedAnchorDateForMode(mode) {
+            const el = document.getElementById('weekStart');
+            if (!el) return null;
+            const v = String(el.value || '').trim();
+            if (!v) return null;
+            const picked = new Date(v + 'T00:00:00');
+            if (isNaN(picked.getTime())) return null;
+
+            if (mode === 'month_end') {
+                updateMonthRangeHint(picked);
+                return picked;
+            }
+
+            const monday = startOfWeekMonday(picked);
+            const coerced = formatYmd(monday);
+            if (el.value !== coerced) el.value = coerced;
             updateWeekRangeHint(monday);
             return monday;
         }
@@ -608,6 +681,41 @@
             return obj;
         }
 
+        function ensureClientFlag(id) {
+            if (!flags) flags = ensureFlagsShape(null);
+            if (!flags.clients) flags.clients = {};
+            if (!flags.clients[id]) flags.clients[id] = {};
+            return flags.clients[id];
+        }
+
+        function maybeUpdateHit10Flags(selectedWeekMonday) {
+            const pRows = (portfolio && Array.isArray(portfolio.rows)) ? portfolio.rows : [];
+            const pIdx = buildPortfolioIndex(pRows);
+
+            const weekKey = selectedWeekMonday ? formatYmd(selectedWeekMonday) : null;
+            if (!weekKey) return false;
+
+            let changed = false;
+            for (const s of (submissions || [])) {
+                const id = String(s && s.id || '').trim();
+                if (!id) continue;
+
+                const c = s.clientInfo || {};
+                const pRow = getClientPortfolioRow(c, pIdx);
+                const txns = pRow && pRow.txnsLastWeek !== undefined && pRow.txnsLastWeek !== null ? Number(pRow.txnsLastWeek) : null;
+                if (txns === null || !(txns >= 10)) continue;
+
+                const f = ensureClientFlag(id);
+                if (!f.firstHit10WeekMondayKey || compareWeekKeys(weekKey, f.firstHit10WeekMondayKey) < 0) {
+                    f.firstHit10WeekMondayKey = weekKey;
+                    f.firstHit10UpdatedAt = new Date().toISOString();
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
         function computeEligibility(paymentWeekMonday, mode) {
             const pRows = (portfolio && Array.isArray(portfolio.rows)) ? portfolio.rows : [];
             const pIdx = buildPortfolioIndex(pRows);
@@ -657,9 +765,27 @@
                 }
 
                 if (mode === 'month_end') {
-                    const eligibleWeekKey = hasTenTx ? targetWeekKey : null;
-                    const missedRegistrationWeek = (regWeekKey !== targetWeekKey);
-                    eligible = missedRegistrationWeek && isActivated && hasTenTx;
+                    const anchor = new Date(paymentWeekMonday.getTime());
+                    anchor.setHours(0,0,0,0);
+
+                    const targetMonthStart = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
+                    targetMonthStart.setHours(0,0,0,0);
+
+                    const targetMonthEnd = new Date(anchor.getFullYear(), anchor.getMonth(), 0);
+                    targetMonthEnd.setHours(23,59,59,999);
+
+                    const targetYm = formatYm(targetMonthStart);
+                    const regYm = formatYm(regDate);
+                    const diffMonths = monthDiff(regYm, targetYm);
+
+                    const withinAllowedRollover = (diffMonths !== null) && diffMonths >= 0 && diffMonths <= 2;
+
+                    const f = (flags && flags.clients) ? flags.clients[id] : null;
+                    const hitWeekKey = f && f.firstHit10WeekMondayKey ? String(f.firstHit10WeekMondayKey) : '';
+                    const hitMonday = hitWeekKey ? parseYmdLocal(hitWeekKey) : null;
+                    const hitAt = hitMonday ? endOfWeekSundayFromMonday(hitMonday) : null;
+
+                    eligible = withinAllowedRollover && isActivated && !!hitAt && hitAt <= targetMonthEnd;
                     payType = 'month_end';
                 }
 
@@ -1146,6 +1272,16 @@
             updateWeekRangeHint(monday);
         }
 
+        function ensureMonthEndDefaultIfEmpty() {
+            const el = document.getElementById('weekStart');
+            if (!el || el.value) return;
+            const now = new Date();
+            const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            firstOfThisMonth.setHours(0,0,0,0);
+            el.value = formatYmd(firstOfThisMonth);
+            updateMonthRangeHint(firstOfThisMonth);
+        }
+
         function populateAgentFilter() {
             const sel = document.getElementById('agentFilter');
             const current = String(sel.value || '');
@@ -1217,27 +1353,32 @@
         async function generateBatch() {
             hideAlert();
 
-            const monday = coerceInputDateToMonday();
-            if (!monday) {
-                showAlert('Please select the payment Monday date.', 'error');
+            const mode = String(document.getElementById('batchMode').value || 'weekly');
+            const anchorDate = getSelectedAnchorDateForMode(mode);
+            if (!anchorDate) {
+                showAlert(mode === 'month_end' ? 'Please select a date (recommended: the 1st of the month you are paying on).' : 'Please select the payment Monday date.', 'error');
                 return;
             }
 
-            // If portfolio upload metadata exists, warn (do not block) when using daily snapshots.
+            if (mode === 'weekly') {
+                const monday = startOfWeekMonday(anchorDate);
+                const changed = maybeUpdateHit10Flags(monday);
+                if (changed) {
+                    await saveFlags();
+                }
+            }
+
             showNonBlockingPortfolioPurposeWarning();
 
-            // If portfolio report week metadata exists, warn (do not block) when mismatch.
-            showNonBlockingWeekMismatchWarning(monday);
+            if (mode === 'weekly') {
+                showNonBlockingWeekMismatchWarning(startOfWeekMonday(anchorDate));
+            }
 
-            const mode = String(document.getElementById('batchMode').value || 'weekly');
-
-            batchRows = computeEligibility(monday, mode);
+            batchRows = computeEligibility(anchorDate, mode);
 
             updateKpis(batchRows, mode);
             renderBatch(batchRows);
 
-            // If a mismatch warning was already shown above, keep it visible.
-            // Otherwise show success.
             const alertEl = document.getElementById('alert');
             const hasWarning = alertEl && alertEl.style.display !== 'none' && (alertEl.className || '').includes('error');
             if (!hasWarning) {
@@ -1365,7 +1506,27 @@
             });
 
             document.getElementById('weekStart').addEventListener('change', () => {
-                coerceInputDateToMonday();
+                const mode = String(document.getElementById('batchMode').value || 'weekly');
+                getSelectedAnchorDateForMode(mode);
+            });
+
+            document.getElementById('batchMode').addEventListener('change', () => {
+                const mode = String(document.getElementById('batchMode').value || 'weekly');
+                const el = document.getElementById('weekStart');
+                if (mode === 'month_end') {
+                    if (!String(el.value || '').trim()) {
+                        ensureMonthEndDefaultIfEmpty();
+                    } else {
+                        const d = parseYmdLocal(el.value);
+                        updateMonthRangeHint(d || new Date());
+                    }
+                } else {
+                    if (!String(el.value || '').trim()) {
+                        ensureWeekStartDefault();
+                    } else {
+                        coerceInputDateToMonday();
+                    }
+                }
             });
 
 
