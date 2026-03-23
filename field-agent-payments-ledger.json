@@ -59,7 +59,7 @@
     },
     "SUB-1773930056124-0ei8sbo0o": {
       "status": "paid",
-      "paidAt": "2026-03-23T13:38:34.311Z",
+      "paidAt": "2026-03-23T13:40:17.847Z",
       "amountUGX": 5000,
       "payType": "weekly",
       "registrationWeekKey": "2026-03-16",
@@ -73,7 +73,7 @@
     },
     "SUB-1773938592458-ofbjsjbvk": {
       "status": "paid",
-      "paidAt": "2026-03-23T13:38:34.311Z",
+      "paidAt": "2026-03-23T13:40:17.847Z",
       "amountUGX": 5000,
       "payType": "weekly",
       "registrationWeekKey": "2026-03-16",
@@ -86,7 +86,7 @@
       "clientScCode": "85439780"
     }
   },
-  "lastUpdated": "2026-03-23T13:38:34.320Z",
+  "lastUpdated": "2026-03-23T13:40:20.109Z",
   "payments": [
     {
       "submissionId": "SUB-1773483739344-sgz193wyg",
@@ -126,7 +126,7 @@
     },
     {
       "submissionId": "SUB-1773930056124-0ei8sbo0o",
-      "paidAt": "2026-03-23T13:38:34.311Z",
+      "paidAt": "2026-03-23T13:40:17.847Z",
       "amountUGX": 5000,
       "payType": "weekly",
       "batchWeekKey": "2026-03-16",
@@ -135,7 +135,7 @@
     },
     {
       "submissionId": "SUB-1773938592458-ofbjsjbvk",
-      "paidAt": "2026-03-23T13:38:34.311Z",
+      "paidAt": "2026-03-23T13:40:17.847Z",
       "amountUGX": 5000,
       "payType": "weekly",
       "batchWeekKey": "2026-03-16",
