@@ -410,7 +410,7 @@
 
         function weekKeyForDate(d) {
             const wk = startOfWeekMonday(d);
-            return wk.toISOString().slice(0, 10);
+            return formatYmd(wk);
         }
 
         function endOfWeekSundayFromMonday(monday) {
@@ -420,8 +420,16 @@
             return d;
         }
 
+        function pad2(n) {
+            return String(n).padStart(2, '0');
+        }
+
         function formatYmd(d) {
-            return new Date(d.getTime()).toISOString().slice(0, 10);
+            const dt = new Date(d.getTime());
+            const y = dt.getFullYear();
+            const m = pad2(dt.getMonth() + 1);
+            const day = pad2(dt.getDate());
+            return `${y}-${m}-${day}`;
         }
 
         function updateWeekRangeHint(monday) {
@@ -609,7 +617,7 @@
             monday.setHours(0,0,0,0);
             const sunday = endOfWeekSundayFromMonday(monday);
 
-            const targetWeekKey = monday.toISOString().slice(0, 10);
+            const targetWeekKey = formatYmd(monday);
 
             const rows = [];
             for (const s of (submissions || [])) {
@@ -1134,7 +1142,7 @@
             if (el.value) return;
             const today = new Date();
             const monday = startOfWeekMonday(today);
-            el.value = monday.toISOString().slice(0, 10);
+            el.value = formatYmd(monday);
             updateWeekRangeHint(monday);
         }
 
@@ -1248,7 +1256,7 @@
             const mode = String(document.getElementById('batchMode').value || 'weekly');
             const wkVal = String(document.getElementById('weekStart').value || '').trim();
             const monday = new Date(wkVal + 'T00:00:00');
-            const weekKey = monday.toISOString().slice(0, 10);
+            const weekKey = formatYmd(monday);
 
             const now = new Date().toISOString();
 
@@ -1412,7 +1420,7 @@
 
             const paidEl = document.getElementById('historicalPaidDate');
             if (paidEl && !String(paidEl.value || '').trim()) {
-                paidEl.value = new Date().toISOString().slice(0, 10);
+                paidEl.value = formatYmd(new Date());
             }
 
             applyUrlParams();
