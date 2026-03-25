@@ -192,7 +192,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Report Week (Monday)</label>
+                    <label id="reportDateLabel">Report Week (Monday)</label>
                     <input type="date" id="reportWeekMonday">
                     <div class="help" id="reportWeekHint" style="margin-top:6px;">Week: —</div>
                 </div>
@@ -1661,8 +1661,10 @@
             const payload = {
                 generatedAt: new Date().toISOString(),
                 lastUpdated: new Date().toISOString(),
-                reportWeekMonday: reportWeekMonday ? formatYmd(reportWeekMonday) : null,
-                reportWeekRange: reportWeekMonday ? { start: formatYmd(reportWeekMonday), end: formatYmd(endOfWeekSundayFromMonday(reportWeekMonday)) } : null,
+                reportWeekMonday: uploadPurpose === 'pay_week' && reportWeekMonday ? formatYmd(reportWeekMonday) : null,
+                reportWeekRange: uploadPurpose === 'pay_week' && reportWeekMonday ? { start: formatYmd(reportWeekMonday), end: formatYmd(endOfWeekSundayFromMonday(reportWeekMonday)) } : null,
+                snapshotDate: uploadPurpose === 'daily_snapshot' && reportWeekMonday ? formatYmd(reportWeekMonday) : null,
+                snapshotRange: uploadPurpose === 'daily_snapshot' && reportWeekMonday ? { start: formatYmd(addDays(reportWeekMonday, -6)), end: formatYmd(reportWeekMonday) } : null,
                 uploadPurpose,
                 rows: Array.from(merged.values()),
                 source: {
@@ -1734,8 +1736,29 @@
             return d;
         }
 
+        function pad2(n) {
+            return String(n).padStart(2, '0');
+        }
+
         function formatYmd(d) {
-            return new Date(d.getTime()).toISOString().slice(0, 10);
+            const dt = new Date(d.getTime());
+            const y = dt.getFullYear();
+            const m = pad2(dt.getMonth() + 1);
+            const day = pad2(dt.getDate());
+            return `${y}-${m}-${day}`;
+        }
+
+        function addDays(date, days) {
+            const d = new Date(date.getTime());
+            d.setDate(d.getDate() + Number(days || 0));
+            return d;
+        }
+
+        function parseYmdLocal(ymd) {
+            const v = String(ymd || '').trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+            const d = new Date(v + 'T00:00:00');
+            return isNaN(d.getTime()) ? null : d;
         }
 
         function updateReportWeekHint(monday) {
@@ -1751,6 +1774,32 @@
             hint.textContent = `Week: ${formatYmd(mon)} to ${formatYmd(sun)}`;
         }
 
+        function updateSnapshotHint(anchorDate) {
+            const hint = document.getElementById('reportWeekHint');
+            if (!hint) return;
+            if (!anchorDate || isNaN(anchorDate.getTime())) {
+                hint.textContent = 'Snapshot: —';
+                return;
+            }
+            const end = new Date(anchorDate.getTime());
+            end.setHours(23,59,59,999);
+            const start = new Date(anchorDate.getTime());
+            start.setDate(start.getDate() - 6);
+            start.setHours(0,0,0,0);
+            hint.textContent = `Snapshot: ${formatYmd(start)} to ${formatYmd(end)}`;
+        }
+
+        function syncPurposeUi(purpose) {
+            const lbl = document.getElementById('reportDateLabel');
+            const hint = document.getElementById('reportWeekHint');
+            if (lbl) {
+                lbl.textContent = purpose === 'pay_week' ? 'Report Week (Monday)' : 'Snapshot Date (as of)';
+            }
+            if (hint && !String(hint.textContent || '').trim()) {
+                hint.textContent = purpose === 'pay_week' ? 'Week: —' : 'Snapshot: —';
+            }
+        }
+
         function coerceReportWeekMonday() {
             const el = document.getElementById('reportWeekMonday');
             if (!el) return null;
@@ -1758,11 +1807,20 @@
             if (!val) return null;
             const picked = new Date(val + 'T00:00:00');
             if (isNaN(picked.getTime())) return null;
-            const monday = startOfWeekMonday(picked);
-            const coerced = formatYmd(monday);
-            if (el.value !== coerced) el.value = coerced;
-            updateReportWeekHint(monday);
-            return monday;
+            const purpose = getUploadPurpose();
+            syncPurposeUi(purpose);
+            if (purpose === 'pay_week') {
+                const monday = startOfWeekMonday(picked);
+                const coerced = formatYmd(monday);
+                if (el.value !== coerced) el.value = coerced;
+                updateReportWeekHint(monday);
+                return monday;
+            }
+
+            const ymd = formatYmd(picked);
+            if (el.value !== ymd) el.value = ymd;
+            updateSnapshotHint(picked);
+            return picked;
         }
 
         function getUploadPurpose() {
@@ -1775,13 +1833,25 @@
         function ensureReportWeekDefault() {
             const el = document.getElementById('reportWeekMonday');
             if (!el) return;
+            const purpose = getUploadPurpose();
+            syncPurposeUi(purpose);
+
             if (String(el.value || '').trim()) {
                 coerceReportWeekMonday();
                 return;
             }
-            const monday = startOfWeekMonday(new Date());
-            el.value = formatYmd(monday);
-            updateReportWeekHint(monday);
+
+            if (purpose === 'pay_week') {
+                const monday = startOfWeekMonday(new Date());
+                el.value = formatYmd(monday);
+                updateReportWeekHint(monday);
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            el.value = formatYmd(today);
+            updateSnapshotHint(today);
         }
 
         async function init() {
@@ -1811,6 +1881,10 @@
 
             document.getElementById('reportWeekMonday').addEventListener('change', () => {
                 coerceReportWeekMonday();
+            });
+
+            document.getElementById('uploadPurpose').addEventListener('change', () => {
+                ensureReportWeekDefault();
             });
 
             document.getElementById('btnOpenPayments').addEventListener('click', () => {
