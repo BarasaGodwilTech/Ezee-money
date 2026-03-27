@@ -429,8 +429,37 @@
       },
       "submissionDate": "2026-03-22T15:51:08.312Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1774608024353-pd65gsfa7",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Oundo Felix Ouma",
+        "phoneNumber": "0700878001",
+        "email": "Oundofilex2@gmail.com",
+        "nationalId": "CM9904210FLA8J",
+        "dob": "1999-09-08",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "businessCoordinates": "1.0505901, 34.1892943",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "Gizamba Fred",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0703886857"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774608024353-pd65gsfa7/idFront_1774608024443.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774608024353-pd65gsfa7/idBack_1774608055792.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1774608024353-pd65gsfa7/agentPhoto_1774608068535.jpg"
+      },
+      "submissionDate": "2026-03-27T10:41:23.279Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-22T20:44:30.985Z",
-  "totalSubmissions": 15
+  "lastUpdated": "2026-03-27T10:41:25.835Z",
+  "totalSubmissions": 16
 }
