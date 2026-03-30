@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-03-30T10:20:42.614Z",
-  "lastUpdated": "2026-03-30T10:20:42.614Z",
-  "reportWeekMonday": "2026-03-30",
+  "generatedAt": "2026-03-30T10:55:15.905Z",
+  "lastUpdated": "2026-03-30T10:55:15.906Z",
+  "reportWeekMonday": "2026-03-23",
   "reportWeekRange": {
-    "start": "2026-03-30",
-    "end": "2026-04-05"
+    "start": "2026-03-23",
+    "end": "2026-03-29"
   },
   "snapshotDate": null,
   "snapshotRange": null,
@@ -51,12 +51,13 @@
       "matchScore": 1
     },
     {
-      "agentName": "NAMBUYA SHAMILAH",
-      "matchedClientName": "NAMBUYA SHAMILAH",
+      "agentName": "NAMUDOSI SUMAYA",
+      "nameCandidate": "NAMUDOSI SUMAYA",
       "scCode": "61270903",
       "txnsLastWeek": 0,
       "valueLastWeekUGX": 0,
       "currency": "UGX",
+      "matchedClientName": "NAMBUYA SHAMILAH",
       "matchScore": 1
     },
     {
@@ -130,12 +131,11 @@
     },
     {
       "agentName": "NAMUDOSI SUMAYA",
-      "nameCandidate": "NAMUDOSI SUMAYA",
+      "matchedClientName": "NAMBUYA SHAMILAH",
       "scCode": "34666083",
       "txnsLastWeek": 41,
       "valueLastWeekUGX": 217200,
       "currency": "UGX",
-      "matchedClientName": "NAMBUYA SHAMILAH",
       "matchScore": 1
     },
     {
