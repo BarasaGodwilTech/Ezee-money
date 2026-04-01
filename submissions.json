@@ -458,8 +458,37 @@
       },
       "submissionDate": "2026-03-27T10:41:23.279Z",
       "status": "pending"
+    },
+    {
+      "id": "SUB-1775031339220-llr4sznxj",
+      "submittedBy": {
+        "agentName": "TIMOTHY KIBUKUNA",
+        "agentScCode": "05544657",
+        "agentId": "1772033414438"
+      },
+      "clientInfo": {
+        "fullName": "Isiiko Alex",
+        "phoneNumber": "0787847653",
+        "email": "isiikalex@gmail.com",
+        "nationalId": "CM970081067RLF",
+        "dob": "2025-05-24",
+        "gender": "male",
+        "businessAddress": "Nauyo",
+        "businessCoordinates": "1.0440235, 34.1805032",
+        "residentialAddress": "Mbale",
+        "nextOfKinName": "SULIMAN KIZZA",
+        "nextOfKinRelationship": "friend",
+        "nextOfKinPhone": "0705923761"
+      },
+      "images": {
+        "idFrontUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1775031339220-llr4sznxj/idFront_1775031339234.jpg",
+        "idBackUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1775031339220-llr4sznxj/idBack_1775031353781.jpg",
+        "agentPhotoUrl": "https://raw.githubusercontent.com/BarasaGodwilTech/Ezee-money/main/images/submissions/SUB-1775031339220-llr4sznxj/agentPhoto_1775031358477.jpg"
+      },
+      "submissionDate": "2026-04-01T08:16:02.566Z",
+      "status": "pending"
     }
   ],
-  "lastUpdated": "2026-03-27T10:41:25.835Z",
-  "totalSubmissions": 16
+  "lastUpdated": "2026-04-01T08:16:03.092Z",
+  "totalSubmissions": 17
 }
